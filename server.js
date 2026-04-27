@@ -25,6 +25,16 @@ function writeLog(payload) {
   }));
 }
 
+function getClientIp(req) {
+  const xForwardedFor = req.headers["x-forwarded-for"];
+
+  if (xForwardedFor) {
+    return xForwardedFor.split(",")[0].trim();
+  }
+
+  return req.socket.remoteAddress || "unknown";
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const requestId = crypto.randomUUID();
@@ -43,8 +53,10 @@ app.use((req, res, next) => {
       path: req.originalUrl,
       status: res.statusCode,
       latency_ms: latencyMs,
-      client_ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown",
+      client_ip: getClientIp(req),
       user_agent: req.headers["user-agent"] || "unknown",
+      host: req.headers["host"] || "unknown",
+      referer: req.headers["referer"] || "unknown",
     });
   });
 
