@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Counter App v6</title>
+  <title>Counter App v7</title>
 
   <style>
     body {
@@ -22,7 +22,7 @@
 
     .card {
       width: 100%;
-      max-width: 900px;
+      max-width: 980px;
       background: rgba(30, 41, 59, 0.92);
       border-radius: 24px;
       padding: 32px;
@@ -61,7 +61,7 @@
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -84,13 +84,13 @@
     }
 
     .stat-number {
-      font-size: 2.6rem;
+      font-size: 2.4rem;
       font-weight: 800;
       line-height: 1.1;
     }
 
     .stat-date {
-      font-size: 1.6rem;
+      font-size: 1.45rem;
       font-weight: 800;
       white-space: nowrap;
     }
@@ -146,7 +146,13 @@
       color: #93c5fd;
     }
 
-    @media (max-width: 720px) {
+    @media (max-width: 900px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
       .stats-grid {
         grid-template-columns: 1fr;
       }
@@ -168,8 +174,8 @@
 
 <body>
   <div class="card">
-    <h1>Counter App v6</h1>
-    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache + CI/CD + Unique Visitors</div>
+    <h1>Counter App v7</h1>
+    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache + CI/CD + Active Visitors</div>
 
     <div id="redisBadge" class="badge">Redis: checking...</div>
 
@@ -182,6 +188,11 @@
       <div class="stat-box">
         <div class="label">Today Visitors</div>
         <div class="stat-number" id="todayVisitors">-</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="label">Active Now</div>
+        <div class="stat-number" id="activeVisitors">-</div>
       </div>
 
       <div class="stat-box">
@@ -243,6 +254,14 @@
       return visitorId;
     }
 
+    function renderStats(data) {
+      document.getElementById("totalVisitors").textContent = data.totalVisitors;
+      document.getElementById("todayVisitors").textContent = data.todayVisitors;
+      document.getElementById("activeVisitors").textContent = data.activeVisitors;
+      document.getElementById("today").textContent = data.today;
+      updateBadge(data.redis);
+    }
+
     async function trackView() {
       try {
         clearError();
@@ -264,13 +283,29 @@
           throw new Error(data.error || "Track view failed");
         }
 
-        document.getElementById("totalVisitors").textContent = data.totalVisitors;
-        document.getElementById("todayVisitors").textContent = data.todayVisitors;
-        document.getElementById("today").textContent = data.today;
-        updateBadge(data.redis);
+        renderStats(data);
       } catch (err) {
         updateBadge("error");
         setError("瀏覽統計更新失敗：" + err.message);
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch("/stats", {
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Load stats failed");
+        }
+
+        renderStats(data);
+      } catch (err) {
+        updateBadge("error");
+        setError("無法讀取統計資料：" + err.message);
       }
     }
 
@@ -339,6 +374,8 @@
 
     trackView();
     loadCount();
+
+    setInterval(loadStats, 30000);
   </script>
 </body>
 </html>

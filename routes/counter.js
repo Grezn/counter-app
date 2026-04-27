@@ -5,6 +5,9 @@ const { redis, getRedisStatus } = require("../services/redis");
 
 const router = express.Router();
 
+const ACTIVE_VISITOR_TTL_SECONDS = 60 * 5;
+const DAILY_STATS_TTL_SECONDS = 60 * 60 * 24 * 30;
+
 function logCounter(event, extra = {}) {
   console.log(JSON.stringify({
     type: "counter",
@@ -48,13 +51,24 @@ router.post("/track-view", async (req, res) => {
     const visitorId = getVisitorId(req);
 
     const totalPageViews = await redis.incr("stats:total_page_views");
-    const todayPageViews = await redis.incr(`stats:daily_page_views:${today}`);
+    const todayPageViewsKey = `stats:daily_page_views:${today}`;
+    const todayUniqueKey = `stats:daily_unique_visitors:${today}`;
+    const activeKey = "stats:active_visitors";
+
+    const todayPageViews = await redis.incr(todayPageViewsKey);
 
     await redis.pfAdd("stats:total_unique_visitors", visitorId);
-    await redis.pfAdd(`stats:daily_unique_visitors:${today}`, visitorId);
+    await redis.pfAdd(todayUniqueKey, visitorId);
+
+    await redis.expire(todayPageViewsKey, DAILY_STATS_TTL_SECONDS);
+    await redis.expire(todayUniqueKey, DAILY_STATS_TTL_SECONDS);
+
+    await redis.sAdd(activeKey, visitorId);
+    await redis.expire(activeKey, ACTIVE_VISITOR_TTL_SECONDS);
 
     const totalVisitors = await redis.pfCount("stats:total_unique_visitors");
-    const todayVisitors = await redis.pfCount(`stats:daily_unique_visitors:${today}`);
+    const todayVisitors = await redis.pfCount(todayUniqueKey);
+    const activeVisitors = await redis.sCard(activeKey);
 
     logCounter("track_view", {
       today,
@@ -62,6 +76,7 @@ router.post("/track-view", async (req, res) => {
       todayPageViews,
       totalVisitors,
       todayVisitors,
+      activeVisitors,
     });
 
     res.json({
@@ -71,6 +86,7 @@ router.post("/track-view", async (req, res) => {
       todayPageViews,
       totalVisitors,
       todayVisitors,
+      activeVisitors,
       redis: getRedisStatus(),
     });
   } catch (err) {
@@ -86,10 +102,15 @@ router.get("/stats", async (req, res) => {
   try {
     const today = getTodayKey();
 
+    const todayPageViewsKey = `stats:daily_page_views:${today}`;
+    const todayUniqueKey = `stats:daily_unique_visitors:${today}`;
+    const activeKey = "stats:active_visitors";
+
     const totalPageViews = Number((await redis.get("stats:total_page_views")) || 0);
-    const todayPageViews = Number((await redis.get(`stats:daily_page_views:${today}`)) || 0);
+    const todayPageViews = Number((await redis.get(todayPageViewsKey)) || 0);
     const totalVisitors = await redis.pfCount("stats:total_unique_visitors");
-    const todayVisitors = await redis.pfCount(`stats:daily_unique_visitors:${today}`);
+    const todayVisitors = await redis.pfCount(todayUniqueKey);
+    const activeVisitors = await redis.sCard(activeKey);
     const count = Number((await redis.get("counter")) || 0);
 
     res.json({
@@ -97,6 +118,7 @@ router.get("/stats", async (req, res) => {
       todayPageViews,
       totalVisitors,
       todayVisitors,
+      activeVisitors,
       today,
       timezone: "Asia/Taipei",
       count,
