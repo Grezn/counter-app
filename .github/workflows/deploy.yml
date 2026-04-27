@@ -1,4 +1,4 @@
-name: Build and Push to ECR
+name: Build, Push, and Refresh ASG
 
 on:
   push:
@@ -11,7 +11,7 @@ env:
   ASG_NAME: counter-app-asg
 
 jobs:
-  build-push-refresh:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
