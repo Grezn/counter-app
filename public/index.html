@@ -20,9 +20,10 @@
     .card {
       width: 100%;
       max-width: 900px;
-      background: rgba(30, 41, 59, 0.88);
+      background: rgba(30, 41, 59, 0.92);
       border-radius: 24px;
       padding: 32px;
+      box-sizing: border-box;
     }
 
     h1 {
@@ -59,15 +60,19 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
     }
 
     .stat-box {
       background: rgba(15, 23, 42, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 18px;
-      padding: 20px;
+      padding: 22px 16px;
       text-align: center;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .label {
@@ -78,6 +83,14 @@
     .stat-number {
       font-size: 2.8rem;
       font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .stat-date {
+      font-size: 1.8rem;
+      font-weight: 800;
+      line-height: 1.2;
+      white-space: nowrap;
     }
 
     .count {
@@ -85,6 +98,7 @@
       font-size: 5rem;
       font-weight: 800;
       margin: 16px 0 24px;
+      line-height: 1;
     }
 
     button {
@@ -112,6 +126,7 @@
       padding-top: 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.12);
       color: #cbd5e1;
+      line-height: 1.6;
     }
 
     .error-box {
@@ -140,6 +155,10 @@
       .count {
         font-size: 4rem;
       }
+
+      .stat-date {
+        font-size: 1.6rem;
+      }
     }
   </style>
 </head>
@@ -163,7 +182,7 @@
 
       <div class="stat-box">
         <div class="label">Today</div>
-        <div class="stat-number" id="today">-</div>
+        <div class="stat-date" id="today">-</div>
       </div>
     </div>
 
@@ -201,6 +220,7 @@
       const okStatuses = ["connected", "ready", "reconnecting"];
 
       badge.textContent = `Redis: ${redisStatus}`;
+
       if (okStatuses.includes(redisStatus)) {
         badge.className = "badge ok";
       } else {
@@ -208,11 +228,39 @@
       }
     }
 
+    async function trackView() {
+      try {
+        clearError();
+
+        const res = await fetch("/track-view", {
+          method: "POST",
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Track view failed");
+        }
+
+        document.getElementById("totalViews").textContent = data.totalViews;
+        document.getElementById("todayViews").textContent = data.todayViews;
+        document.getElementById("today").textContent = data.today;
+        updateBadge(data.redis);
+      } catch (err) {
+        updateBadge("error");
+        setError("瀏覽統計更新失敗：" + err.message);
+      }
+    }
+
     async function loadCount() {
       try {
         clearError();
 
-        const res = await fetch("/count");
+        const res = await fetch("/count", {
+          cache: "no-store",
+        });
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -230,7 +278,10 @@
 
     async function loadStats() {
       try {
-        const res = await fetch("/stats");
+        const res = await fetch("/stats", {
+          cache: "no-store",
+        });
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -254,7 +305,11 @@
       try {
         clearError();
 
-        const res = await fetch("/increment", { method: "POST" });
+        const res = await fetch("/increment", {
+          method: "POST",
+          cache: "no-store",
+        });
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -262,7 +317,6 @@
         }
 
         document.getElementById("count").textContent = data.count;
-        await loadCount();
         await loadStats();
       } catch (err) {
         setError("+1 失敗：" + err.message);
@@ -273,7 +327,11 @@
       try {
         clearError();
 
-        const res = await fetch("/reset", { method: "POST" });
+        const res = await fetch("/reset", {
+          method: "POST",
+          cache: "no-store",
+        });
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -281,15 +339,14 @@
         }
 
         document.getElementById("count").textContent = data.count;
-        await loadCount();
         await loadStats();
       } catch (err) {
         setError("Reset 失敗：" + err.message);
       }
     }
 
+    trackView();
     loadCount();
-    loadStats();
   </script>
 </body>
 </html>

@@ -22,29 +22,44 @@ function getTodayKey() {
 }
 
 router.get("/", async (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/index.html"));
+});
+
+router.post("/track-view", async (req, res) => {
   try {
     const today = getTodayKey();
 
-    await redis.incr("stats:total_views");
-    await redis.incr(`stats:daily_views:${today}`);
+    const totalViews = await redis.incr("stats:total_views");
+    const todayViews = await redis.incr(`stats:daily_views:${today}`);
 
-    logCounter("page_view", { today });
+    logCounter("page_view", {
+      today,
+      totalViews,
+      todayViews,
+    });
+
+    res.json({
+      totalViews,
+      todayViews,
+      today,
+      redis: getRedisStatus(),
+    });
   } catch (err) {
-    console.error("[Redis] page view increment failed:", err.message);
+    console.error("[Redis] track view failed:", err.message);
+    res.status(500).json({
+      error: err.message,
+    });
   }
-
-  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
 router.get("/count", async (req, res) => {
   try {
     const value = await redis.get("counter");
     const count = Number(value || 0);
-    const status = getRedisStatus();
 
     res.json({
       count,
-      redis: status,
+      redis: getRedisStatus(),
     });
   } catch (err) {
     console.error("[Redis] get count failed:", err.message);
