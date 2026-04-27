@@ -5,7 +5,7 @@ const { redis, getRedisStatus } = require("../services/redis");
 
 const router = express.Router();
 
-const ACTIVE_WINDOW_SECONDS = 60 * 5;
+const ACTIVE_WINDOW_SECONDS = 30;
 const DAILY_STATS_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 function logCounter(event, extra = {}) {
