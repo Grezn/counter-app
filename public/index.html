@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Counter App v5</title>
+  <title>Counter App v6</title>
+
   <style>
     body {
       margin: 0;
@@ -27,18 +28,18 @@
     }
 
     h1 {
-      font-size: 3rem;
+      font-size: 2.5rem;
       margin: 0 0 8px;
     }
 
     .sub {
       color: #94a3b8;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .badge {
       display: inline-block;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       padding: 10px 16px;
       border-radius: 999px;
       font-weight: bold;
@@ -60,57 +61,50 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
     .stat-box {
       background: rgba(15, 23, 42, 0.75);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 18px;
-      padding: 22px 16px;
+      padding: 20px;
       text-align: center;
-      min-height: 110px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
     }
 
     .label {
       color: #94a3b8;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
     .stat-number {
-      font-size: 2.8rem;
+      font-size: 2.5rem;
       font-weight: 800;
-      line-height: 1.1;
     }
 
     .stat-date {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       font-weight: 800;
-      line-height: 1.2;
       white-space: nowrap;
     }
 
     .count {
       text-align: center;
-      font-size: 5rem;
+      font-size: 4rem;
       font-weight: 800;
-      margin: 16px 0 24px;
-      line-height: 1;
+      margin: 20px 0;
     }
 
     button {
       width: 100%;
       border: 0;
       border-radius: 18px;
-      padding: 20px;
+      padding: 16px;
       color: white;
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: bold;
       cursor: pointer;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .inc {
@@ -121,62 +115,44 @@
       background: #ef4444;
     }
 
-    .footer {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255, 255, 255, 0.12);
-      color: #cbd5e1;
-      line-height: 1.6;
-    }
-
     .error-box {
       display: none;
-      margin-top: 16px;
-      padding: 14px 16px;
-      border-radius: 12px;
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
       color: #fecaca;
       background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .footer {
+      margin-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 10px;
+      font-size: 0.9rem;
     }
 
     a {
       color: #93c5fd;
     }
-
-    @media (max-width: 720px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: 2.2rem;
-      }
-
-      .count {
-        font-size: 4rem;
-      }
-
-      .stat-date {
-        font-size: 1.6rem;
-      }
-    }
   </style>
 </head>
+
 <body>
   <div class="card">
-    <h1>Counter App v5</h1>
-    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache + CI/CD</div>
+
+    <h1>Counter App v6</h1>
+    <div class="sub">Unique Visitor Tracking + AWS + CI/CD</div>
 
     <div id="redisBadge" class="badge">Redis: checking...</div>
 
     <div class="stats-grid">
       <div class="stat-box">
-        <div class="label">Total Views</div>
+        <div class="label">Total Visitors</div>
         <div class="stat-number" id="totalViews">-</div>
       </div>
 
       <div class="stat-box">
-        <div class="label">Today Views</div>
+        <div class="label">Today Visitors</div>
         <div class="stat-number" id="todayViews">-</div>
       </div>
 
@@ -195,158 +171,69 @@
     <div id="errorBox" class="error-box"></div>
 
     <div class="footer">
-      <div><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></div>
-      <div><strong>Readiness Check:</strong> <a href="/ready" target="_blank">/ready</a></div>
-      <div><strong>Stats API:</strong> <a href="/stats" target="_blank">/stats</a></div>
-      <div><strong>Instance:</strong> <a href="/whoami" target="_blank">/whoami</a></div>
+      <div><a href="/stats" target="_blank">/stats</a></div>
+      <div><a href="/whoami" target="_blank">/whoami</a></div>
     </div>
+
   </div>
 
   <script>
-    function setError(message) {
+    function setError(msg) {
       const box = document.getElementById("errorBox");
       box.style.display = "block";
-      box.textContent = message;
+      box.textContent = msg;
     }
 
-    function clearError() {
-      const box = document.getElementById("errorBox");
-      box.style.display = "none";
-      box.textContent = "";
-    }
-
-    function updateBadge(redisStatus) {
+    function updateBadge(status) {
       const badge = document.getElementById("redisBadge");
-      const okStatuses = ["connected", "ready", "reconnecting"];
+      badge.textContent = "Redis: " + status;
+      badge.className = status === "ready" ? "badge ok" : "badge error";
+    }
 
-      badge.textContent = `Redis: ${redisStatus}`;
-
-      if (okStatuses.includes(redisStatus)) {
-        badge.className = "badge ok";
-      } else {
-        badge.className = "badge error";
+    function getVisitorId() {
+      let id = localStorage.getItem("visitor_id");
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem("visitor_id", id);
       }
+      return id;
     }
 
     async function trackView() {
-      try {
-        clearError();
+      const res = await fetch("/track-view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitorId: getVisitorId() })
+      });
 
-        const res = await fetch("/track-view", {
-          method: "POST",
-          cache: "no-store",
-        });
+      const data = await res.json();
 
-        const data = await res.json();
+      document.getElementById("totalViews").textContent = data.totalVisitors;
+      document.getElementById("todayViews").textContent = data.todayVisitors;
+      document.getElementById("today").textContent = data.today;
 
-        if (!res.ok) {
-          throw new Error(data.error || "Track view failed");
-        }
-
-        document.getElementById("totalViews").textContent = data.totalViews;
-        document.getElementById("todayViews").textContent = data.todayViews;
-        document.getElementById("today").textContent = data.today;
-        updateBadge(data.redis);
-      } catch (err) {
-        updateBadge("error");
-        setError("瀏覽統計更新失敗：" + err.message);
-      }
+      updateBadge(data.redis);
     }
 
     async function loadCount() {
-      try {
-        clearError();
-
-        const res = await fetch("/count", {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Load count failed");
-        }
-
-        document.getElementById("count").textContent = data.count;
-        updateBadge(data.redis);
-      } catch (err) {
-        document.getElementById("count").textContent = "ERR";
-        updateBadge("error");
-        setError("無法讀取目前計數：" + err.message);
-      }
-    }
-
-    async function loadStats() {
-      try {
-        const res = await fetch("/stats", {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Load stats failed");
-        }
-
-        document.getElementById("totalViews").textContent = data.totalViews;
-        document.getElementById("todayViews").textContent = data.todayViews;
-        document.getElementById("today").textContent = data.today;
-        updateBadge(data.redis);
-      } catch (err) {
-        document.getElementById("totalViews").textContent = "ERR";
-        document.getElementById("todayViews").textContent = "ERR";
-        document.getElementById("today").textContent = "ERR";
-        updateBadge("error");
-        setError("無法讀取瀏覽統計：" + err.message);
-      }
+      const res = await fetch("/count");
+      const data = await res.json();
+      document.getElementById("count").textContent = data.count;
     }
 
     async function increment() {
-      try {
-        clearError();
-
-        const res = await fetch("/increment", {
-          method: "POST",
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Increment failed");
-        }
-
-        document.getElementById("count").textContent = data.count;
-        await loadStats();
-      } catch (err) {
-        setError("+1 失敗：" + err.message);
-      }
+      await fetch("/increment", { method: "POST" });
+      loadCount();
     }
 
     async function resetCounter() {
-      try {
-        clearError();
-
-        const res = await fetch("/reset", {
-          method: "POST",
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Reset failed");
-        }
-
-        document.getElementById("count").textContent = data.count;
-        await loadStats();
-      } catch (err) {
-        setError("Reset 失敗：" + err.message);
-      }
+      await fetch("/reset", { method: "POST" });
+      loadCount();
     }
 
     trackView();
     loadCount();
   </script>
+
 </body>
 </html>
