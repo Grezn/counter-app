@@ -13,21 +13,25 @@ function logCounter(event, extra = {}) {
   }));
 }
 
+function getTodayKey() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 router.get("/", async (req, res) => {
-  let count = 0;
-
   try {
-    const value = await redis.get("counter");
-    count = Number(value || 0);
-  } catch (err) {
-    console.error("[Redis] get counter failed:", err.message);
-  }
+    const today = getTodayKey();
 
-  const status = getRedisStatus();
-  const ok =
-    status === "connected" ||
-    status === "ready" ||
-    status === "reconnecting";
+    await redis.incr("stats:total_views");
+    await redis.incr(`stats:daily_views:${today}`);
+
+    logCounter("page_view", { today });
+  } catch (err) {
+    console.error("[Redis] page view increment failed:", err.message);
+  }
 
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
@@ -44,6 +48,29 @@ router.get("/count", async (req, res) => {
     });
   } catch (err) {
     console.error("[Redis] get count failed:", err.message);
+    res.status(500).json({
+      error: err.message,
+    });
+  }
+});
+
+router.get("/stats", async (req, res) => {
+  try {
+    const today = getTodayKey();
+
+    const totalViews = Number((await redis.get("stats:total_views")) || 0);
+    const todayViews = Number((await redis.get(`stats:daily_views:${today}`)) || 0);
+    const count = Number((await redis.get("counter")) || 0);
+
+    res.json({
+      totalViews,
+      todayViews,
+      today,
+      count,
+      redis: getRedisStatus(),
+    });
+  } catch (err) {
+    console.error("[Redis] get stats failed:", err.message);
     res.status(500).json({
       error: err.message,
     });

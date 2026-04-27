@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Counter App v4</title>
+  <title>Counter App v5</title>
   <style>
     body {
       margin: 0;
@@ -16,21 +16,25 @@
       align-items: center;
       padding: 24px;
     }
+
     .card {
       width: 100%;
-      max-width: 860px;
+      max-width: 900px;
       background: rgba(30, 41, 59, 0.88);
       border-radius: 24px;
       padding: 32px;
     }
+
     h1 {
       font-size: 3rem;
       margin: 0 0 8px;
     }
+
     .sub {
       color: #94a3b8;
       margin-bottom: 24px;
     }
+
     .badge {
       display: inline-block;
       margin-bottom: 24px;
@@ -38,26 +42,51 @@
       border-radius: 999px;
       font-weight: bold;
     }
+
     .badge.ok {
       color: #bbf7d0;
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(16, 185, 129, 0.35);
     }
+
     .badge.error {
       color: #fecaca;
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.35);
     }
-    .label {
-      text-align: center;
-      color: #94a3b8;
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
     }
+
+    .stat-box {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .label {
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+
+    .stat-number {
+      font-size: 2.8rem;
+      font-weight: 800;
+    }
+
     .count {
       text-align: center;
       font-size: 5rem;
       font-weight: 800;
       margin: 16px 0 24px;
     }
+
     button {
       width: 100%;
       border: 0;
@@ -69,18 +98,22 @@
       cursor: pointer;
       margin-bottom: 16px;
     }
+
     .inc {
       background: #3b82f6;
     }
+
     .reset {
       background: #ef4444;
     }
+
     .footer {
       margin-top: 24px;
       padding-top: 20px;
       border-top: 1px solid rgba(255, 255, 255, 0.12);
       color: #cbd5e1;
     }
+
     .error-box {
       display: none;
       margin-top: 16px;
@@ -90,17 +123,49 @@
       background: rgba(239, 68, 68, 0.12);
       border: 1px solid rgba(239, 68, 68, 0.35);
     }
+
     a {
       color: #93c5fd;
+    }
+
+    @media (max-width: 720px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 2.2rem;
+      }
+
+      .count {
+        font-size: 4rem;
+      }
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Counter App v4</h1>
-    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache</div>
+    <h1>Counter App v5</h1>
+    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache + CI/CD</div>
 
     <div id="redisBadge" class="badge">Redis: checking...</div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="label">Total Views</div>
+        <div class="stat-number" id="totalViews">-</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="label">Today Views</div>
+        <div class="stat-number" id="todayViews">-</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="label">Today</div>
+        <div class="stat-number" id="today">-</div>
+      </div>
+    </div>
 
     <div class="label">Current Count</div>
     <div class="count" id="count">-</div>
@@ -112,6 +177,9 @@
 
     <div class="footer">
       <div><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></div>
+      <div><strong>Readiness Check:</strong> <a href="/ready" target="_blank">/ready</a></div>
+      <div><strong>Stats API:</strong> <a href="/stats" target="_blank">/stats</a></div>
+      <div><strong>Instance:</strong> <a href="/whoami" target="_blank">/whoami</a></div>
     </div>
   </div>
 
@@ -143,6 +211,7 @@
     async function loadCount() {
       try {
         clearError();
+
         const res = await fetch("/count");
         const data = await res.json();
 
@@ -159,9 +228,32 @@
       }
     }
 
+    async function loadStats() {
+      try {
+        const res = await fetch("/stats");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Load stats failed");
+        }
+
+        document.getElementById("totalViews").textContent = data.totalViews;
+        document.getElementById("todayViews").textContent = data.todayViews;
+        document.getElementById("today").textContent = data.today;
+        updateBadge(data.redis);
+      } catch (err) {
+        document.getElementById("totalViews").textContent = "ERR";
+        document.getElementById("todayViews").textContent = "ERR";
+        document.getElementById("today").textContent = "ERR";
+        updateBadge("error");
+        setError("無法讀取瀏覽統計：" + err.message);
+      }
+    }
+
     async function increment() {
       try {
         clearError();
+
         const res = await fetch("/increment", { method: "POST" });
         const data = await res.json();
 
@@ -171,6 +263,7 @@
 
         document.getElementById("count").textContent = data.count;
         await loadCount();
+        await loadStats();
       } catch (err) {
         setError("+1 失敗：" + err.message);
       }
@@ -179,6 +272,7 @@
     async function resetCounter() {
       try {
         clearError();
+
         const res = await fetch("/reset", { method: "POST" });
         const data = await res.json();
 
@@ -188,12 +282,14 @@
 
         document.getElementById("count").textContent = data.count;
         await loadCount();
+        await loadStats();
       } catch (err) {
         setError("Reset 失敗：" + err.message);
       }
     }
 
     loadCount();
+    loadStats();
   </script>
 </body>
 </html>
