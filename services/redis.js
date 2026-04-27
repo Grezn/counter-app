@@ -16,15 +16,6 @@ const redis = createClient({
   },
 });
 
-function logRedis(event, extra = {}) {
-  console.log(JSON.stringify({
-    type: "redis",
-    event,
-    timestamp: new Date().toISOString(),
-    ...extra
-  }));
-}
-
 redis.on("connect", () => {
   redisStatus = "connected";
   console.log("[Redis] connected");
@@ -49,9 +40,12 @@ redis.on("error", (err) => {
   redisStatus = "error";
   console.error("[Redis] error:", err.message);
 });
+
 async function connectRedis() {
   try {
-    await redis.connect();
+    if (!redis.isOpen) {
+      await redis.connect();
+    }
   } catch (err) {
     console.error("[Redis] initial connect failed:", err.message);
   }
@@ -62,7 +56,7 @@ function getRedisStatus() {
 }
 
 function getRedisEndpoint() {
-  return `${REDIS_HOST}:${REDIS_PORT}`;
+  return REDIS_URL;
 }
 
 module.exports = {

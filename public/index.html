@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Counter App v6</title>
 
   <style>
@@ -16,6 +17,7 @@
       justify-content: center;
       align-items: center;
       padding: 24px;
+      box-sizing: border-box;
     }
 
     .card {
@@ -28,7 +30,7 @@
     }
 
     h1 {
-      font-size: 2.5rem;
+      font-size: 2.8rem;
       margin: 0 0 8px;
     }
 
@@ -70,16 +72,21 @@
       border-radius: 18px;
       padding: 20px;
       text-align: center;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .label {
       color: #94a3b8;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .stat-number {
-      font-size: 2.5rem;
+      font-size: 2.6rem;
       font-weight: 800;
+      line-height: 1.1;
     }
 
     .stat-date {
@@ -90,21 +97,22 @@
 
     .count {
       text-align: center;
-      font-size: 4rem;
+      font-size: 4.5rem;
       font-weight: 800;
-      margin: 20px 0;
+      margin: 18px 0 24px;
+      line-height: 1;
     }
 
     button {
       width: 100%;
       border: 0;
       border-radius: 18px;
-      padding: 16px;
+      padding: 18px;
       color: white;
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: bold;
       cursor: pointer;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .inc {
@@ -117,43 +125,63 @@
 
     .error-box {
       display: none;
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 10px;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
       color: #fecaca;
       background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
     }
 
     .footer {
-      margin-top: 20px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      padding-top: 10px;
-      font-size: 0.9rem;
+      margin-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 16px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      font-size: 0.95rem;
     }
 
     a {
       color: #93c5fd;
+    }
+
+    @media (max-width: 720px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 2.2rem;
+      }
+
+      .count {
+        font-size: 4rem;
+      }
+
+      .stat-date {
+        font-size: 1.5rem;
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="card">
-
     <h1>Counter App v6</h1>
-    <div class="sub">Unique Visitor Tracking + AWS + CI/CD</div>
+    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache + CI/CD + Unique Visitors</div>
 
     <div id="redisBadge" class="badge">Redis: checking...</div>
 
     <div class="stats-grid">
       <div class="stat-box">
         <div class="label">Total Visitors</div>
-        <div class="stat-number" id="totalViews">-</div>
+        <div class="stat-number" id="totalVisitors">-</div>
       </div>
 
       <div class="stat-box">
         <div class="label">Today Visitors</div>
-        <div class="stat-number" id="todayViews">-</div>
+        <div class="stat-number" id="todayVisitors">-</div>
       </div>
 
       <div class="stat-box">
@@ -171,69 +199,146 @@
     <div id="errorBox" class="error-box"></div>
 
     <div class="footer">
-      <div><a href="/stats" target="_blank">/stats</a></div>
-      <div><a href="/whoami" target="_blank">/whoami</a></div>
+      <div><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></div>
+      <div><strong>Readiness Check:</strong> <a href="/ready" target="_blank">/ready</a></div>
+      <div><strong>Stats API:</strong> <a href="/stats" target="_blank">/stats</a></div>
+      <div><strong>Instance:</strong> <a href="/whoami" target="_blank">/whoami</a></div>
     </div>
-
   </div>
 
   <script>
-    function setError(msg) {
+    function setError(message) {
       const box = document.getElementById("errorBox");
       box.style.display = "block";
-      box.textContent = msg;
+      box.textContent = message;
     }
 
-    function updateBadge(status) {
+    function clearError() {
+      const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function updateBadge(redisStatus) {
       const badge = document.getElementById("redisBadge");
-      badge.textContent = "Redis: " + status;
-      badge.className = status === "ready" ? "badge ok" : "badge error";
+      const okStatuses = ["connected", "ready", "reconnecting"];
+
+      badge.textContent = `Redis: ${redisStatus}`;
+
+      if (okStatuses.includes(redisStatus)) {
+        badge.className = "badge ok";
+      } else {
+        badge.className = "badge error";
+      }
     }
 
     function getVisitorId() {
-      let id = localStorage.getItem("visitor_id");
-      if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem("visitor_id", id);
+      let visitorId = localStorage.getItem("visitor_id");
+
+      if (!visitorId) {
+        visitorId = crypto.randomUUID();
+        localStorage.setItem("visitor_id", visitorId);
       }
-      return id;
+
+      return visitorId;
     }
 
     async function trackView() {
-      const res = await fetch("/track-view", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visitorId: getVisitorId() })
-      });
+      try {
+        clearError();
 
-      const data = await res.json();
+        const res = await fetch("/track-view", {
+          method: "POST",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            visitorId: getVisitorId(),
+          }),
+        });
 
-      document.getElementById("totalViews").textContent = data.totalVisitors;
-      document.getElementById("todayViews").textContent = data.todayVisitors;
-      document.getElementById("today").textContent = data.today;
+        const data = await res.json();
 
-      updateBadge(data.redis);
+        if (!res.ok) {
+          throw new Error(data.error || "Track view failed");
+        }
+
+        document.getElementById("totalVisitors").textContent = data.totalVisitors;
+        document.getElementById("todayVisitors").textContent = data.todayVisitors;
+        document.getElementById("today").textContent = data.today;
+        updateBadge(data.redis);
+      } catch (err) {
+        updateBadge("error");
+        setError("瀏覽統計更新失敗：" + err.message);
+      }
     }
 
     async function loadCount() {
-      const res = await fetch("/count");
-      const data = await res.json();
-      document.getElementById("count").textContent = data.count;
+      try {
+        const res = await fetch("/count", {
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Load count failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
+        updateBadge(data.redis);
+      } catch (err) {
+        document.getElementById("count").textContent = "ERR";
+        updateBadge("error");
+        setError("無法讀取目前計數：" + err.message);
+      }
     }
 
     async function increment() {
-      await fetch("/increment", { method: "POST" });
-      loadCount();
+      try {
+        clearError();
+
+        const res = await fetch("/increment", {
+          method: "POST",
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Increment failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
+      } catch (err) {
+        setError("+1 失敗：" + err.message);
+      }
     }
 
     async function resetCounter() {
-      await fetch("/reset", { method: "POST" });
-      loadCount();
+      try {
+        clearError();
+
+        const res = await fetch("/reset", {
+          method: "POST",
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Reset failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
+      } catch (err) {
+        setError("Reset 失敗：" + err.message);
+      }
     }
 
     trackView();
     loadCount();
   </script>
-
 </body>
 </html>

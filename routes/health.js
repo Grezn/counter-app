@@ -7,16 +7,14 @@ const {
 
 const router = express.Router();
 
-// Liveness：只確認 App 本身還活著
 router.get("/health", (req, res) => {
   res.status(200).json({
     status: "ok",
     app: "running",
-    version: "v4",
+    version: process.env.APP_VERSION || "v6",
   });
 });
 
-// Readiness：確認 App 的依賴服務 Redis 是否可用
 router.get("/ready", async (req, res) => {
   try {
     await redis.ping();
@@ -26,7 +24,7 @@ router.get("/ready", async (req, res) => {
       app: "running",
       redis: getRedisStatus(),
       endpoint: getRedisEndpoint(),
-      version: "v4",
+      version: process.env.APP_VERSION || "v6",
     });
   } catch (err) {
     res.status(500).json({
@@ -34,7 +32,7 @@ router.get("/ready", async (req, res) => {
       app: "running",
       redis: getRedisStatus(),
       endpoint: getRedisEndpoint(),
-      version: "v4",
+      version: process.env.APP_VERSION || "v6",
       error: err.message,
     });
   }

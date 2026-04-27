@@ -8,6 +8,7 @@ const healthRoutes = require("./routes/health");
 const { connectRedis } = require("./services/redis");
 
 const app = express();
+
 const PORT = process.env.PORT || 3000;
 const APP_VERSION = process.env.APP_VERSION || "v6";
 const INSTANCE_ID = os.hostname();
