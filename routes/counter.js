@@ -5,7 +5,7 @@ const { redis, getRedisStatus } = require("../services/redis");
 
 const router = express.Router();
 
-const ACTIVE_VISITOR_TTL_SECONDS = 60 * 5;
+const ACTIVE_WINDOW_SECONDS = 60 * 5;
 const DAILY_STATS_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 function logCounter(event, extra = {}) {
@@ -18,14 +18,12 @@ function logCounter(event, extra = {}) {
 }
 
 function getTodayKey() {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Taipei",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  });
-
-  return formatter.format(new Date());
+  }).format(new Date());
 }
 
 function getVisitorId(req) {
@@ -49,26 +47,30 @@ router.post("/track-view", async (req, res) => {
   try {
     const today = getTodayKey();
     const visitorId = getVisitorId(req);
+    const now = Math.floor(Date.now() / 1000);
 
-    const totalPageViews = await redis.incr("stats:total_page_views");
+    const totalPageViewsKey = "stats:total_page_views";
     const todayPageViewsKey = `stats:daily_page_views:${today}`;
+    const totalUniqueKey = "stats:total_unique_visitors";
     const todayUniqueKey = `stats:daily_unique_visitors:${today}`;
-    const activeKey = "stats:active_visitors";
+    const activeKey = "stats:active_visitors_zset";
 
+    const totalPageViews = await redis.incr(totalPageViewsKey);
     const todayPageViews = await redis.incr(todayPageViewsKey);
 
-    await redis.pfAdd("stats:total_unique_visitors", visitorId);
+    await redis.pfAdd(totalUniqueKey, visitorId);
     await redis.pfAdd(todayUniqueKey, visitorId);
 
     await redis.expire(todayPageViewsKey, DAILY_STATS_TTL_SECONDS);
     await redis.expire(todayUniqueKey, DAILY_STATS_TTL_SECONDS);
 
-    await redis.sAdd(activeKey, visitorId);
-    await redis.expire(activeKey, ACTIVE_VISITOR_TTL_SECONDS);
+    await redis.zAdd(activeKey, [{ score: now, value: visitorId }]);
+    await redis.zRemRangeByScore(activeKey, 0, now - ACTIVE_WINDOW_SECONDS);
+    await redis.expire(activeKey, ACTIVE_WINDOW_SECONDS * 2);
 
-    const totalVisitors = await redis.pfCount("stats:total_unique_visitors");
+    const totalVisitors = await redis.pfCount(totalUniqueKey);
     const todayVisitors = await redis.pfCount(todayUniqueKey);
-    const activeVisitors = await redis.sCard(activeKey);
+    const activeVisitors = await redis.zCard(activeKey);
 
     logCounter("track_view", {
       today,
@@ -101,16 +103,19 @@ router.post("/track-view", async (req, res) => {
 router.get("/stats", async (req, res) => {
   try {
     const today = getTodayKey();
+    const now = Math.floor(Date.now() / 1000);
 
     const todayPageViewsKey = `stats:daily_page_views:${today}`;
     const todayUniqueKey = `stats:daily_unique_visitors:${today}`;
-    const activeKey = "stats:active_visitors";
+    const activeKey = "stats:active_visitors_zset";
+
+    await redis.zRemRangeByScore(activeKey, 0, now - ACTIVE_WINDOW_SECONDS);
 
     const totalPageViews = Number((await redis.get("stats:total_page_views")) || 0);
     const todayPageViews = Number((await redis.get(todayPageViewsKey)) || 0);
     const totalVisitors = await redis.pfCount("stats:total_unique_visitors");
     const todayVisitors = await redis.pfCount(todayUniqueKey);
-    const activeVisitors = await redis.sCard(activeKey);
+    const activeVisitors = await redis.zCard(activeKey);
     const count = Number((await redis.get("counter")) || 0);
 
     res.json({
@@ -135,19 +140,10 @@ router.get("/stats", async (req, res) => {
 
 router.get("/count", async (req, res) => {
   try {
-    const value = await redis.get("counter");
-    const count = Number(value || 0);
-
-    res.json({
-      count,
-      redis: getRedisStatus(),
-    });
+    const count = Number((await redis.get("counter")) || 0);
+    res.json({ count, redis: getRedisStatus() });
   } catch (err) {
-    console.error("[Redis] get count failed:", err.message);
-    res.status(500).json({
-      error: err.message,
-      redis: getRedisStatus(),
-    });
+    res.status(500).json({ error: err.message, redis: getRedisStatus() });
   }
 });
 
@@ -157,7 +153,6 @@ router.post("/increment", async (req, res) => {
     logCounter("increment", { count });
     res.json({ count });
   } catch (err) {
-    console.error("[Redis] increment failed:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -168,7 +163,6 @@ router.post("/reset", async (req, res) => {
     logCounter("reset", { count: 0 });
     res.json({ count: 0 });
   } catch (err) {
-    console.error("[Redis] reset failed:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
