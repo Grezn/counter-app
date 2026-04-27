@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Counter App v4</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(90deg, #1d4ed8 0%, #0f172a 45%, #0ea5e9 100%);
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 860px;
+      background: rgba(30, 41, 59, 0.88);
+      border-radius: 24px;
+      padding: 32px;
+    }
+    h1 {
+      font-size: 3rem;
+      margin: 0 0 8px;
+    }
+    .sub {
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-block;
+      margin-bottom: 24px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: bold;
+    }
+    .badge.ok {
+      color: #bbf7d0;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .badge.error {
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    .label {
+      text-align: center;
+      color: #94a3b8;
+    }
+    .count {
+      text-align: center;
+      font-size: 5rem;
+      font-weight: 800;
+      margin: 16px 0 24px;
+    }
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 18px;
+      padding: 20px;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .inc {
+      background: #3b82f6;
+    }
+    .reset {
+      background: #ef4444;
+    }
+    .footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+    }
+    .error-box {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    a {
+      color: #93c5fd;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Counter App v4</h1>
+    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache</div>
+
+    <div id="redisBadge" class="badge">Redis: checking...</div>
+
+    <div class="label">Current Count</div>
+    <div class="count" id="count">-</div>
+
+    <button class="inc" onclick="increment()">+1</button>
+    <button class="reset" onclick="resetCounter()">Reset</button>
+
+    <div id="errorBox" class="error-box"></div>
+
+    <div class="footer">
+      <div><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></div>
+    </div>
+  </div>
+
+  <script>
+    function setError(message) {
+      const box = document.getElementById("errorBox");
+      box.style.display = "block";
+      box.textContent = message;
+    }
+
+    function clearError() {
+      const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function updateBadge(redisStatus) {
+      const badge = document.getElementById("redisBadge");
+      const okStatuses = ["connected", "ready", "reconnecting"];
+
+      badge.textContent = `Redis: ${redisStatus}`;
+      if (okStatuses.includes(redisStatus)) {
+        badge.className = "badge ok";
+      } else {
+        badge.className = "badge error";
+      }
+    }
+
+    async function loadCount() {
+      try {
+        clearError();
+        const res = await fetch("/count");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Load count failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
+        updateBadge(data.redis);
+      } catch (err) {
+        document.getElementById("count").textContent = "ERR";
+        updateBadge("error");
+        setError("無法讀取目前計數：" + err.message);
+      }
+    }
+
+    async function increment() {
+      try {
+        clearError();
+        const res = await fetch("/increment", { method: "POST" });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Increment failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
+        await loadCount();
+      } catch (err) {
+        setError("+1 失敗：" + err.message);
+      }
+    }
+
+    async function resetCounter() {
+      try {
+        clearError();
+        const res = await fetch("/reset", { method: "POST" });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Reset failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
+        await loadCount();
+      } catch (err) {
+        setError("Reset 失敗：" + err.message);
+      }
+    }
+
+    loadCount();
+  </script>
+</body>
+</html>
