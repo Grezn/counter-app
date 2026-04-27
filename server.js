@@ -89,3 +89,20 @@ async function startServer() {
 }
 
 startServer();
+
+const { getRedisClient } = require("./services/redis");
+
+function shutdown(signal) {
+  console.log(`Received ${signal}, shutting down...`);
+
+  const client = getRedisClient();
+
+  if (client) {
+    client.quit().catch(() => {});
+  }
+
+  process.exit(0);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

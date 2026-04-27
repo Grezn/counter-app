@@ -28,17 +28,30 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build Docker image
-        run: docker build -t $ECR_REPOSITORY .
+      - name: Set image uri
+        run: |
+          echo "IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
 
-      - name: Tag Docker image
-        run: docker tag $ECR_REPOSITORY:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:latest
+      - name: Build Docker image (latest + sha)
+        run: |
+          docker build \
+            -t $IMAGE_URI:latest \
+            -t $IMAGE_URI:$IMAGE_TAG \
+            .
 
-      - name: Push Docker image to ECR
-        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:latest
+      - name: Push Docker images to ECR
+        run: |
+          docker push $IMAGE_URI:latest
+          docker push $IMAGE_URI:$IMAGE_TAG
 
       - name: Start ASG instance refresh
         run: |
           aws autoscaling start-instance-refresh \
             --auto-scaling-group-name $ASG_NAME \
             --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":120}'
+
+      - name: Show deployed image tags
+        run: |
+          echo "Pushed: $IMAGE_URI:latest"
+          echo "Pushed: $IMAGE_URI:$IMAGE_TAG"
