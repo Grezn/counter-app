@@ -8,9 +8,10 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: docker-demo
+  ASG_NAME: counter-app-asg
 
 jobs:
-  build-and-push:
+  build-push-refresh:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,5 +34,11 @@ jobs:
       - name: Tag Docker image
         run: docker tag $ECR_REPOSITORY:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:latest
 
-      - name: Push Docker image
+      - name: Push Docker image to ECR
         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPOSITORY:latest
+
+      - name: Start ASG instance refresh
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name $ASG_NAME \
+            --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":120}'
