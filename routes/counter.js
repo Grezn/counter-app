@@ -1,7 +1,14 @@
 const express = require("express");
 const path = require("path");
 const crypto = require("crypto");
-const { redis, getRedisStatus } = require("../services/redis");
+
+// 防呆載入 redis service（避免匯出名稱不一致造成 crash）
+const redisSvc = require("../services/redis");
+const redis = redisSvc.redis || redisSvc.client || redisSvc.redisClient;
+const getRedisStatus =
+  redisSvc.getRedisStatus ||
+  redisSvc.getRedisConnectionStatus ||
+  (() => "unknown");
 
 const router = express.Router();
 
@@ -9,12 +16,14 @@ const ACTIVE_WINDOW_SECONDS = 30;
 const DAILY_STATS_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 function logCounter(event, extra = {}) {
-  console.log(JSON.stringify({
-    type: "counter",
-    event,
-    timestamp: new Date().toISOString(),
-    ...extra,
-  }));
+  console.log(
+    JSON.stringify({
+      type: "counter",
+      event,
+      timestamp: new Date().toISOString(),
+      ...extra,
+    })
+  );
 }
 
 function getTodayKey() {
@@ -45,6 +54,10 @@ router.get("/", (req, res) => {
 
 router.post("/track-view", async (req, res) => {
   try {
+    if (!redis) {
+      return res.status(500).json({ error: "redis client not available", redis: getRedisStatus() });
+    }
+
     const today = getTodayKey();
     const visitorId = getVisitorId(req);
     const now = Math.floor(Date.now() / 1000);
@@ -102,6 +115,10 @@ router.post("/track-view", async (req, res) => {
 
 router.get("/stats", async (req, res) => {
   try {
+    if (!redis) {
+      return res.status(500).json({ error: "redis client not available", redis: getRedisStatus() });
+    }
+
     const today = getTodayKey();
     const now = Math.floor(Date.now() / 1000);
 
@@ -140,6 +157,10 @@ router.get("/stats", async (req, res) => {
 
 router.get("/count", async (req, res) => {
   try {
+    if (!redis) {
+      return res.status(500).json({ error: "redis client not available", redis: getRedisStatus() });
+    }
+
     const count = Number((await redis.get("counter")) || 0);
     res.json({ count, redis: getRedisStatus() });
   } catch (err) {
@@ -149,21 +170,29 @@ router.get("/count", async (req, res) => {
 
 router.post("/increment", async (req, res) => {
   try {
+    if (!redis) {
+      return res.status(500).json({ error: "redis client not available", redis: getRedisStatus() });
+    }
+
     const count = await redis.incr("counter");
     logCounter("increment", { count });
     res.json({ count });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, redis: getRedisStatus() });
   }
 });
 
 router.post("/reset", async (req, res) => {
   try {
+    if (!redis) {
+      return res.status(500).json({ error: "redis client not available", redis: getRedisStatus() });
+    }
+
     await redis.set("counter", 0);
     logCounter("reset", { count: 0 });
     res.json({ count: 0 });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, redis: getRedisStatus() });
   }
 });
 
