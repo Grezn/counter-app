@@ -1,2 +1,8 @@
-.env
-*.env
+# Terraform local files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+
+# local temp files
+app/200
+app/403
