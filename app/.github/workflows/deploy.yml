@@ -1,0 +1,57 @@
+name: Build, Push, and Refresh ASG
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: docker-demo
+  ASG_NAME: counter-app-asg
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image uri
+        run: |
+          echo "IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
+
+      - name: Build Docker image (latest + sha)
+        run: |
+          docker build \
+            -t $IMAGE_URI:latest \
+            -t $IMAGE_URI:$IMAGE_TAG \
+            .
+
+      - name: Push Docker images to ECR
+        run: |
+          docker push $IMAGE_URI:latest
+          docker push $IMAGE_URI:$IMAGE_TAG
+
+      - name: Start ASG instance refresh
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name $ASG_NAME \
+            --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":120}'
+
+      - name: Show deployed image tags
+        run: |
+          echo "Pushed: $IMAGE_URI:latest"
+          echo "Pushed: $IMAGE_URI:$IMAGE_TAG"

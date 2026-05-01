@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  app:
+    image: ${IMAGE_URI:-131730003210.dkr.ecr.us-east-1.amazonaws.com/docker-demo:latest}
+    container_name: counter-app
+    restart: unless-stopped
+    ports:
+      - "80:3000"
+    environment:
+      PORT: "3000"
+      APP_VERSION: "${APP_VERSION:-latest}"
+      REDIS_HOST: "${REDIS_HOST}"
+      REDIS_PORT: "${REDIS_PORT:-6379}"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
