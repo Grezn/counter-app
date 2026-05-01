@@ -22,6 +22,13 @@ function getRedisStatus() {
   return r.isReady ? "ready" : r.isOpen ? "connected" : "not_connected";
 }
 
+function isResetAuthorized(req) {
+  const expected = process.env.RESET_TOKEN;
+  if (!expected) return true; // 若沒設 token，維持相容行為
+  const provided = req.headers["x-reset-token"];
+  return typeof provided === "string" && provided === expected;
+}
+
 function logCounter(event, extra = {}) {
   console.log(
     JSON.stringify({
@@ -207,6 +214,10 @@ router.post("/increment", async (req, res) => {
 
 router.post("/reset", async (req, res) => {
   try {
+    if (!isResetAuthorized(req)) {
+      return res.status(403).json({ error: "forbidden" });
+    }
+
     const redis = getRedis();
     if (!redis) {
       return res.status(500).json({
