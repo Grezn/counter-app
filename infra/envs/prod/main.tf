@@ -28,7 +28,7 @@ output "region" {
   value = data.aws_region.current.name
 }
 
-# ===== Existing ALB (imported) =====
+# ===== Existing ALB =====
 resource "aws_lb" "counter_app" {
   name               = "counter-app-alb"
   internal           = false
@@ -46,7 +46,7 @@ resource "aws_lb" "counter_app" {
   }
 }
 
-# ===== Existing Target Group (imported) =====
+# ===== Existing Target Group =====
 resource "aws_lb_target_group" "counter_app" {
   name        = "counter-app-tg"
   port        = 80
@@ -68,5 +68,46 @@ resource "aws_lb_target_group" "counter_app" {
 
   lifecycle {
     prevent_destroy = true
+  }
+}
+
+# ===== Listener 80: HTTP -> HTTPS redirect =====
+resource "aws_lb_listener" "http_80" {
+  load_balancer_arn = aws_lb.counter_app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
+# ===== Listener 443: HTTPS -> target group =====
+resource "aws_lb_listener" "https_443" {
+  load_balancer_arn = aws_lb.counter_app.arn
+  port              = 443
+  protocol          = "HTTPS"
+
+  certificate_arn = "arn:aws:acm:us-east-1:131730003210:certificate/f517b2da-2ec6-41a1-872c-9aae3f13ce79"
+  ssl_policy      = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.counter_app.arn
+  }
+
+  lifecycle {
+    prevent_destroy = true
+
+    # AWS listener default_action 會被 provider 展開成另一種結構，先忽略避免無意義漂移
+    ignore_changes = [
+      default_action
+    ]
   }
 }
