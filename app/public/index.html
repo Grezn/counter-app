@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Counter App v7</title>
+  <title>Counter NOC Dashboard</title>
 
   <style>
     body {
@@ -22,7 +22,7 @@
 
     .card {
       width: 100%;
-      max-width: 980px;
+      max-width: 1100px;
       background: rgba(30, 41, 59, 0.92);
       border-radius: 24px;
       padding: 32px;
@@ -30,7 +30,7 @@
     }
 
     h1 {
-      font-size: 2.8rem;
+      font-size: 2.4rem;
       margin: 0 0 8px;
     }
 
@@ -115,13 +115,8 @@
       margin-bottom: 14px;
     }
 
-    .inc {
-      background: #3b82f6;
-    }
-
-    .reset {
-      background: #ef4444;
-    }
+    .inc { background: #3b82f6; }
+    .reset { background: #ef4444; }
 
     .error-box {
       display: none;
@@ -149,7 +144,7 @@
 
     .links-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
       gap: 10px;
     }
 
@@ -186,6 +181,68 @@
       padding: 0;
     }
 
+    .noc-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .panel {
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .panel h3 {
+      margin: 0 0 10px;
+      color: #bfdbfe;
+      font-size: 1rem;
+    }
+
+    .sop-list, .handover-list {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+    }
+
+    .alert-pill {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      color: #fecaca;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.82rem;
+      margin-bottom: 10px;
+    }
+
+    .contact-link {
+      display: inline-block;
+      margin: 6px 8px 0 0;
+      font-size: 0.86rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(147, 197, 253, 0.3);
+      background: rgba(59, 130, 246, 0.15);
+      color: #dbeafe;
+      text-decoration: none;
+    }
+
+    .focus-note {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(253, 224, 71, 0.4);
+      background: rgba(250, 204, 21, 0.12);
+      color: #fef9c3;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
     .footer {
       margin-top: 24px;
       border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -195,40 +252,26 @@
       font-size: 0.95rem;
     }
 
-    a {
-      color: #93c5fd;
-    }
+    a { color: #93c5fd; }
 
     @media (max-width: 900px) {
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     @media (max-width: 600px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      h1 {
-        font-size: 2.2rem;
-      }
-
-      .count {
-        font-size: 4rem;
-      }
-
-      .stat-date {
-        font-size: 1.5rem;
-      }
+      .stats-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2rem; }
+      .count { font-size: 3.4rem; }
+      .stat-date { font-size: 1.3rem; }
+      .noc-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 
 <body>
   <div class="card">
-    <h1>Counter App v7</h1>
-    <div class="sub">AWS ALB + EC2 + Valkey / ElastiCache + CI/CD + Active Visitors</div>
+    <h1>Counter NOC Dashboard</h1>
+    <div class="sub">Personal NOC / On-call Battle Panel</div>
 
     <div id="redisBadge" class="badge">Redis: checking...</div>
 
@@ -237,17 +280,14 @@
         <div class="label">Total Visitors</div>
         <div class="stat-number" id="totalVisitors">-</div>
       </div>
-
       <div class="stat-box">
         <div class="label">Today Visitors</div>
         <div class="stat-number" id="todayVisitors">-</div>
       </div>
-
       <div class="stat-box">
         <div class="label">Active Now</div>
         <div class="stat-number" id="activeVisitors">-</div>
       </div>
-
       <div class="stat-box">
         <div class="label">Today</div>
         <div class="stat-date" id="today">-</div>
@@ -264,7 +304,7 @@
 
     <div class="links-panel">
       <h2 class="links-title">個人值班快速入口</h2>
-      <div class="links-note">每日值班與 AWS 維運常用連結（已依你提供清單整合）。</div>
+      <div class="links-note">每日值班與 AWS 維運常用連結（已整合）。</div>
 
       <h3 class="links-title" style="font-size:1rem;margin-top:12px;">日常值班</h3>
       <div class="links-grid">
@@ -289,6 +329,33 @@
           <li>若影響服務可用性，優先做止血處置。</li>
           <li>在交辦小卡補上處理紀錄與交班資訊。</li>
         </ul>
+      </div>
+    </div>
+
+    <div class="noc-grid">
+      <div class="panel">
+        <h3>事故處理 SOP 快速卡</h3>
+        <span class="alert-pill">告警處理順序：告警 → 監控 → 止血 → 通報</span>
+        <ol class="sop-list">
+          <li><strong>網站異常 / 5xx：</strong>先看 CloudWatch 與應用健康指標，確認是否全面影響。</li>
+          <li><strong>先止血：</strong>必要時先 rollback 或切流，優先恢復可用性。</li>
+          <li><strong>同步通報：</strong>在 Jira 小卡記錄處置與時間點，避免交班遺漏。</li>
+        </ol>
+        <div class="focus-note">
+          值班提醒：先止血再追根因；每 15–30 分鐘更新狀態；不確定就升級支援。
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>交班 / 聯絡</h3>
+        <ul class="handover-list">
+          <li>今日已處理事件與處置結果</li>
+          <li>未解告警與風險追蹤</li>
+          <li>明日需追蹤項目</li>
+        </ul>
+        <a class="contact-link" href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">聯絡窗口（Outlook）</a>
+        <a class="contact-link" href="https://chat.line.biz/U8c3714570b470532700282ab54913f8a" target="_blank" rel="noopener noreferrer">客服通報（LINE）</a>
+        <a class="contact-link" href="https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status" target="_blank" rel="noopener noreferrer">交班紀錄（Jira）</a>
       </div>
     </div>
 
