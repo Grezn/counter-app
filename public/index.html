@@ -265,18 +265,6 @@
       margin-bottom: 10px;
     }
 
-    .contact-link {
-      display: inline-block;
-      margin: 6px 8px 0 0;
-      font-size: 0.86rem;
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid rgba(147, 197, 253, 0.3);
-      background: rgba(59, 130, 246, 0.15);
-      color: #dbeafe;
-      text-decoration: none;
-    }
-
     .focus-note {
       margin-top: 14px;
       padding: 10px 12px;
@@ -441,6 +429,7 @@
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
         <button class="bulk-open" style="margin:0;" onclick="showSopTab('dell')">Dell Server/Storage SOP</button>
         <button class="bulk-open" style="margin:0;" onclick="showSopTab('pure')">PureStorage SOP</button>
+        <button class="bulk-open" style="margin:0;" onclick="showSopTab('cycraft')">奧義智慧 SOP</button>
       </div>
 
       <div id="sop-dell" class="sop-tab">
@@ -505,6 +494,40 @@
         <ul class="sop-list">
           <li>設備 Alert（Info、Warning、Critical）。</li>
           <li>Support 與客戶後續回應。</li>
+        </ul>
+      </div>
+
+      <div id="sop-cycraft" class="sop-tab">
+        <div class="focus-note" style="margin-top:0;">
+          <strong>奧義智慧 SOP（精簡版）</strong><br/>
+          收到 cycraft-support@metaage.com.tw 告警後，先依 AlertID 於 Xcockpit 查工單；
+          超過 15 分鐘未顯示也要先電話通報客戶，並回報二線群組。
+        </div>
+
+        <h4>值班規則</h4>
+        <ul class="sop-list">
+          <li>非上班時間（18:00–次日 09:00）與假日 7x24 都要回報。</li>
+          <li>原廠 SLA：4 小時內需回覆客戶。</li>
+          <li>值班電話三通未接 → Call in 主管；兩者未接先回客戶信並告知已轉告工程師。</li>
+        </ul>
+
+        <h4>應對步驟（摘要）</h4>
+        <ol class="sop-list">
+          <li>確認客戶 Account、端點名稱、AlertID。</li>
+          <li>登入 Xcockpit > Incidents，以 Alert ID 搜尋工單。</li>
+          <li>狀態 inprogress：等待 investigated；investigated：先電話通報、Email 留底。</li>
+          <li>與客戶確認是否 isolate；於工單留下 Note，三天後追蹤 release/close。</li>
+        </ol>
+
+        <h4>複製工具</h4>
+        <p><button class="copy-btn" onclick="copyText('cycraft-support@metaage.com.tw; silviachu@metaage.com.tw; yipingyang@metaage.com.tw;')">複製 CC 清單</button></p>
+        <p><button class="copy-btn" onclick="copyText('XENSOR - 告警端點 [貼上端點名稱] [公司名稱] [高風險/可疑活動行為]事件')">複製主旨模板</button></p>
+        <p><button class="copy-btn" onclick="copyText('［客戶公司名稱］您好：\n如電話通報所述，經奧義智慧 MDR 平台偵測，貴公司端點發生高風險事件。\n【案件資訊】案件名稱：[日期-案件編號-類型]；案件狀態：[confirmed/closed]；告警端點：[Hostname]。\n【處置說明】[依情境填寫]\n【後續確認】邁達特 MSSP 團隊將於3天後再次確認後續應變措施。\n上述處置內容皆經貴公司授權後執行。')">複製通報信主架構</button></p>
+
+        <h4>需理會 / 不需理會</h4>
+        <ul class="sop-list">
+          <li>需理會：Support 第一封、客戶/經銷商第一封、需填 Dispatch 的信件。</li>
+          <li>不需理會：設備 Alert（Info/Warning/Critical）、Support/客戶後續回應。</li>
         </ul>
       </div>
 
