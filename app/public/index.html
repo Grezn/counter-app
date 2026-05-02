@@ -23,7 +23,7 @@
 
     .card {
       width: 100%;
-      max-width: 980px;
+      max-width: 1180px;
       background: rgba(30, 41, 59, 0.92);
       border-radius: 24px;
       padding: 32px;
@@ -89,7 +89,7 @@
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 16px;
       margin-bottom: 24px;
     }
@@ -177,7 +177,7 @@
 
     .links-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 10px;
     }
 
@@ -209,6 +209,7 @@
       color: #94a3b8;
       font-size: 0.88rem;
     }
+
 
     .oncall-checklist {
       margin-top: 14px;
@@ -265,6 +266,18 @@
       margin-bottom: 10px;
     }
 
+    .contact-link {
+      display: inline-block;
+      margin: 6px 8px 0 0;
+      font-size: 0.86rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(147, 197, 253, 0.3);
+      background: rgba(59, 130, 246, 0.15);
+      color: #dbeafe;
+      text-decoration: none;
+    }
+
     .focus-note {
       margin-top: 14px;
       padding: 10px 12px;
@@ -301,13 +314,45 @@
       color: #93c5fd;
     }
 
+
+    @media (max-width: 1200px) {
+      .card {
+        max-width: 1020px;
+        padding: 24px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .links-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 900px) {
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
+      }
+
+      .links-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        padding: 12px;
       }
     }
 
     @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        border-radius: 16px;
+        padding: 16px;
+      }
       .stats-grid {
         grid-template-columns: 1fr;
       }
@@ -317,7 +362,12 @@
       }
 
       .count {
-        font-size: 4rem;
+        font-size: 3.2rem;
+      }
+
+      button {
+        padding: 14px;
+        border-radius: 12px;
       }
 
       .stat-date {
@@ -424,6 +474,9 @@
       </div>
     </div>
 
+
+
+
     <div class="panel" style="margin-top:20px;">
       <h3>SOP 分頁（範例）</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
@@ -459,7 +512,7 @@
         </ol>
 
         <h4>值班人員信箱</h4>
-        <ul class="sop-list">
+                <ul class="sop-list">
           <li>ST230 Ice Chang 張有為 — icechang@ginnet.com.tw</li>
           <li>ST230 Kevin Hsieh 謝孟諭 — kevinhsieh@ginnet.com.tw</li>
           <li>ST230 Kai Lei 雷愷豐 — kailei@ginnet.com.tw</li>
@@ -496,6 +549,7 @@
           <li>Support 與客戶後續回應。</li>
         </ul>
       </div>
+
 
       <div id="sop-cycraft" class="sop-tab">
         <div class="focus-note" style="margin-top:0;">
