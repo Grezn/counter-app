@@ -133,6 +133,59 @@
       border: 1px solid rgba(239, 68, 68, 0.35);
     }
 
+    .links-panel {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .links-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .quick-link {
+      display: block;
+      text-decoration: none;
+      color: #dbeafe;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(147, 197, 253, 0.35);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+    }
+
+    .links-note {
+      margin-top: 10px;
+      color: #94a3b8;
+      font-size: 0.88rem;
+    }
+
+    .oncall-checklist {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(125, 211, 252, 0.25);
+      color: #dbeafe;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .oncall-checklist ul {
+      margin: 8px 0 0 16px;
+      padding: 0;
+    }
+
     .footer {
       margin-top: 24px;
       border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -209,6 +262,31 @@
 
     <div id="errorBox" class="error-box"></div>
 
+    <div class="links-panel">
+      <h2 class="links-title">個人值班工作台（On-call）</h2>
+      <div class="links-note">你不是一個人在戰鬥：先看告警、再看儀表板、最後照 runbook 處理。</div>
+
+      <div class="links-grid">
+        <a class="quick-link" href="https://pagerduty.com/" target="_blank" rel="noopener noreferrer">1) 告警中心（PagerDuty）</a>
+        <a class="quick-link" href="https://grafana.com/" target="_blank" rel="noopener noreferrer">2) 系統儀表板（Grafana）</a>
+        <a class="quick-link" href="https://app.datadoghq.com/" target="_blank" rel="noopener noreferrer">3) Logs / APM（Datadog）</a>
+        <a class="quick-link" href="https://console.aws.amazon.com/" target="_blank" rel="noopener noreferrer">4) 基礎設施（AWS）</a>
+        <a class="quick-link" href="https://github.com/" target="_blank" rel="noopener noreferrer">5) 版本與部署（GitHub）</a>
+        <a class="quick-link" href="https://docs.google.com/" target="_blank" rel="noopener noreferrer">6) Runbook / 交班筆記</a>
+      </div>
+
+      <div class="oncall-checklist">
+        <strong>值班小 checklist：</strong>
+        <ul>
+          <li>先確認影響範圍（單一服務 / 全站）。</li>
+          <li>先止血（rollback / failover），再找 root cause。</li>
+          <li>每 15–30 分鐘更新一次狀態與處置紀錄。</li>
+        </ul>
+      </div>
+
+      <div class="links-note">提示：把上述網址改成你公司內部連結，這頁就會是你的個人值班首頁。</div>
+    </div>
+
     <div class="footer">
       <div><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></div>
       <div><strong>Readiness Check:</strong> <a href="/ready" target="_blank">/ready</a></div>
@@ -243,90 +321,30 @@
       }
     }
 
-    function getVisitorId() {
-      let visitorId = localStorage.getItem("visitor_id");
-
-      if (!visitorId) {
-        visitorId = crypto.randomUUID();
-        localStorage.setItem("visitor_id", visitorId);
-      }
-
-      return visitorId;
-    }
-
-    function renderStats(data) {
-      document.getElementById("totalVisitors").textContent = data.totalVisitors;
-      document.getElementById("todayVisitors").textContent = data.todayVisitors;
-      document.getElementById("activeVisitors").textContent = data.activeVisitors;
-      document.getElementById("today").textContent = data.today;
-      updateBadge(data.redis);
-    }
-
-    async function trackView() {
+    async function loadData() {
       try {
         clearError();
 
-        const res = await fetch("/track-view", {
-          method: "POST",
-          cache: "no-store",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            visitorId: getVisitorId(),
-          }),
-        });
+        const [counterRes, statsRes] = await Promise.all([
+          fetch("/counter"),
+          fetch("/stats")
+        ]);
 
-        const data = await res.json();
+        if (!counterRes.ok) throw new Error("Failed to load counter");
+        if (!statsRes.ok) throw new Error("Failed to load stats");
 
-        if (!res.ok) {
-          throw new Error(data.error || "Track view failed");
-        }
+        const counterData = await counterRes.json();
+        const statsData = await statsRes.json();
 
-        renderStats(data);
+        document.getElementById("count").textContent = counterData.count;
+        document.getElementById("totalVisitors").textContent = statsData.totalVisitors;
+        document.getElementById("todayVisitors").textContent = statsData.todayVisitors;
+        document.getElementById("activeVisitors").textContent = statsData.activeVisitors;
+        document.getElementById("today").textContent = statsData.today || "-";
+
+        updateBadge(statsData.redisStatus || "unknown");
       } catch (err) {
-        updateBadge("error");
-        setError("瀏覽統計更新失敗：" + err.message);
-      }
-    }
-
-    async function loadStats() {
-      try {
-        const res = await fetch("/stats", {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Load stats failed");
-        }
-
-        renderStats(data);
-      } catch (err) {
-        updateBadge("error");
-        setError("無法讀取統計資料：" + err.message);
-      }
-    }
-
-    async function loadCount() {
-      try {
-        const res = await fetch("/count", {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Load count failed");
-        }
-
-        document.getElementById("count").textContent = data.count;
-        updateBadge(data.redis);
-      } catch (err) {
-        document.getElementById("count").textContent = "ERR";
-        updateBadge("error");
-        setError("無法讀取目前計數：" + err.message);
+        setError(err.message || "Something went wrong");
       }
     }
 
@@ -334,20 +352,12 @@
       try {
         clearError();
 
-        const res = await fetch("/increment", {
-          method: "POST",
-          cache: "no-store",
-        });
+        const res = await fetch("/increment", { method: "POST" });
+        if (!res.ok) throw new Error("Failed to increment");
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Increment failed");
-        }
-
-        document.getElementById("count").textContent = data.count;
+        await loadData();
       } catch (err) {
-        setError("+1 失敗：" + err.message);
+        setError(err.message || "Increment failed");
       }
     }
 
@@ -355,27 +365,17 @@
       try {
         clearError();
 
-        const res = await fetch("/reset", {
-          method: "POST",
-          cache: "no-store",
-        });
+        const res = await fetch("/reset", { method: "POST" });
+        if (!res.ok) throw new Error("Failed to reset");
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Reset failed");
-        }
-
-        document.getElementById("count").textContent = data.count;
+        await loadData();
       } catch (err) {
-        setError("Reset 失敗：" + err.message);
+        setError(err.message || "Reset failed");
       }
     }
 
-    trackView();
-    loadCount();
-
-    setInterval(loadStats, 30000);
+    loadData();
+    setInterval(loadData, 5000);
   </script>
 </body>
 </html>
