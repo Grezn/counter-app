@@ -1,6 +1,14 @@
 terraform {
   required_version = ">= 1.6.0"
 
+  backend "s3" {
+    bucket         = "131730003210-counter-app-tfstate"
+    key            = "counter-app/prod/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "counter-app-terraform-locks"
+    encrypt        = true
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -117,7 +125,7 @@ resource "aws_lb_listener" "https_443" {
 }
 
 # =========================
-# Launch Template (import existing)
+# Launch Template (imported)
 # =========================
 resource "aws_launch_template" "counter_app" {
   name                   = "counter-app-template"
@@ -130,7 +138,7 @@ resource "aws_launch_template" "counter_app" {
 }
 
 # =========================
-# Auto Scaling Group (import existing)
+# Auto Scaling Group (imported)
 # =========================
 resource "aws_autoscaling_group" "counter_app" {
   name                      = "counter-app-asg"
