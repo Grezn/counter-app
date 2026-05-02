@@ -28,7 +28,9 @@ output "region" {
   value = data.aws_region.current.name
 }
 
-# ===== Existing ALB =====
+# =========================
+# ALB
+# =========================
 resource "aws_lb" "counter_app" {
   name               = "counter-app-alb"
   internal           = false
@@ -46,7 +48,9 @@ resource "aws_lb" "counter_app" {
   }
 }
 
-# ===== Existing Target Group =====
+# =========================
+# Target Group
+# =========================
 resource "aws_lb_target_group" "counter_app" {
   name        = "counter-app-tg"
   port        = 80
@@ -71,7 +75,9 @@ resource "aws_lb_target_group" "counter_app" {
   }
 }
 
-# ===== Listener 80: HTTP -> HTTPS redirect =====
+# =========================
+# Listener 80 -> 443 Redirect
+# =========================
 resource "aws_lb_listener" "http_80" {
   load_balancer_arn = aws_lb.counter_app.arn
   port              = 80
@@ -88,7 +94,9 @@ resource "aws_lb_listener" "http_80" {
   }
 }
 
-# ===== Listener 443: HTTPS -> target group =====
+# =========================
+# Listener 443 -> Forward TG
+# =========================
 resource "aws_lb_listener" "https_443" {
   load_balancer_arn = aws_lb.counter_app.arn
   port              = 443
@@ -104,10 +112,51 @@ resource "aws_lb_listener" "https_443" {
 
   lifecycle {
     prevent_destroy = true
+    ignore_changes  = [default_action]
+  }
+}
 
-    # AWS listener default_action 會被 provider 展開成另一種結構，先忽略避免無意義漂移
-    ignore_changes = [
-      default_action
-    ]
+# =========================
+# Launch Template (import existing)
+# =========================
+resource "aws_launch_template" "counter_app" {
+  name                   = "counter-app-template"
+  update_default_version = true
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = all
+  }
+}
+
+# =========================
+# Auto Scaling Group (import existing)
+# =========================
+resource "aws_autoscaling_group" "counter_app" {
+  name                      = "counter-app-asg"
+  min_size                  = 1
+  max_size                  = 2
+  desired_capacity          = 1
+  health_check_type         = "ELB"
+  health_check_grace_period = 300
+  metrics_granularity       = "1Minute"
+
+  target_group_arns = [
+    "arn:aws:elasticloadbalancing:us-east-1:131730003210:targetgroup/counter-app-tg/337a14de9c9b122c"
+  ]
+
+  vpc_zone_identifier = [
+    "subnet-013ee08c32691e2cf",
+    "subnet-08f75ba3284367f37",
+  ]
+
+  launch_template {
+    id      = aws_launch_template.counter_app.id
+    version = "$Default"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes  = all
   }
 }
