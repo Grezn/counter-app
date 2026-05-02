@@ -288,6 +288,18 @@
       line-height: 1.5;
     }
 
+    .copy-btn {
+      width: auto;
+      margin: 0 0 0 8px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(147, 197, 253, 0.4);
+      background: rgba(59, 130, 246, 0.2);
+      color: #dbeafe;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+
     .footer {
       margin-top: 24px;
       border-top: 1px solid rgba(255, 255, 255, 0.12);
@@ -438,8 +450,8 @@
         </div>
 
         <p><strong>SOP 檔案：</strong><a href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EVifIvg8Ue9JphI-FLq4gyoBT1_Y7oU9O-6fYA8K9-Po7g?e=pzaknJ" target="_blank" rel="noopener noreferrer">Dell Server/Storage SOP 表單</a></p>
-        <p><strong>值班手機：</strong>0936030276</p>
-        <p><strong>主管手機：</strong>Ice 0972797257 / Gary 0917156071</p>
+        <p><strong>值班手機：</strong>0936030276 <button class="copy-btn" onclick="copyText('0936030276')">複製</button></p>
+        <p><strong>主管手機：</strong>Ice 0972797257 / Gary 0917156071 <button class="copy-btn" onclick="copyText('Ice 0972797257 / Gary 0917156071')">複製</button></p>
 
         <h4>信件判斷（需回覆）</h4>
         <ul class="sop-list">
@@ -452,11 +464,15 @@
         <ol class="sop-list">
           <li>收到客戶報修信件並依上述規則判別。</li>
           <li>撥打值班電話，簡述客戶問題與產品類別，確認當前值班人員姓名。</li>
-          <li>將客戶信件使用「轉寄」給值班人員，CC：slm@ginnet.com.tw、support@ginnet.com.tw。</li>
+          <li>將客戶信件使用「轉寄」給值班人員，CC：slm@ginnet.com.tw、support@ginnet.com.tw <button class="copy-btn" onclick="copyText('slm@ginnet.com.tw; support@ginnet.com.tw')">複製 CC</button>。</li>
           <li>填寫紀錄表單完成交接。</li>
         </ol>
 
         <h4>值班人員信箱</h4>
+        <p><strong>值班人員信箱（全部）：</strong>
+          <button class="copy-btn" onclick="copyText('icechang@ginnet.com.tw; kevinhsieh@ginnet.com.tw; kailei@ginnet.com.tw; williamhsu@ginnet.com.tw; jaychang@ginnet.com.tw; stevensung@ginnet.com.tw; clarkcheng@ginnet.com.tw; mikehsu@ginnet.com.tw; samhuang@ginnet.com.tw; tomatseng@ginnet.com.tw')">複製全部</button>
+        </p>
+
         <ul class="sop-list">
           <li>ST230 Ice Chang 張有為 — icechang@ginnet.com.tw</li>
           <li>ST230 Kevin Hsieh 謝孟諭 — kevinhsieh@ginnet.com.tw</li>
@@ -590,6 +606,15 @@
         document.getElementById("count").textContent = "ERR";
         updateBadge("error");
         setError("無法讀取目前計數：" + err.message);
+      }
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        alert("已複製：" + text);
+      } catch (err) {
+        alert("複製失敗，請手動複製。\n" + text);
       }
     }
 
