@@ -440,6 +440,7 @@
       <h3>SOP 分頁（範例）</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
         <button class="bulk-open" style="margin:0;" onclick="showSopTab('dell')">Dell Server/Storage SOP</button>
+        <button class="bulk-open" style="margin:0;" onclick="showSopTab('pure')">PureStorage SOP</button>
       </div>
 
       <div id="sop-dell" class="sop-tab">
@@ -451,7 +452,7 @@
 
         <p><strong>SOP 檔案：</strong><a href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EVifIvg8Ue9JphI-FLq4gyoBT1_Y7oU9O-6fYA8K9-Po7g?e=pzaknJ" target="_blank" rel="noopener noreferrer">Dell Server/Storage SOP 表單</a></p>
         <p><strong>值班手機：</strong>0936030276 <button class="copy-btn" onclick="copyText('0936030276')">複製</button></p>
-        <p><strong>主管手機：</strong>Ice 0972797257 / Gary 0917156071 <button class="copy-btn" onclick="copyText('Ice 0972797257 / Gary 0917156071')">複製</button></p>
+        <p><strong>主管手機：</strong>Ice 0972797257 / Gary 0917156071</p>
 
         <h4>信件判斷（需回覆）</h4>
         <ul class="sop-list">
@@ -469,10 +470,6 @@
         </ol>
 
         <h4>值班人員信箱</h4>
-        <p><strong>值班人員信箱（全部）：</strong>
-          <button class="copy-btn" onclick="copyText('icechang@ginnet.com.tw; kevinhsieh@ginnet.com.tw; kailei@ginnet.com.tw; williamhsu@ginnet.com.tw; jaychang@ginnet.com.tw; stevensung@ginnet.com.tw; clarkcheng@ginnet.com.tw; mikehsu@ginnet.com.tw; samhuang@ginnet.com.tw; tomatseng@ginnet.com.tw')">複製全部</button>
-        </p>
-
         <ul class="sop-list">
           <li>ST230 Ice Chang 張有為 — icechang@ginnet.com.tw</li>
           <li>ST230 Kevin Hsieh 謝孟諭 — kevinhsieh@ginnet.com.tw</li>
@@ -486,6 +483,31 @@
           <li>ST250 Toma Tseng 曾翊欽 — tomatseng@ginnet.com.tw</li>
         </ul>
       </div>
+
+      <div id="sop-pure" class="sop-tab">
+        <div class="focus-note" style="margin-top:0;">
+          <strong>PureStorage SOP</strong><br/>
+          值班規則：非上班時間（18:00–次日 09:00）、國定假日、假日 7x24 都要回報；
+          原廠要求 SLA 四小時內回覆；值班電話三通未接改撥主管；若兩者都未接先回信告知已轉告工程師。
+        </div>
+
+        <p><strong>PureStorage 值班人員手機：</strong>0917157536 <button class="copy-btn" onclick="copyText('0917157536')">複製</button></p>
+        <p><strong>PureStorage 主管 (Libraer) 手機：</strong>0953779897</p>
+
+        <h4>主要需應對之信件</h4>
+        <ul class="sop-list">
+          <li>Support 的第一封來信。</li>
+          <li>經銷商或客戶第一封來信（報修或詢問）。</li>
+          <li>Support 來信需填寫 Dispatch 表單之信件。</li>
+        </ul>
+
+        <h4>不需理會</h4>
+        <ul class="sop-list">
+          <li>設備 Alert（Info、Warning、Critical）。</li>
+          <li>Support 與客戶後續回應。</li>
+        </ul>
+      </div>
+
     </div>
 
     <div class="footer">
