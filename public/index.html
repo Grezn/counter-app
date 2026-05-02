@@ -263,28 +263,33 @@
     <div id="errorBox" class="error-box"></div>
 
     <div class="links-panel">
-      <h2 class="links-title">個人值班工作台（On-call）</h2>
-      <div class="links-note">你不是一個人在戰鬥：先看告警、再看儀表板、最後照 runbook 處理。</div>
+      <h2 class="links-title">個人值班快速入口</h2>
+      <div class="links-note">每日值班與 AWS 維運常用連結（已依你提供清單整合）。</div>
 
+      <h3 class="links-title" style="font-size:1rem;margin-top:12px;">日常值班</h3>
       <div class="links-grid">
-        <a class="quick-link" href="https://pagerduty.com/" target="_blank" rel="noopener noreferrer">1) 告警中心（PagerDuty）</a>
-        <a class="quick-link" href="https://grafana.com/" target="_blank" rel="noopener noreferrer">2) 系統儀表板（Grafana）</a>
-        <a class="quick-link" href="https://app.datadoghq.com/" target="_blank" rel="noopener noreferrer">3) Logs / APM（Datadog）</a>
-        <a class="quick-link" href="https://console.aws.amazon.com/" target="_blank" rel="noopener noreferrer">4) 基礎設施（AWS）</a>
-        <a class="quick-link" href="https://github.com/" target="_blank" rel="noopener noreferrer">5) 版本與部署（GitHub）</a>
-        <a class="quick-link" href="https://docs.google.com/" target="_blank" rel="noopener noreferrer">6) Runbook / 交班筆記</a>
+        <a class="quick-link" href="https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status" target="_blank" rel="noopener noreferrer">工作交辦小卡（Jira）</a>
+        <a class="quick-link" href="https://chat.line.biz/U8c3714570b470532700282ab54913f8a" target="_blank" rel="noopener noreferrer">LINE 客服帳號</a>
+        <a class="quick-link" href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
+        <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">每日設備檢查表單</a>
+        <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">值班班表（SharePoint）</a>
+      </div>
+
+      <h3 class="links-title" style="font-size:1rem;margin-top:16px;">AWS 維運</h3>
+      <div class="links-grid">
+        <a class="quick-link" href="https://us-west-1.console.aws.amazon.com/console/home?region=us-west-1#" target="_blank" rel="noopener noreferrer">AWS Console（us-west-1）</a>
+        <a class="quick-link" href="https://metaage.awsapps.com/start#/" target="_blank" rel="noopener noreferrer">AWS SSO</a>
+        <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
       </div>
 
       <div class="oncall-checklist">
         <strong>值班小 checklist：</strong>
         <ul>
-          <li>先確認影響範圍（單一服務 / 全站）。</li>
-          <li>先止血（rollback / failover），再找 root cause。</li>
-          <li>每 15–30 分鐘更新一次狀態與處置紀錄。</li>
+          <li>先確認告警影響範圍，再通知相關窗口。</li>
+          <li>若影響服務可用性，優先做止血處置。</li>
+          <li>在交辦小卡補上處理紀錄與交班資訊。</li>
         </ul>
       </div>
-
-      <div class="links-note">提示：把上述網址改成你公司內部連結，這頁就會是你的個人值班首頁。</div>
     </div>
 
     <div class="footer">
