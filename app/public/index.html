@@ -181,17 +181,6 @@
       gap: 10px;
     }
 
-    .link-search {
-      width:100%;
-      border-radius:10px;
-      border:1px solid rgba(148,163,184,0.35);
-      background:rgba(15,23,42,0.7);
-      color:#e2e8f0;
-      padding:10px 12px;
-      margin:0 0 12px;
-      box-sizing:border-box;
-    }
-
     .bulk-open {
       width: auto;
       margin: 0 0 12px;
@@ -380,7 +369,6 @@
     </div>
 
     <div class="label">Current Count</div>
-    <div id="statusTimer" class="links-note">⏱️ 值班更新計時器：剛開始（建議每 20 分鐘更新一次狀態）</div>
     <div class="count" id="count">-</div>
 
     <button class="inc" onclick="increment()">+1</button>
@@ -391,7 +379,6 @@
     <div class="links-panel">
       <h2 class="links-title">個人值班快速入口</h2>
       <div class="links-note">每日值班、公司內部系統與 AWS 維運連結。</div>
-      <input id="linkSearch" class="link-search" type="text" placeholder="搜尋連結（例如：AWS / Jira / 表單）" oninput="filterLinks()" />
       <button class="bulk-open" onclick="openDailyLinks()">🚀 一鍵開啟日常值班連結（請允許彈出視窗）</button>
 
       <h3 class="links-title" style="font-size:1rem;margin-top:12px;">日常值班</h3>
@@ -437,31 +424,51 @@
       </div>
     </div>
 
-    <div class="noc-grid">
-      <div class="panel">
-        <h3>事故處理 SOP 快速卡</h3>
-        <span class="alert-pill">告警處理順序：告警 → 監控 → 止血 → 通報</span>
-        <ol class="sop-list">
-          <li><strong>網站異常 / 5xx：</strong>先看 CloudWatch 與應用健康指標，確認是否全面影響。</li>
-          <li><strong>先止血：</strong>必要時先 rollback 或切流，優先恢復可用性。</li>
-          <li><strong>同步通報：</strong>在 Jira 小卡記錄處置與時間點，避免交班遺漏。</li>
-        </ol>
-
-        <div class="focus-note">
-          值班提醒：先止血再追根因；每 15–30 分鐘更新狀態；不確定就升級支援。
-        </div>
+    <div class="panel" style="margin-top:20px;">
+      <h3>SOP 分頁（範例）</h3>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="bulk-open" style="margin:0;" onclick="showSopTab('dell')">Dell Server/Storage SOP</button>
       </div>
 
-      <div class="panel">
-        <h3>交班 / 聯絡</h3>
-        <ul class="handover-list">
-          <li>今日已處理事件與處置結果</li>
-          <li>未解告警與風險追蹤</li>
-          <li>明日需追蹤項目</li>
+      <div id="sop-dell" class="sop-tab">
+        <div class="focus-note" style="margin-top:0;">
+          <strong>Dell Server/Storage SOP</strong><br/>
+          值班規則：非上班時間（18:00–次日 09:00）、國定假日、假日 7x24 都要回報；
+          值班電話 Call in 三通未接則 Call in 主管電話；每月需紀錄撥打通數。
+        </div>
+
+        <p><strong>SOP 檔案：</strong><a href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EVifIvg8Ue9JphI-FLq4gyoBT1_Y7oU9O-6fYA8K9-Po7g?e=pzaknJ" target="_blank" rel="noopener noreferrer">Dell Server/Storage SOP 表單</a></p>
+        <p><strong>值班手機：</strong>0936030276</p>
+        <p><strong>主管手機：</strong>Ice 0972797257 / Gary 0917156071</p>
+
+        <h4>信件判斷（需回覆）</h4>
+        <ul class="sop-list">
+          <li>客戶產品類別非 Client 端（NB/Desktop/Monitor）之報修信件。</li>
+          <li>客戶來信詢問原廠未回應之信件。</li>
+          <li>客戶反應值班手機撥打無回應等。</li>
         </ul>
-        <a class="contact-link" href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">聯絡窗口（Outlook）</a>
-        <a class="contact-link" href="https://chat.line.biz/U8c3714570b470532700282ab54913f8a" target="_blank" rel="noopener noreferrer">客服通報（LINE）</a>
-        <a class="contact-link" href="https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status" target="_blank" rel="noopener noreferrer">交班紀錄（Jira）</a>
+
+        <h4>值班步驟</h4>
+        <ol class="sop-list">
+          <li>收到客戶報修信件並依上述規則判別。</li>
+          <li>撥打值班電話，簡述客戶問題與產品類別，確認當前值班人員姓名。</li>
+          <li>將客戶信件使用「轉寄」給值班人員，CC：slm@ginnet.com.tw、support@ginnet.com.tw。</li>
+          <li>填寫紀錄表單完成交接。</li>
+        </ol>
+
+        <h4>值班人員信箱</h4>
+        <ul class="sop-list">
+          <li>ST230 Ice Chang 張有為 — icechang@ginnet.com.tw</li>
+          <li>ST230 Kevin Hsieh 謝孟諭 — kevinhsieh@ginnet.com.tw</li>
+          <li>ST230 Kai Lei 雷愷豐 — kailei@ginnet.com.tw</li>
+          <li>ST230 William Hsu 許維麟 — williamhsu@ginnet.com.tw</li>
+          <li>ST240 Jay Chang 張嘉傑 — jaychang@ginnet.com.tw</li>
+          <li>ST240 Steven Sung 宋信賢 — stevensung@ginnet.com.tw</li>
+          <li>ST250 Clark Cheng 鄭弘彬 — clarkcheng@ginnet.com.tw</li>
+          <li>ST250 Mike Hsu 徐順義 — mikehsu@ginnet.com.tw</li>
+          <li>ST250 Sam Huang 黃彥智 — samhuang@ginnet.com.tw</li>
+          <li>ST250 Toma Tseng 曾翊欽 — tomatseng@ginnet.com.tw</li>
+        </ul>
       </div>
     </div>
 
@@ -586,35 +593,10 @@
       }
     }
 
-    let statusTimerStartedAt = Date.now();
-
-    function formatDuration(ms) {
-      const min = Math.floor(ms / 60000);
-      const sec = Math.floor((ms % 60000) / 1000);
-      return `${min} 分 ${sec.toString().padStart(2, "0")} 秒`;
-    }
-
-    function updateStatusTimer() {
-      const elapsed = Date.now() - statusTimerStartedAt;
-      const el = document.getElementById("statusTimer");
-      if (!el) return;
-      const over = elapsed >= 20 * 60 * 1000;
-      el.textContent = `⏱️ 值班更新計時器：${formatDuration(elapsed)}${over ? "（請更新狀態）" : ""}`;
-      el.style.color = over ? "#fca5a5" : "#94a3b8";
-    }
-
-    function markStatusUpdated() {
-      statusTimerStartedAt = Date.now();
-      updateStatusTimer();
-    }
-
-    function filterLinks() {
-      const keyword = (document.getElementById("linkSearch")?.value || "").toLowerCase();
-      document.querySelectorAll(".quick-link").forEach((a) => {
-        const text = a.textContent.toLowerCase();
-        const href = (a.getAttribute("href") || "").toLowerCase();
-        a.style.display = (text.includes(keyword) || href.includes(keyword)) ? "block" : "none";
-      });
+    function showSopTab(tab) {
+      document.querySelectorAll(".sop-tab").forEach((el) => el.style.display = "none");
+      const t = document.getElementById(`sop-${tab}`);
+      if (t) t.style.display = "block";
     }
 
     function openDailyLinks() {
@@ -631,7 +613,6 @@
     }
 
     async function increment() {
-      markStatusUpdated();
       try {
         clearError();
 
@@ -653,7 +634,6 @@
     }
 
     async function resetCounter() {
-      markStatusUpdated();
       try {
         clearError();
 
@@ -676,10 +656,8 @@
 
     trackView();
     loadCount();
-    updateStatusTimer();
-
+    showSopTab("dell");
     setInterval(loadStats, 30000);
-    setInterval(updateStatusTimer, 1000);
   </script>
 </body>
 </html>
