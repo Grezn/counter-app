@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Counter NOC Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
   <style>
     body {
@@ -32,6 +33,33 @@
     h1 {
       font-size: 2.8rem;
       margin: 0 0 8px;
+    }
+
+    .header-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .mascot {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border-radius:12px;
+      background:rgba(56,189,248,0.14);
+      border:1px solid rgba(125,211,252,0.35);
+      color:#e0f2fe;
+      font-size:0.86rem;
+    }
+
+    .mascot-avatar {
+      width:30px;height:30px;border-radius:50%;
+      display:grid;place-items:center;
+      background:rgba(14,116,144,0.55);
+      font-size:1rem;
     }
 
     .sub {
@@ -151,6 +179,17 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 10px;
+    }
+
+    .link-search {
+      width:100%;
+      border-radius:10px;
+      border:1px solid rgba(148,163,184,0.35);
+      background:rgba(15,23,42,0.7);
+      color:#e2e8f0;
+      padding:10px 12px;
+      margin:0 0 12px;
+      box-sizing:border-box;
     }
 
     .bulk-open {
@@ -305,8 +344,16 @@
 
 <body>
   <div class="card">
-    <h1>Counter NOC Dashboard</h1>
-    <div class="sub">Personal NOC / On-call Battle Panel</div>
+    <div class="header-row">
+      <div>
+        <h1>Counter NOC Dashboard</h1>
+        <div class="sub">Personal NOC / On-call Battle Panel</div>
+      </div>
+      <div class="mascot">
+        <div class="mascot-avatar">🛰️</div>
+        <div><strong>NOC 小助手</strong><br/>保持冷靜，一步一步處理</div>
+      </div>
+    </div>
 
     <div id="redisBadge" class="badge">Redis: checking...</div>
 
@@ -333,6 +380,7 @@
     </div>
 
     <div class="label">Current Count</div>
+    <div id="statusTimer" class="links-note">⏱️ 值班更新計時器：剛開始（建議每 20 分鐘更新一次狀態）</div>
     <div class="count" id="count">-</div>
 
     <button class="inc" onclick="increment()">+1</button>
@@ -343,6 +391,7 @@
     <div class="links-panel">
       <h2 class="links-title">個人值班快速入口</h2>
       <div class="links-note">每日值班、公司內部系統與 AWS 維運連結。</div>
+      <input id="linkSearch" class="link-search" type="text" placeholder="搜尋連結（例如：AWS / Jira / 表單）" oninput="filterLinks()" />
       <button class="bulk-open" onclick="openDailyLinks()">🚀 一鍵開啟日常值班連結（請允許彈出視窗）</button>
 
       <h3 class="links-title" style="font-size:1rem;margin-top:12px;">日常值班</h3>
@@ -362,6 +411,12 @@
         <a class="quick-link" href="https://bpm.metaage.com.tw/Gaia/portal" target="_blank" rel="noopener noreferrer">BPM</a>
         <a class="quick-link" href="https://ext.metaage.com.tw/Ext/list" target="_blank" rel="noopener noreferrer">公司分機表</a>
         <a class="quick-link" href="https://www.cloudman.app/" target="_blank" rel="noopener noreferrer">CloudMan</a>
+        <a class="quick-link" href="https://dtimis.sharepoint.com/:f:/s/P400-P400/IgC8r2cr3K1jR68e1qFNFrVHAQjvXDEtLa2cer7cbvtu4T4?e=ug9aYb" target="_blank" rel="noopener noreferrer">P400 OneDrive</a>
+      </div>
+
+      <h3 class="links-title" style="font-size:1rem;margin-top:16px;">其他連結</h3>
+      <div class="links-grid">
+        <a class="quick-link" href="https://jp.dubber.net/%E5%B8%B3%E6%88%B6/d63e63ada4f3448093cbe9792c66f12a/%E9%8C%84%E9%9F%B3" target="_blank" rel="noopener noreferrer">話機錄音下載</a>
       </div>
 
       <h3 class="links-title" style="font-size:1rem;margin-top:16px;">AWS 維運</h3>
@@ -531,6 +586,37 @@
       }
     }
 
+    let statusTimerStartedAt = Date.now();
+
+    function formatDuration(ms) {
+      const min = Math.floor(ms / 60000);
+      const sec = Math.floor((ms % 60000) / 1000);
+      return `${min} 分 ${sec.toString().padStart(2, "0")} 秒`;
+    }
+
+    function updateStatusTimer() {
+      const elapsed = Date.now() - statusTimerStartedAt;
+      const el = document.getElementById("statusTimer");
+      if (!el) return;
+      const over = elapsed >= 20 * 60 * 1000;
+      el.textContent = `⏱️ 值班更新計時器：${formatDuration(elapsed)}${over ? "（請更新狀態）" : ""}`;
+      el.style.color = over ? "#fca5a5" : "#94a3b8";
+    }
+
+    function markStatusUpdated() {
+      statusTimerStartedAt = Date.now();
+      updateStatusTimer();
+    }
+
+    function filterLinks() {
+      const keyword = (document.getElementById("linkSearch")?.value || "").toLowerCase();
+      document.querySelectorAll(".quick-link").forEach((a) => {
+        const text = a.textContent.toLowerCase();
+        const href = (a.getAttribute("href") || "").toLowerCase();
+        a.style.display = (text.includes(keyword) || href.includes(keyword)) ? "block" : "none";
+      });
+    }
+
     function openDailyLinks() {
       const urls = [
         "https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status",
@@ -545,6 +631,7 @@
     }
 
     async function increment() {
+      markStatusUpdated();
       try {
         clearError();
 
@@ -566,6 +653,7 @@
     }
 
     async function resetCounter() {
+      markStatusUpdated();
       try {
         clearError();
 
@@ -588,8 +676,10 @@
 
     trackView();
     loadCount();
+    updateStatusTimer();
 
     setInterval(loadStats, 30000);
+    setInterval(updateStatusTimer, 1000);
   </script>
 </body>
 </html>
