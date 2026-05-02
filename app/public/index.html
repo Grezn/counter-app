@@ -22,7 +22,7 @@
 
     .card {
       width: 100%;
-      max-width: 1100px;
+      max-width: 980px;
       background: rgba(30, 41, 59, 0.92);
       border-radius: 24px;
       padding: 32px;
@@ -30,7 +30,7 @@
     }
 
     h1 {
-      font-size: 2.4rem;
+      font-size: 2.8rem;
       margin: 0 0 8px;
     }
 
@@ -115,8 +115,13 @@
       margin-bottom: 14px;
     }
 
-    .inc { background: #3b82f6; }
-    .reset { background: #ef4444; }
+    .inc {
+      background: #3b82f6;
+    }
+
+    .reset {
+      background: #ef4444;
+    }
 
     .error-box {
       display: none;
@@ -144,8 +149,20 @@
 
     .links-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       gap: 10px;
+    }
+
+    .bulk-open {
+      width: auto;
+      margin: 0 0 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(134, 239, 172, 0.4);
+      background: rgba(34, 197, 94, 0.2);
+      color: #dcfce7;
+      font-weight: 700;
+      cursor: pointer;
     }
 
     .quick-link {
@@ -252,18 +269,36 @@
       font-size: 0.95rem;
     }
 
-    a { color: #93c5fd; }
+    a {
+      color: #93c5fd;
+    }
 
     @media (max-width: 900px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     @media (max-width: 600px) {
-      .stats-grid { grid-template-columns: 1fr; }
-      h1 { font-size: 2rem; }
-      .count { font-size: 3.4rem; }
-      .stat-date { font-size: 1.3rem; }
-      .noc-grid { grid-template-columns: 1fr; }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 2.2rem;
+      }
+
+      .count {
+        font-size: 4rem;
+      }
+
+      .stat-date {
+        font-size: 1.5rem;
+      }
+
+      .noc-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -280,14 +315,17 @@
         <div class="label">Total Visitors</div>
         <div class="stat-number" id="totalVisitors">-</div>
       </div>
+
       <div class="stat-box">
         <div class="label">Today Visitors</div>
         <div class="stat-number" id="todayVisitors">-</div>
       </div>
+
       <div class="stat-box">
         <div class="label">Active Now</div>
         <div class="stat-number" id="activeVisitors">-</div>
       </div>
+
       <div class="stat-box">
         <div class="label">Today</div>
         <div class="stat-date" id="today">-</div>
@@ -304,7 +342,8 @@
 
     <div class="links-panel">
       <h2 class="links-title">個人值班快速入口</h2>
-      <div class="links-note">每日值班與 AWS 維運常用連結（已整合）。</div>
+      <div class="links-note">每日值班、公司內部系統與 AWS 維運連結。</div>
+      <button class="bulk-open" onclick="openDailyLinks()">🚀 一鍵開啟日常值班連結（請允許彈出視窗）</button>
 
       <h3 class="links-title" style="font-size:1rem;margin-top:12px;">日常值班</h3>
       <div class="links-grid">
@@ -313,6 +352,16 @@
         <a class="quick-link" href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
         <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">每日設備檢查表單</a>
         <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">值班班表（SharePoint）</a>
+        <a class="quick-link" href="https://forms.office.com/pages/responsepage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUMVI2VE5XTEVDMzZYTVpFU0pWU05HQU1WOC4u" target="_blank" rel="noopener noreferrer">第一線客戶資訊表</a>
+        <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUN0lTTk4yVTdXN0ZDVFdCQ1ZLUVRTWlRDOC4u" target="_blank" rel="noopener noreferrer">Akamai 客戶資訊表</a>
+      </div>
+
+      <h3 class="links-title" style="font-size:1rem;margin-top:16px;">公司內部系統</h3>
+      <div class="links-grid">
+        <a class="quick-link" href="https://kb.aws-metaage.com/" target="_blank" rel="noopener noreferrer">KB</a>
+        <a class="quick-link" href="https://bpm.metaage.com.tw/Gaia/portal" target="_blank" rel="noopener noreferrer">BPM</a>
+        <a class="quick-link" href="https://ext.metaage.com.tw/Ext/list" target="_blank" rel="noopener noreferrer">公司分機表</a>
+        <a class="quick-link" href="https://www.cloudman.app/" target="_blank" rel="noopener noreferrer">CloudMan</a>
       </div>
 
       <h3 class="links-title" style="font-size:1rem;margin-top:16px;">AWS 維運</h3>
@@ -320,6 +369,7 @@
         <a class="quick-link" href="https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#" target="_blank" rel="noopener noreferrer">AWS Console（us-east-1）</a>
         <a class="quick-link" href="https://metaage.awsapps.com/start#/" target="_blank" rel="noopener noreferrer">AWS SSO</a>
         <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
+        <a class="quick-link" href="https://health.aws.amazon.com/health/status" target="_blank" rel="noopener noreferrer">AWS Health Dashboard</a>
       </div>
 
       <div class="oncall-checklist">
@@ -341,6 +391,7 @@
           <li><strong>先止血：</strong>必要時先 rollback 或切流，優先恢復可用性。</li>
           <li><strong>同步通報：</strong>在 Jira 小卡記錄處置與時間點，避免交班遺漏。</li>
         </ol>
+
         <div class="focus-note">
           值班提醒：先止血再追根因；每 15–30 分鐘更新狀態；不確定就升級支援。
         </div>
@@ -393,43 +444,124 @@
       }
     }
 
-    async function loadData() {
+    function getVisitorId() {
+      let visitorId = localStorage.getItem("visitor_id");
+
+      if (!visitorId) {
+        visitorId = crypto.randomUUID();
+        localStorage.setItem("visitor_id", visitorId);
+      }
+
+      return visitorId;
+    }
+
+    function renderStats(data) {
+      document.getElementById("totalVisitors").textContent = data.totalVisitors;
+      document.getElementById("todayVisitors").textContent = data.todayVisitors;
+      document.getElementById("activeVisitors").textContent = data.activeVisitors;
+      document.getElementById("today").textContent = data.today;
+      updateBadge(data.redis);
+    }
+
+    async function trackView() {
       try {
         clearError();
 
-        const [counterRes, statsRes] = await Promise.all([
-          fetch("/counter"),
-          fetch("/stats")
-        ]);
+        const res = await fetch("/track-view", {
+          method: "POST",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            visitorId: getVisitorId(),
+          }),
+        });
 
-        if (!counterRes.ok) throw new Error("Failed to load counter");
-        if (!statsRes.ok) throw new Error("Failed to load stats");
+        const data = await res.json();
 
-        const counterData = await counterRes.json();
-        const statsData = await statsRes.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Track view failed");
+        }
 
-        document.getElementById("count").textContent = counterData.count;
-        document.getElementById("totalVisitors").textContent = statsData.totalVisitors;
-        document.getElementById("todayVisitors").textContent = statsData.todayVisitors;
-        document.getElementById("activeVisitors").textContent = statsData.activeVisitors;
-        document.getElementById("today").textContent = statsData.today || "-";
-
-        updateBadge(statsData.redisStatus || "unknown");
+        renderStats(data);
       } catch (err) {
-        setError(err.message || "Something went wrong");
+        updateBadge("error");
+        setError("瀏覽統計更新失敗：" + err.message);
       }
+    }
+
+    async function loadStats() {
+      try {
+        const res = await fetch("/stats", {
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Load stats failed");
+        }
+
+        renderStats(data);
+      } catch (err) {
+        updateBadge("error");
+        setError("無法讀取統計資料：" + err.message);
+      }
+    }
+
+    async function loadCount() {
+      try {
+        const res = await fetch("/count", {
+          cache: "no-store",
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Load count failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
+        updateBadge(data.redis);
+      } catch (err) {
+        document.getElementById("count").textContent = "ERR";
+        updateBadge("error");
+        setError("無法讀取目前計數：" + err.message);
+      }
+    }
+
+    function openDailyLinks() {
+      const urls = [
+        "https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status",
+        "https://chat.line.biz/U8c3714570b470532700282ab54913f8a",
+        "https://outlook.office.com/mail/",
+        "https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u",
+        "https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA",
+        "https://forms.office.com/pages/responsepage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUMVI2VE5XTEVDMzZYTVpFU0pWU05HQU1WOC4u",
+        "https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUN0lTTk4yVTdXN0ZDVFdCQ1ZLUVRTWlRDOC4u"
+      ];
+      urls.forEach((url, idx) => setTimeout(() => window.open(url, "_blank", "noopener,noreferrer"), idx * 120));
     }
 
     async function increment() {
       try {
         clearError();
 
-        const res = await fetch("/increment", { method: "POST" });
-        if (!res.ok) throw new Error("Failed to increment");
+        const res = await fetch("/increment", {
+          method: "POST",
+          cache: "no-store",
+        });
 
-        await loadData();
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Increment failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
       } catch (err) {
-        setError(err.message || "Increment failed");
+        setError("+1 失敗：" + err.message);
       }
     }
 
@@ -437,17 +569,27 @@
       try {
         clearError();
 
-        const res = await fetch("/reset", { method: "POST" });
-        if (!res.ok) throw new Error("Failed to reset");
+        const res = await fetch("/reset", {
+          method: "POST",
+          cache: "no-store",
+        });
 
-        await loadData();
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Reset failed");
+        }
+
+        document.getElementById("count").textContent = data.count;
       } catch (err) {
-        setError(err.message || "Reset failed");
+        setError("Reset 失敗：" + err.message);
       }
     }
 
-    loadData();
-    setInterval(loadData, 5000);
+    trackView();
+    loadCount();
+
+    setInterval(loadStats, 30000);
   </script>
 </body>
 </html>
