@@ -31,17 +31,63 @@ EC2 role 至少需要：
 
 ### GitHub Secrets 裡的 AWS key
 
-目前先不要移除。
+改成 OIDC 前先不要移除。
 
-GitHub Actions 目前仍使用：
+如果 `.github/workflows/deploy.yml` 已經改成 `role-to-assume`，而且 OIDC role 測試部署成功，就可以移除：
 
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
-- `AWS_ACCOUNT_ID`
 
-這些 secret 用來 build/push ECR image 和啟動 ASG instance refresh。
+`AWS_ACCOUNT_ID` 不是秘密，workflow 目前已經直接寫在 env 裡，不需要放 GitHub secret。
 
-之後可以改成 GitHub OIDC assume role。改完 OIDC 後，才可以移除 GitHub 裡的長期 AWS access key。
+## GitHub Actions 改用 OIDC
+
+OIDC 的目的：GitHub Actions 部署時向 AWS 換短期憑證，不再保存長期 AWS access key。
+
+目前 workflow 會 assume 這個 role：
+
+```text
+arn:aws:iam::131730003210:role/counter-app-github-actions-deploy
+```
+
+第一次使用前，先在 CloudShell 建立 OIDC provider 和 IAM role：
+
+```bash
+cd counter-app
+git pull
+bash infra/setup-github-oidc.sh
+```
+
+如果你是第一次把 OIDC workflow push 上去，GitHub Actions 可能會先失敗一次，因為 IAM Role 還不存在。這是正常的 bootstrap 順序：
+
+1. 先 push 這次 OIDC 修改，讓 CloudShell 可以 `git pull` 到 `infra/setup-github-oidc.sh`。
+2. 到 CloudShell 跑 `bash infra/setup-github-oidc.sh`。
+3. 回 GitHub Actions 按 `Re-run jobs`，或再 push 一個 commit。
+
+這個腳本會：
+
+1. 建立 GitHub OIDC provider：`token.actions.githubusercontent.com`
+2. 建立 IAM Role：`counter-app-github-actions-deploy`
+3. 限制只有 `Grezn/counter-app` 的 `main` branch 可以 assume role
+4. 授權 GitHub Actions push/pull `docker-demo` ECR image
+5. 授權 GitHub Actions 啟動和查詢 ASG instance refresh
+
+建立完成後，push 一次測試：
+
+```bash
+git add .
+git commit -m "use GitHub OIDC for AWS deploy"
+git push origin main
+```
+
+如果 GitHub Actions 成功，就可以到 GitHub repo settings 刪除：
+
+```text
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+```
+
+`AWS_ACCOUNT_ID` 也可以刪，因為它不是 secret，而且 workflow 已經不需要從 GitHub secret 讀它。
 
 ### Reset Token
 
