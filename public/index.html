@@ -335,6 +335,10 @@
       grid-column: 1 / -1;
     }
 
+    .field.span-2 {
+      grid-column: span 2;
+    }
+
     .field label {
       color: #bfdbfe;
       font-size: 0.84rem;
@@ -359,6 +363,42 @@
       min-height: 78px;
       resize: vertical;
       line-height: 1.5;
+    }
+
+    .field-hint {
+      color: #94a3b8;
+      font-size: 0.8rem;
+      line-height: 1.35;
+    }
+
+    .form-section-title {
+      grid-column: 1 / -1;
+      margin: 8px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e0f2fe;
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .choice-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px 0 2px;
+    }
+
+    .choice-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .choice-item input {
+      accent-color: #38bdf8;
     }
 
     .incident-actions {
@@ -490,6 +530,10 @@
       .incident-grid,
       .incident-workflow {
         grid-template-columns: 1fr;
+      }
+
+      .field.span-2 {
+        grid-column: 1 / -1;
       }
 
       .panel {
@@ -648,6 +692,110 @@
         <div class="field full">
           <label for="incidentTitle">事件主旨</label>
           <input id="incidentTitle" type="text" data-incident-field="title" placeholder="例如：XX 服務連線異常 / 告警編號" />
+        </div>
+
+        <div class="form-section-title">報修表單資訊</div>
+
+        <div class="field">
+          <label for="incidentDealer">經銷商名稱</label>
+          <input id="incidentDealer" type="text" data-incident-field="dealer" placeholder="輸入經銷商名稱" />
+        </div>
+
+        <div class="field full">
+          <label for="incidentProblemDescription">問題描述</label>
+          <textarea id="incidentProblemDescription" data-incident-field="problemDescription" placeholder="客戶描述的問題、錯誤訊息、發生時間、已嘗試的處理方式"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="incidentProductName">產品名稱</label>
+          <select id="incidentProductName" data-incident-field="productName">
+            <option value="">選取產品</option>
+            <option value="AWS">AWS</option>
+            <option value="Dell Server/Storage">Dell Server/Storage</option>
+            <option value="PureStorage">PureStorage</option>
+            <option value="Akamai">Akamai</option>
+            <option value="CyCraft / 奧義智慧">CyCraft / 奧義智慧</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="incidentContractId">合約編號</label>
+          <span class="field-hint">無則填無</span>
+          <input id="incidentContractId" type="text" data-incident-field="contractId" />
+        </div>
+
+        <div class="field">
+          <label for="incidentModel">產品型號</label>
+          <span class="field-hint">無則填無</span>
+          <input id="incidentModel" type="text" data-incident-field="model" />
+        </div>
+
+        <div class="field">
+          <label for="incidentSerial">產品序號</label>
+          <span class="field-hint">無則填無</span>
+          <input id="incidentSerial" type="text" data-incident-field="serial" />
+        </div>
+
+        <div class="field">
+          <label for="incidentRepairTarget">報修對象</label>
+          <input id="incidentRepairTarget" type="text" data-incident-field="repairTarget" placeholder="例如：客戶 / 經銷商 / 內部單位" />
+        </div>
+
+        <div class="field">
+          <label for="incidentOwner">負責業務 / 工程師</label>
+          <input id="incidentOwner" type="text" data-incident-field="owner" placeholder="對接窗口" />
+        </div>
+
+        <div class="field">
+          <label for="incidentContactMethod">聯繫方式 / 稱呼</label>
+          <input id="incidentContactMethod" type="text" data-incident-field="contactMethod" />
+        </div>
+
+        <div class="field full">
+          <label>服務類型</label>
+          <div class="choice-group">
+            <label class="choice-item"><input type="radio" name="serviceType" value="一般諮詢" data-incident-radio="serviceType" />一般諮詢</label>
+            <label class="choice-item"><input type="radio" name="serviceType" value="產品報修" data-incident-radio="serviceType" />產品報修</label>
+            <label class="choice-item"><input type="radio" name="serviceType" value="協助客戶報修" data-incident-radio="serviceType" />協助客戶報修</label>
+            <label class="choice-item"><input type="radio" name="serviceType" value="AWS - 邀請組織" data-incident-radio="serviceType" />AWS - 邀請組織</label>
+            <label class="choice-item"><input type="radio" name="serviceType" value="其他" data-incident-radio="serviceType" />其他</label>
+          </div>
+          <input id="incidentServiceTypeOther" type="text" data-incident-field="serviceTypeOther" placeholder="服務類型為其他時填寫" />
+        </div>
+
+        <div class="field full">
+          <label>是否為客戶</label>
+          <div class="choice-group">
+            <label class="choice-item"><input type="radio" name="isCustomer" value="是" data-incident-radio="isCustomer" />是</label>
+            <label class="choice-item"><input type="radio" name="isCustomer" value="否" data-incident-radio="isCustomer" />否</label>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label>後續處理方式</label>
+          <span class="field-hint">可複選，對應 Microsoft Forms 欄位 12。</span>
+          <div class="choice-group">
+            <label class="choice-item"><input type="checkbox" data-incident-followup="發Mail" />發Mail</label>
+            <label class="choice-item"><input type="checkbox" data-incident-followup="Webex告知" />Webex告知</label>
+            <label class="choice-item"><input type="checkbox" data-incident-followup="請相關工程師協助排修" />請相關工程師協助排修</label>
+            <label class="choice-item"><input type="checkbox" data-incident-followup="通知業務" />通知業務</label>
+            <label class="choice-item"><input type="checkbox" data-incident-followup="通報於公務群組" />通報於公務群組</label>
+            <label class="choice-item"><input type="checkbox" data-incident-followup="測試演練" />測試演練</label>
+            <label class="choice-item"><input type="checkbox" data-incident-followup="其他" />其他</label>
+          </div>
+          <input id="incidentFollowupOther" type="text" data-incident-field="followupOther" placeholder="後續處理方式為其他時填寫" />
+        </div>
+
+        <div class="field full">
+          <label for="incidentHandoverOwner">後續接手人員</label>
+          <span class="field-hint">工程師 / 業務 / 部門 / 無</span>
+          <textarea id="incidentHandoverOwner" data-incident-field="handoverOwner"></textarea>
+        </div>
+
+        <div class="field full">
+          <label for="incidentExtraInfo">其他補充</label>
+          <textarea id="incidentExtraInfo" data-incident-field="extraInfo"></textarea>
         </div>
 
         <div class="field full">
@@ -1031,9 +1179,21 @@
       return Array.from(document.querySelectorAll("[data-incident-check]"));
     }
 
+    function getIncidentRadios() {
+      // radio 是單選題：同一組 name 只會有一個被選到。
+      return Array.from(document.querySelectorAll("[data-incident-radio]"));
+    }
+
+    function getIncidentFollowups() {
+      // 後續處理方式是複選題，所以每一個 checkbox 都要各自記錄。
+      return Array.from(document.querySelectorAll("[data-incident-followup]"));
+    }
+
     function readIncidentStateFromPage() {
       const fields = {};
       const checks = {};
+      const radios = {};
+      const followups = {};
 
       getIncidentFields().forEach((field) => {
         fields[field.dataset.incidentField] = field.value;
@@ -1043,7 +1203,17 @@
         checks[check.dataset.incidentCheck] = check.checked;
       });
 
-      return { fields, checks };
+      getIncidentRadios().forEach((radio) => {
+        if (radio.checked) {
+          radios[radio.dataset.incidentRadio] = radio.value;
+        }
+      });
+
+      getIncidentFollowups().forEach((followup) => {
+        followups[followup.dataset.incidentFollowup] = followup.checked;
+      });
+
+      return { fields, checks, radios, followups };
     }
 
     function saveIncidentState() {
@@ -1062,15 +1232,24 @@
         if (!raw) return;
 
         const state = JSON.parse(raw);
+        const savedFields = state.fields || {};
 
         getIncidentFields().forEach((field) => {
-          field.value = state.fields && state.fields[field.dataset.incidentField]
-            ? state.fields[field.dataset.incidentField]
+          field.value = Object.prototype.hasOwnProperty.call(savedFields, field.dataset.incidentField)
+            ? savedFields[field.dataset.incidentField]
             : "";
         });
 
         getIncidentChecks().forEach((check) => {
           check.checked = Boolean(state.checks && state.checks[check.dataset.incidentCheck]);
+        });
+
+        getIncidentRadios().forEach((radio) => {
+          radio.checked = Boolean(state.radios && state.radios[radio.dataset.incidentRadio] === radio.value);
+        });
+
+        getIncidentFollowups().forEach((followup) => {
+          followup.checked = Boolean(state.followups && state.followups[followup.dataset.incidentFollowup]);
         });
       } catch (err) {
         setError("事件暫存讀取失敗：" + err.message);
@@ -1101,6 +1280,20 @@
     function buildHandoverSummary() {
       const state = readIncidentStateFromPage();
       const fields = state.fields;
+      const radios = state.radios;
+      const serviceType = radios.serviceType === "其他" && fields.serviceTypeOther
+        ? `其他：${fields.serviceTypeOther}`
+        : (radios.serviceType || "-");
+      const followupLines = getIncidentFollowups()
+        .filter((followup) => followup.checked)
+        .map((followup) => {
+          if (followup.dataset.incidentFollowup === "其他" && fields.followupOther) {
+            return `其他：${fields.followupOther}`;
+          }
+
+          return followup.dataset.incidentFollowup;
+        });
+      const followupText = followupLines.length ? followupLines.join("、") : "-";
       const checkLines = getIncidentChecks().map((check) => {
         const mark = check.checked ? "[x]" : "[ ]";
         return `${mark} ${check.dataset.incidentCheck}`;
@@ -1115,6 +1308,22 @@
         `客戶 / 單位：${fields.customer || "-"}`,
         `系統 / 設備：${fields.system || "-"}`,
         `事件主旨：${fields.title || "-"}`,
+        "",
+        "【報修表單資訊】",
+        `經銷商名稱：${fields.dealer || "-"}`,
+        `問題描述：${fields.problemDescription || "-"}`,
+        `產品名稱：${fields.productName || "-"}`,
+        `合約編號：${fields.contractId || "-"}`,
+        `產品型號：${fields.model || "-"}`,
+        `產品序號：${fields.serial || "-"}`,
+        `服務類型：${serviceType}`,
+        `報修對象：${fields.repairTarget || "-"}`,
+        `負責業務 / 工程師：${fields.owner || "-"}`,
+        `聯繫方式 / 稱呼：${fields.contactMethod || "-"}`,
+        `是否為客戶：${radios.isCustomer || "-"}`,
+        `後續處理方式：${followupText}`,
+        `後續接手人員：${fields.handoverOwner || "-"}`,
+        `其他補充：${fields.extraInfo || "-"}`,
         "",
         "【影響範圍】",
         fields.impact || "-",
@@ -1163,6 +1372,14 @@
         check.checked = false;
       });
 
+      getIncidentRadios().forEach((radio) => {
+        radio.checked = false;
+      });
+
+      getIncidentFollowups().forEach((followup) => {
+        followup.checked = false;
+      });
+
       localStorage.removeItem(INCIDENT_STORAGE_KEY);
       updateHandoverSummary();
     }
@@ -1170,19 +1387,26 @@
     function initIncidentPanel() {
       loadIncidentState();
       updateHandoverSummary();
+      const syncIncidentState = () => {
+        saveIncidentState();
+        updateHandoverSummary();
+      };
 
       getIncidentFields().forEach((field) => {
-        field.addEventListener("input", () => {
-          saveIncidentState();
-          updateHandoverSummary();
-        });
+        field.addEventListener("input", syncIncidentState);
+        field.addEventListener("change", syncIncidentState);
       });
 
       getIncidentChecks().forEach((check) => {
-        check.addEventListener("change", () => {
-          saveIncidentState();
-          updateHandoverSummary();
-        });
+        check.addEventListener("change", syncIncidentState);
+      });
+
+      getIncidentRadios().forEach((radio) => {
+        radio.addEventListener("change", syncIncidentState);
+      });
+
+      getIncidentFollowups().forEach((followup) => {
+        followup.addEventListener("change", syncIncidentState);
       });
     }
 
