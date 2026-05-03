@@ -399,21 +399,26 @@
     .choice-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px 18px;
       padding: 10px 0 2px;
     }
 
     .choice-item {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      flex: 0 0 auto;
+      gap: 8px;
       color: #cbd5e1;
       font-size: 0.9rem;
       line-height: 1.4;
+      white-space: nowrap;
+      word-break: keep-all;
     }
 
     .choice-item input {
       accent-color: #38bdf8;
+      flex: 0 0 auto;
+      margin: 0;
     }
 
     .incident-actions {
