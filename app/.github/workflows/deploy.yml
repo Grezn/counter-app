@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: counter-app-deploy
+  cancel-in-progress: false
+
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: docker-demo
@@ -48,14 +52,39 @@ jobs:
       - name: Start ASG instance refresh
         id: refresh
         run: |
-          REFRESH_ID=$(aws autoscaling start-instance-refresh \
+          set +e
+          START_OUTPUT=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name $ASG_NAME \
             --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":120}' \
             --query 'InstanceRefreshId' \
-            --output text)
+            --output text 2>&1)
+          START_EXIT=$?
+          set -e
+
+          if [ "$START_EXIT" -eq 0 ]; then
+            REFRESH_ID="$START_OUTPUT"
+            echo "Started ASG instance refresh: $REFRESH_ID"
+          elif echo "$START_OUTPUT" | grep -q "InstanceRefreshInProgress"; then
+            echo "An ASG instance refresh is already running. Waiting for the existing refresh instead."
+
+            REFRESH_ID=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name "$ASG_NAME" \
+              --query "InstanceRefreshes[?Status=='Pending' || Status=='InProgress' || Status=='Cancelling' || Status=='RollbackInProgress'] | [0].InstanceRefreshId" \
+              --output text)
+
+            if [ -z "$REFRESH_ID" ] || [ "$REFRESH_ID" = "None" ]; then
+              echo "Could not find the existing instance refresh id."
+              echo "$START_OUTPUT"
+              exit 1
+            fi
+
+            echo "Using existing ASG instance refresh: $REFRESH_ID"
+          else
+            echo "$START_OUTPUT"
+            exit "$START_EXIT"
+          fi
 
           echo "refresh_id=$REFRESH_ID" >> "$GITHUB_OUTPUT"
-          echo "Started ASG instance refresh: $REFRESH_ID"
 
       - name: Wait for ASG instance refresh
         run: |
