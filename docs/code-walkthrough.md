@@ -46,7 +46,7 @@ public/styles.css
 public/app.js
   前端互動邏輯。
   按鈕點擊後會用 fetch 呼叫後端 API。
-  值班事件處理台的 localStorage 暫存和交班摘要產生也在這裡。
+  值班事件處理台、本機個人連結的 localStorage 暫存，以及交班摘要產生也在這裡。
 
 Dockerfile
   把 Node.js app 打包成 Docker image。
@@ -73,7 +73,7 @@ infra/user-data.sh
 ```text
 trackView()
 loadCount()
-showSopTab("dell")
+loadPersonalLinks()
 setInterval(loadStats, 30000)
 ```
 
@@ -180,6 +180,23 @@ localStorage key: noc_incident_state
 「複製交班摘要」會把接手重點、問題影響、下一步和已完成檢查組成文字，方便貼到 Jira、交班小卡或訊息。
 
 報修表單補充資訊是參考「第一線客戶資訊表」做的，預設收在可展開區。這些欄位仍然只存在你的瀏覽器，不會自動送去 Microsoft Forms；它的用途是讓你值班時先整理資料，最後複製交班摘要或再貼到正式表單。
+
+## 前端安全邊界
+
+瀏覽器 F12 可以看到所有前端 HTML、CSS、JS，所以前端不要寫死：
+
+- 公司內部 URL
+- 電話、信箱、CC 清單
+- SOP 細節
+- token、密碼、AWS / Redis / ECR 資訊
+
+目前快速入口只保留不敏感的公開服務連結。個人值班連結改放在瀏覽器 `localStorage`，key 是：
+
+```text
+noc_personal_links
+```
+
+這樣 repo 和前端原始碼不會帶著公司內部連結，但使用者自己的瀏覽器仍然可以暫存常用入口。正式 SOP、電話、信箱和客戶資料應放在公司授權系統。
 
 ## /health 和 /ready 差在哪
 

@@ -27,6 +27,16 @@ let server;
 app.set("trust proxy", true);
 app.disable("x-powered-by");
 
+// 基本安全 header。
+// 這些 header 不會取代登入，但可以減少瀏覽器端不必要的資訊外流。
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  next();
+});
+
 // 這個 app 只需要很小的 JSON，限制大小可以降低被亂塞大 payload 的風險。
 app.use(express.json({ limit: "16kb" }));
 
@@ -91,11 +101,11 @@ app.use((req, res, next) => {
 // 例如 /favicon.svg 會直接從 public/favicon.svg 回傳。
 app.use(express.static(path.join(__dirname, "public")));
 
-// /whoami 用來確認現在是哪個 container/version 在回應。
-// 部署或 ASG 換機時很好用。
+// /whoami 用來確認目前部署版本。
+// 不回傳 container hostname，避免公開暴露太細的執行環境資訊。
 app.get("/whoami", (req, res) => {
   res.json({
-    instance: INSTANCE_ID,
+    app: "counter-app",
     version: APP_VERSION,
   });
 });

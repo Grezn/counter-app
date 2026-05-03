@@ -146,17 +146,6 @@ async function loadCount() {
   }
 }
 
-async function copyText(text) {
-  try {
-    // navigator.clipboard 是瀏覽器的複製 API。
-    // 只有 HTTPS 或 localhost 通常才能使用。
-    await navigator.clipboard.writeText(text);
-    alert("已複製：" + text);
-  } catch (err) {
-    alert("複製失敗，請手動複製。\n" + text);
-  }
-}
-
 const INCIDENT_STORAGE_KEY = "noc_incident_state";
 
 function getIncidentFields() {
@@ -406,26 +395,75 @@ function initIncidentPanel() {
   });
 }
 
-function showSopTab(tab) {
-  // 先把所有 SOP tab 隱藏，再顯示被點到的那一個。
-  document.querySelectorAll(".sop-tab").forEach((el) => el.style.display = "none");
-  const t = document.getElementById(`sop-${tab}`);
-  if (t) t.style.display = "block";
+const PERSONAL_LINKS_KEY = "noc_personal_links";
+
+function getPersonalLinksInput() {
+  return document.getElementById("personalLinksInput");
 }
 
-function openDailyLinks() {
-  // 一次開很多網址時，瀏覽器可能會擋 popup。
-  // 這裡用 setTimeout 分批開，成功率會高一點。
-  const urls = [
-    "https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status",
-    "https://chat.line.biz/U8c3714570b470532700282ab54913f8a",
-    "https://outlook.office.com/mail/",
-    "https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u",
-    "https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA",
-    "https://forms.office.com/pages/responsepage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUMVI2VE5XTEVDMzZYTVpFU0pWU05HQU1WOC4u",
-    "https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUN0lTTk4yVTdXN0ZDVFdCQ1ZLUVRTWlRDOC4u"
-  ];
-  urls.forEach((url, idx) => setTimeout(() => window.open(url, "_blank", "noopener,noreferrer"), idx * 120));
+function loadPersonalLinks() {
+  const input = getPersonalLinksInput();
+  if (!input) return;
+
+  input.value = localStorage.getItem(PERSONAL_LINKS_KEY) || "";
+}
+
+function savePersonalLinks() {
+  const input = getPersonalLinksInput();
+  if (!input) return;
+
+  localStorage.setItem(PERSONAL_LINKS_KEY, input.value.trim());
+  alert("已儲存到這台瀏覽器");
+}
+
+function clearPersonalLinks() {
+  if (!confirm("確定要清空這台瀏覽器的個人連結嗎？")) {
+    return;
+  }
+
+  localStorage.removeItem(PERSONAL_LINKS_KEY);
+  const input = getPersonalLinksInput();
+  if (input) {
+    input.value = "";
+  }
+}
+
+function parsePersonalLinkLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+
+  const parts = trimmed.includes("|")
+    ? trimmed.split("|")
+    : [trimmed];
+  const rawUrl = (parts.length > 1 ? parts.slice(1).join("|") : parts[0]).trim();
+
+  try {
+    const url = new URL(rawUrl);
+    if (url.protocol !== "https:") {
+      return null;
+    }
+
+    return url.toString();
+  } catch (err) {
+    return null;
+  }
+}
+
+function openPersonalLinks() {
+  const input = getPersonalLinksInput();
+  const links = (input ? input.value : "")
+    .split(/\r?\n/)
+    .map(parsePersonalLinkLine)
+    .filter(Boolean);
+
+  if (!links.length) {
+    alert("尚未設定可開啟的 HTTPS 連結");
+    return;
+  }
+
+  links.forEach((url, idx) => {
+    setTimeout(() => window.open(url, "_blank", "noopener,noreferrer"), idx * 120);
+  });
 }
 
 async function increment() {
@@ -490,10 +528,10 @@ async function resetCounter() {
 // 頁面第一次載入時：
 // 1. trackView() 記錄一次瀏覽並更新訪客統計
 // 2. loadCount() 載入 Current Count
-// 3. showSopTab("dell") 預設顯示 Dell SOP
+// 3. loadPersonalLinks() 載入這台瀏覽器自己的快速連結
 // 4. 每 30 秒 loadStats() 更新統計
 initIncidentPanel();
+loadPersonalLinks();
 trackView();
 loadCount();
-showSopTab("dell");
 setInterval(loadStats, 30000);

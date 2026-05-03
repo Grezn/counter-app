@@ -27,7 +27,7 @@ router.get("/ready", async (req, res) => {
   } catch (err) {
     res.status(500).json({
       status: "not ready",
-      error: err.message,
+      error: "dependency not ready",
     });
   }
 });

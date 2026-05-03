@@ -269,172 +269,41 @@
       </div>
     </section>
 
-    <div class="links-panel">
-      <h2 class="links-title">個人值班快速入口</h2>
-      <div class="links-note">每日值班、公司內部系統與 AWS 維運連結。</div>
-      <button class="bulk-open" onclick="openDailyLinks()">🚀 一鍵開啟日常值班連結（請允許彈出視窗）</button>
+    <section class="links-panel">
+      <h2 class="links-title">安全快速入口</h2>
+      <div class="links-note">前端原始碼不再寫死公司內部 URL、電話、信箱或 SOP 細節。</div>
 
-      <h3 class="links-title" style="font-size:1rem;margin-top:12px;">日常值班</h3>
       <div class="links-grid">
-        <a class="quick-link" href="https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status" target="_blank" rel="noopener noreferrer">工作交辦小卡（Jira）</a>
-        <a class="quick-link" href="https://chat.line.biz/U8c3714570b470532700282ab54913f8a" target="_blank" rel="noopener noreferrer">LINE 客服帳號</a>
         <a class="quick-link" href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
-        <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">每日設備檢查表單</a>
-        <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">值班班表（SharePoint）</a>
-        <a class="quick-link" href="https://forms.office.com/pages/responsepage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUMVI2VE5XTEVDMzZYTVpFU0pWU05HQU1WOC4u" target="_blank" rel="noopener noreferrer">第一線客戶資訊表</a>
-        <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXGrSucvxYSRErDKcQN1zfTVUN0lTTk4yVTdXN0ZDVFdCQ1ZLUVRTWlRDOC4u" target="_blank" rel="noopener noreferrer">Akamai 客戶資訊表</a>
-      </div>
-
-      <h3 class="links-title" style="font-size:1rem;margin-top:16px;">公司內部系統</h3>
-      <div class="links-grid">
-        <a class="quick-link" href="https://kb.aws-metaage.com/" target="_blank" rel="noopener noreferrer">KB</a>
-        <a class="quick-link" href="https://bpm.metaage.com.tw/Gaia/portal" target="_blank" rel="noopener noreferrer">BPM</a>
-        <a class="quick-link" href="https://ext.metaage.com.tw/Ext/list" target="_blank" rel="noopener noreferrer">公司分機表</a>
-        <a class="quick-link" href="https://www.cloudman.app/" target="_blank" rel="noopener noreferrer">CloudMan</a>
-        <a class="quick-link" href="https://dtimis.sharepoint.com/:f:/s/P400-P400/IgC8r2cr3K1jR68e1qFNFrVHAQjvXDEtLa2cer7cbvtu4T4?e=ug9aYb" target="_blank" rel="noopener noreferrer">P400 OneDrive</a>
-      </div>
-
-      <h3 class="links-title" style="font-size:1rem;margin-top:16px;">其他連結</h3>
-      <div class="links-grid">
-        <a class="quick-link" href="https://jp.dubber.net/%E5%B8%B3%E6%88%B6/d63e63ada4f3448093cbe9792c66f12a/%E9%8C%84%E9%9F%B3" target="_blank" rel="noopener noreferrer">話機錄音下載</a>
-      </div>
-
-      <h3 class="links-title" style="font-size:1rem;margin-top:16px;">AWS 維運</h3>
-      <div class="links-grid">
         <a class="quick-link" href="https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#" target="_blank" rel="noopener noreferrer">AWS Console（us-east-1）</a>
-        <a class="quick-link" href="https://metaage.awsapps.com/start#/" target="_blank" rel="noopener noreferrer">AWS SSO</a>
         <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
         <a class="quick-link" href="https://health.aws.amazon.com/health/status" target="_blank" rel="noopener noreferrer">AWS Health Dashboard</a>
       </div>
+
+      <details class="secure-details">
+        <summary>本機個人連結</summary>
+        <div class="links-note">每行一個 URL，或用「名稱 | URL」。內容只存在你這台瀏覽器的 localStorage，不會寫進原始碼。</div>
+        <textarea id="personalLinksInput" class="personal-links-input" placeholder="工作交辦小卡 | https://...
+值班班表 | https://..."></textarea>
+        <div class="secure-actions">
+          <button class="action-btn" onclick="savePersonalLinks()">儲存本機連結</button>
+          <button class="action-btn" onclick="openPersonalLinks()">開啟本機連結</button>
+          <button class="action-btn danger" onclick="clearPersonalLinks()">清空本機連結</button>
+        </div>
+      </details>
 
       <div class="oncall-checklist">
         <strong>值班小 checklist：</strong>
         <ul>
           <li>先確認告警影響範圍，再通知相關窗口。</li>
           <li>若影響服務可用性，優先做止血處置。</li>
-          <li>在交辦小卡補上處理紀錄與交班資訊。</li>
+          <li>正式 SOP、電話、信箱與客戶資料請放在公司授權系統。</li>
         </ul>
       </div>
-    </div>
-
-
-
-
-    <div class="panel" style="margin-top:20px;">
-      <h3>SOP 分頁（範例）</h3>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <button class="bulk-open" style="margin:0;" onclick="showSopTab('dell')">Dell Server/Storage SOP</button>
-        <button class="bulk-open" style="margin:0;" onclick="showSopTab('pure')">PureStorage SOP</button>
-        <button class="bulk-open" style="margin:0;" onclick="showSopTab('cycraft')">奧義智慧 SOP</button>
-      </div>
-
-      <div id="sop-dell" class="sop-tab">
-        <div class="focus-note" style="margin-top:0;">
-          <strong>Dell Server/Storage SOP</strong><br/>
-          值班規則：非上班時間（18:00–次日 09:00）、國定假日、假日 7x24 都要回報；
-          值班電話 Call in 三通未接則 Call in 主管電話；每月需紀錄撥打通數。
-        </div>
-
-        <p><strong>SOP 檔案：</strong><a href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EVifIvg8Ue9JphI-FLq4gyoBT1_Y7oU9O-6fYA8K9-Po7g?e=pzaknJ" target="_blank" rel="noopener noreferrer">Dell Server/Storage SOP 表單</a></p>
-        <p><strong>值班手機：</strong>0936030276 <button class="copy-btn" onclick="copyText('0936030276')">複製</button></p>
-        <p><strong>主管手機：</strong>Ice 0972797257 / Gary 0917156071</p>
-
-        <h4>信件判斷（需回覆）</h4>
-        <ul class="sop-list">
-          <li>客戶產品類別非 Client 端（NB/Desktop/Monitor）之報修信件。</li>
-          <li>客戶來信詢問原廠未回應之信件。</li>
-          <li>客戶反應值班手機撥打無回應等。</li>
-        </ul>
-
-        <h4>值班步驟</h4>
-        <ol class="sop-list">
-          <li>收到客戶報修信件並依上述規則判別。</li>
-          <li>撥打值班電話，簡述客戶問題與產品類別，確認當前值班人員姓名。</li>
-          <li>將客戶信件使用「轉寄」給值班人員，CC：slm@ginnet.com.tw、support@ginnet.com.tw <button class="copy-btn" onclick="copyText('slm@ginnet.com.tw; support@ginnet.com.tw')">複製 CC</button>。</li>
-          <li>填寫紀錄表單完成交接。</li>
-        </ol>
-
-        <h4>值班人員信箱</h4>
-                <ul class="sop-list">
-          <li>ST230 Ice Chang 張有為 — icechang@ginnet.com.tw</li>
-          <li>ST230 Kevin Hsieh 謝孟諭 — kevinhsieh@ginnet.com.tw</li>
-          <li>ST230 Kai Lei 雷愷豐 — kailei@ginnet.com.tw</li>
-          <li>ST230 William Hsu 許維麟 — williamhsu@ginnet.com.tw</li>
-          <li>ST240 Jay Chang 張嘉傑 — jaychang@ginnet.com.tw</li>
-          <li>ST240 Steven Sung 宋信賢 — stevensung@ginnet.com.tw</li>
-          <li>ST250 Clark Cheng 鄭弘彬 — clarkcheng@ginnet.com.tw</li>
-          <li>ST250 Mike Hsu 徐順義 — mikehsu@ginnet.com.tw</li>
-          <li>ST250 Sam Huang 黃彥智 — samhuang@ginnet.com.tw</li>
-          <li>ST250 Toma Tseng 曾翊欽 — tomatseng@ginnet.com.tw</li>
-        </ul>
-      </div>
-
-      <div id="sop-pure" class="sop-tab">
-        <div class="focus-note" style="margin-top:0;">
-          <strong>PureStorage SOP</strong><br/>
-          值班規則：非上班時間（18:00–次日 09:00）、國定假日、假日 7x24 都要回報；
-          原廠要求 SLA 四小時內回覆；值班電話三通未接改撥主管；若兩者都未接先回信告知已轉告工程師。
-        </div>
-
-        <p><strong>PureStorage 值班人員手機：</strong>0917157536 <button class="copy-btn" onclick="copyText('0917157536')">複製</button></p>
-        <p><strong>PureStorage 主管 (Libraer) 手機：</strong>0953779897</p>
-
-        <h4>主要需應對之信件</h4>
-        <ul class="sop-list">
-          <li>Support 的第一封來信。</li>
-          <li>經銷商或客戶第一封來信（報修或詢問）。</li>
-          <li>Support 來信需填寫 Dispatch 表單之信件。</li>
-        </ul>
-
-        <h4>不需理會</h4>
-        <ul class="sop-list">
-          <li>設備 Alert（Info、Warning、Critical）。</li>
-          <li>Support 與客戶後續回應。</li>
-        </ul>
-      </div>
-
-
-      <div id="sop-cycraft" class="sop-tab">
-        <div class="focus-note" style="margin-top:0;">
-          <strong>奧義智慧 SOP（精簡版）</strong><br/>
-          收到 cycraft-support@metaage.com.tw 告警後，先依 AlertID 於 Xcockpit 查工單；
-          超過 15 分鐘未顯示也要先電話通報客戶，並回報二線群組。
-        </div>
-
-        <h4>值班規則</h4>
-        <ul class="sop-list">
-          <li>非上班時間（18:00–次日 09:00）與假日 7x24 都要回報。</li>
-          <li>原廠 SLA：4 小時內需回覆客戶。</li>
-          <li>值班電話三通未接 → Call in 主管；兩者未接先回客戶信並告知已轉告工程師。</li>
-        </ul>
-
-        <h4>應對步驟（摘要）</h4>
-        <ol class="sop-list">
-          <li>確認客戶 Account、端點名稱、AlertID。</li>
-          <li>登入 Xcockpit > Incidents，以 Alert ID 搜尋工單。</li>
-          <li>狀態 inprogress：等待 investigated；investigated：先電話通報、Email 留底。</li>
-          <li>與客戶確認是否 isolate；於工單留下 Note，三天後追蹤 release/close。</li>
-        </ol>
-
-        <h4>複製工具</h4>
-        <p><button class="copy-btn" onclick="copyText('cycraft-support@metaage.com.tw; silviachu@metaage.com.tw; yipingyang@metaage.com.tw;')">複製 CC 清單</button></p>
-        <p><button class="copy-btn" onclick="copyText('XENSOR - 告警端點 [貼上端點名稱] [公司名稱] [高風險/可疑活動行為]事件')">複製主旨模板</button></p>
-        <p><button class="copy-btn" onclick="copyText('［客戶公司名稱］您好：\n如電話通報所述，經奧義智慧 MDR 平台偵測，貴公司端點發生高風險事件。\n【案件資訊】案件名稱：[日期-案件編號-類型]；案件狀態：[confirmed/closed]；告警端點：[Hostname]。\n【處置說明】[依情境填寫]\n【後續確認】邁達特 MSSP 團隊將於3天後再次確認後續應變措施。\n上述處置內容皆經貴公司授權後執行。')">複製通報信主架構</button></p>
-
-        <h4>需理會 / 不需理會</h4>
-        <ul class="sop-list">
-          <li>需理會：Support 第一封、客戶/經銷商第一封、需填 Dispatch 的信件。</li>
-          <li>不需理會：設備 Alert（Info/Warning/Critical）、Support/客戶後續回應。</li>
-        </ul>
-      </div>
-
-    </div>
+    </section>
 
     <div class="footer">
-      <div><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></div>
-      <div><strong>Readiness Check:</strong> <a href="/ready" target="_blank">/ready</a></div>
-      <div><strong>Stats API:</strong> <a href="/stats" target="_blank">/stats</a></div>
-      <div><strong>Instance:</strong> <a href="/whoami" target="_blank">/whoami</a></div>
+      <div><strong>Security:</strong> Internal SOP, phone numbers, email lists, and private URLs are not embedded in this page.</div>
     </div>
   </div>
   <script src="/app.js"></script>
