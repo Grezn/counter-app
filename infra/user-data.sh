@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-# 這份 user data 是給 ASG/EC2 開機時使用。
+# 這份 user data 是給 ASG/EC2 開機時使用的。
 # 重點：
 # 1. EC2 要掛 IAM Role / Instance Profile，讓 aws cli 可以登入 ECR。
 # 2. RESET_TOKEN 建議放 SSM Parameter Store，不要寫死在 user data。
