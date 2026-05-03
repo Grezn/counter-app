@@ -33,6 +33,7 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - EC2 user data 範本放在 `infra/user-data.sh`。正式環境建議讓 EC2 掛 IAM Role，不要在機器上放 IAM User access key。
 - ALB 來源 IP 限制腳本放在 `infra/restrict-alb-source-ip.sh`。
 - GitHub Actions OIDC 建立腳本放在 `infra/setup-github-oidc.sh`。
+- 程式碼導讀請看 `docs/code-walkthrough.md`。
 - 詳細維運步驟和 key 移除說明請看 `docs/operations.md`。
 
 ## Reset 按鈕

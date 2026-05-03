@@ -1,5 +1,7 @@
 const { createClient } = require("redis");
 
+// client 是整個 app 共用的 Redis 連線。
+// 先在 connectRedis() 建立，其他檔案再透過 getRedisClient() 取得。
 let client;
 
 function getRedisUrl() {
@@ -29,13 +31,17 @@ async function connectRedis() {
   try {
     const redisUrl = getRedisUrl();
 
+    // createClient 只是建立 client 物件，真正連線要等下面的 client.connect()。
     client = createClient({
       url: redisUrl,
       socket: {
+        // Redis 短暫斷線時，node-redis 會自動重試。
+        // retries 越多等待越久，但最多等 3000ms。
         reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
       },
     });
 
+    // error event 一定要監聽，否則 Redis 連線錯誤可能讓 Node process 掛掉。
     client.on("error", (err) => {
       console.error("Redis error:", err.message);
     });
@@ -50,6 +56,8 @@ async function connectRedis() {
 }
 
 function getRedisClient() {
+  // routes 裡會呼叫這個 function 取得目前 Redis client。
+  // 如果 connectRedis() 失敗，這裡會回傳 null。
   return client;
 }
 

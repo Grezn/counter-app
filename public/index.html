@@ -289,6 +289,154 @@
       line-height: 1.5;
     }
 
+    .incident-panel {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .incident-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .incident-title {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+      color: #e0f2fe;
+    }
+
+    .incident-subtitle {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .incident-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      color: #bfdbfe;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid rgba(147, 197, 253, 0.24);
+      border-radius: 10px;
+      background: rgba(2, 6, 23, 0.45);
+      color: #e5e7eb;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 0.92rem;
+    }
+
+    .field textarea {
+      min-height: 78px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .incident-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      width: auto;
+      margin: 0;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(59, 130, 246, 0.22);
+      border: 1px solid rgba(147, 197, 253, 0.35);
+      color: #dbeafe;
+      font-size: 0.9rem;
+    }
+
+    .action-btn.danger {
+      background: rgba(239, 68, 68, 0.16);
+      border-color: rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+    }
+
+    .incident-workflow {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .checklist-box,
+    .summary-box {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(2, 6, 23, 0.32);
+      padding: 14px;
+    }
+
+    .workflow-title {
+      margin: 0 0 10px;
+      color: #bfdbfe;
+      font-size: 0.98rem;
+    }
+
+    .check-item {
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      margin: 8px 0;
+    }
+
+    .check-item input {
+      margin-top: 2px;
+      accent-color: #22c55e;
+    }
+
+    .summary-output {
+      width: 100%;
+      min-height: 220px;
+      box-sizing: border-box;
+      border: 1px solid rgba(147, 197, 253, 0.22);
+      border-radius: 10px;
+      background: rgba(2, 6, 23, 0.5);
+      color: #e5e7eb;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      resize: vertical;
+    }
+
     .copy-btn {
       width: auto;
       margin: 0 0 0 8px;
@@ -336,6 +484,11 @@
       }
 
       .links-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .incident-grid,
+      .incident-workflow {
         grid-template-columns: 1fr;
       }
 
@@ -425,6 +578,117 @@
     <button class="reset" onclick="resetCounter()">Reset</button>
 
     <div id="errorBox" class="error-box"></div>
+
+    <section class="incident-panel">
+      <div class="incident-header">
+        <div>
+          <h2 class="incident-title">值班事件處理台</h2>
+          <p class="incident-subtitle">記錄目前事件狀態、處理檢查點與交班摘要。</p>
+        </div>
+        <div class="incident-actions">
+          <button class="action-btn" onclick="setIncidentNow()">填入現在時間</button>
+          <button class="action-btn" onclick="copyHandoverSummary()">複製交班摘要</button>
+          <button class="action-btn danger" onclick="clearIncidentState()">清空事件</button>
+        </div>
+      </div>
+
+      <div class="incident-grid">
+        <div class="field">
+          <label for="incidentStartedAt">事件時間</label>
+          <input id="incidentStartedAt" type="datetime-local" data-incident-field="startedAt" />
+        </div>
+
+        <div class="field">
+          <label for="incidentSeverity">嚴重度</label>
+          <select id="incidentSeverity" data-incident-field="severity">
+            <option value="">未分類</option>
+            <option value="Info">Info</option>
+            <option value="Warning">Warning</option>
+            <option value="Critical">Critical</option>
+            <option value="Service Impact">Service Impact</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="incidentStatus">目前狀態</label>
+          <select id="incidentStatus" data-incident-field="status">
+            <option value="">未開始</option>
+            <option value="Triage">Triage</option>
+            <option value="Notified">Notified</option>
+            <option value="Monitoring">Monitoring</option>
+            <option value="Waiting">Waiting</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Handover">Handover</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="incidentSource">告警來源</label>
+          <select id="incidentSource" data-incident-field="source">
+            <option value="">未填</option>
+            <option value="Email">Email</option>
+            <option value="Phone">Phone</option>
+            <option value="Jira">Jira</option>
+            <option value="LINE">LINE</option>
+            <option value="AWS">AWS</option>
+            <option value="Customer">Customer</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="incidentCustomer">客戶 / 單位</label>
+          <input id="incidentCustomer" type="text" data-incident-field="customer" placeholder="例如：客戶名稱、內部單位" />
+        </div>
+
+        <div class="field">
+          <label for="incidentSystem">系統 / 設備</label>
+          <input id="incidentSystem" type="text" data-incident-field="system" placeholder="例如：主機、服務、設備名稱" />
+        </div>
+
+        <div class="field full">
+          <label for="incidentTitle">事件主旨</label>
+          <input id="incidentTitle" type="text" data-incident-field="title" placeholder="例如：XX 服務連線異常 / 告警編號" />
+        </div>
+
+        <div class="field full">
+          <label for="incidentImpact">影響範圍</label>
+          <textarea id="incidentImpact" data-incident-field="impact" placeholder="目前觀察到的影響、受影響服務、是否影響客戶使用"></textarea>
+        </div>
+
+        <div class="field full">
+          <label for="incidentNotified">已通知對象</label>
+          <textarea id="incidentNotified" data-incident-field="notified" placeholder="已通知的人、時間、管道，例如：22:10 已電話通知值班工程師"></textarea>
+        </div>
+
+        <div class="field full">
+          <label for="incidentNextStep">下一步</label>
+          <textarea id="incidentNextStep" data-incident-field="nextStep" placeholder="下一個要追蹤的動作、等待誰回覆、預計何時再確認"></textarea>
+        </div>
+
+        <div class="field full">
+          <label for="incidentNotes">處理紀錄</label>
+          <textarea id="incidentNotes" data-incident-field="notes" placeholder="依時間補處理紀錄，例如：22:15 確認告警；22:20 已轉二線"></textarea>
+        </div>
+      </div>
+
+      <div class="incident-workflow">
+        <div class="checklist-box">
+          <h3 class="workflow-title">事件 checklist</h3>
+          <label class="check-item"><input type="checkbox" data-incident-check="確認告警時間與來源" />確認告警時間與來源</label>
+          <label class="check-item"><input type="checkbox" data-incident-check="確認影響範圍與嚴重度" />確認影響範圍與嚴重度</label>
+          <label class="check-item"><input type="checkbox" data-incident-check="確認是否影響服務可用性" />確認是否影響服務可用性</label>
+          <label class="check-item"><input type="checkbox" data-incident-check="查閱對應 SOP" />查閱對應 SOP</label>
+          <label class="check-item"><input type="checkbox" data-incident-check="通知值班工程師或主管" />通知值班工程師或主管</label>
+          <label class="check-item"><input type="checkbox" data-incident-check="補上 Jira / 小卡處理紀錄" />補上 Jira / 小卡處理紀錄</label>
+          <label class="check-item"><input type="checkbox" data-incident-check="整理交班資訊" />整理交班資訊</label>
+        </div>
+
+        <div class="summary-box">
+          <h3 class="workflow-title">交班摘要</h3>
+          <textarea id="handoverSummary" class="summary-output" readonly></textarea>
+        </div>
+      </div>
+    </section>
 
     <div class="links-panel">
       <h2 class="links-title">個人值班快速入口</h2>
@@ -596,19 +860,26 @@
   </div>
 
   <script>
+    // 這個 <script> 是前端互動的地方。
+    // 它會呼叫後端 API，例如 /track-view、/count、/increment、/reset。
+
     function setError(message) {
+      // 把錯誤訊息顯示在畫面上的紅色 error box。
       const box = document.getElementById("errorBox");
       box.style.display = "block";
       box.textContent = message;
     }
 
     function clearError() {
+      // 每次重新執行 API 前，先把舊錯誤清掉。
       const box = document.getElementById("errorBox");
       box.style.display = "none";
       box.textContent = "";
     }
 
     function updateBadge(redisStatus) {
+      // 更新畫面左上角的 Redis 狀態 badge。
+      // redisStatus 來自後端回傳，例如 ready / connected / error。
       const badge = document.getElementById("redisBadge");
       const okStatuses = ["connected", "ready", "reconnecting"];
 
@@ -622,6 +893,8 @@
     }
 
     function getVisitorId() {
+      // localStorage 是瀏覽器提供的小型儲存空間。
+      // visitor_id 存在這裡，關掉瀏覽器再打開也還在。
       let visitorId = localStorage.getItem("visitor_id");
 
       if (!visitorId) {
@@ -636,6 +909,8 @@
     }
 
     function getResetToken() {
+      // sessionStorage 只在目前分頁保存。
+      // 關掉分頁後 token 會消失，比放 localStorage 安全一點。
       let token = sessionStorage.getItem("reset_token");
 
       if (!token) {
@@ -651,6 +926,8 @@
     }
 
     function renderStats(data) {
+      // 後端回傳 JSON 後，這裡把數字塞進 HTML 對應的元素。
+      // 例如 id="totalVisitors" 的 <div> 會顯示總訪客數。
       document.getElementById("totalVisitors").textContent = data.totalVisitors;
       document.getElementById("todayVisitors").textContent = data.todayVisitors;
       document.getElementById("activeVisitors").textContent = data.activeVisitors;
@@ -662,6 +939,8 @@
       try {
         clearError();
 
+        // fetch 是瀏覽器呼叫 API 的方法。
+        // POST /track-view 會讓後端記錄一次頁面瀏覽。
         const res = await fetch("/track-view", {
           method: "POST",
           cache: "no-store",
@@ -688,6 +967,8 @@
 
     async function loadStats() {
       try {
+        // GET /stats 只讀統計，不增加瀏覽次數。
+        // setInterval 會每 30 秒呼叫一次，讓 Active Now 自動更新。
         const res = await fetch("/stats", {
           cache: "no-store",
         });
@@ -707,6 +988,7 @@
 
     async function loadCount() {
       try {
+        // GET /count 只取得目前 Current Count。
         const res = await fetch("/count", {
           cache: "no-store",
         });
@@ -728,6 +1010,8 @@
 
     async function copyText(text) {
       try {
+        // navigator.clipboard 是瀏覽器的複製 API。
+        // 只有 HTTPS 或 localhost 通常才能使用。
         await navigator.clipboard.writeText(text);
         alert("已複製：" + text);
       } catch (err) {
@@ -735,13 +1019,183 @@
       }
     }
 
+    const INCIDENT_STORAGE_KEY = "noc_incident_state";
+
+    function getIncidentFields() {
+      // 用 data-incident-field 找到事件表單欄位。
+      // 這樣以後新增欄位時，不用每個地方都手動補 id。
+      return Array.from(document.querySelectorAll("[data-incident-field]"));
+    }
+
+    function getIncidentChecks() {
+      return Array.from(document.querySelectorAll("[data-incident-check]"));
+    }
+
+    function readIncidentStateFromPage() {
+      const fields = {};
+      const checks = {};
+
+      getIncidentFields().forEach((field) => {
+        fields[field.dataset.incidentField] = field.value;
+      });
+
+      getIncidentChecks().forEach((check) => {
+        checks[check.dataset.incidentCheck] = check.checked;
+      });
+
+      return { fields, checks };
+    }
+
+    function saveIncidentState() {
+      // 值班事件是個人暫存資料，所以存在 localStorage。
+      // 重新整理網頁後資料還在，但不會送到 server 或 Redis。
+      try {
+        localStorage.setItem(INCIDENT_STORAGE_KEY, JSON.stringify(readIncidentStateFromPage()));
+      } catch (err) {
+        setError("事件暫存失敗：" + err.message);
+      }
+    }
+
+    function loadIncidentState() {
+      try {
+        const raw = localStorage.getItem(INCIDENT_STORAGE_KEY);
+        if (!raw) return;
+
+        const state = JSON.parse(raw);
+
+        getIncidentFields().forEach((field) => {
+          field.value = state.fields && state.fields[field.dataset.incidentField]
+            ? state.fields[field.dataset.incidentField]
+            : "";
+        });
+
+        getIncidentChecks().forEach((check) => {
+          check.checked = Boolean(state.checks && state.checks[check.dataset.incidentCheck]);
+        });
+      } catch (err) {
+        setError("事件暫存讀取失敗：" + err.message);
+      }
+    }
+
+    function formatLocalDateTime(date) {
+      // datetime-local input 需要 yyyy-MM-ddTHH:mm 格式。
+      const pad = (value) => String(value).padStart(2, "0");
+      return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate()),
+      ].join("-") + "T" + [pad(date.getHours()), pad(date.getMinutes())].join(":");
+    }
+
+    function formatDisplayDateTime(value) {
+      return value ? value.replace("T", " ") : "-";
+    }
+
+    function setIncidentNow() {
+      const startedAt = document.getElementById("incidentStartedAt");
+      startedAt.value = formatLocalDateTime(new Date());
+      saveIncidentState();
+      updateHandoverSummary();
+    }
+
+    function buildHandoverSummary() {
+      const state = readIncidentStateFromPage();
+      const fields = state.fields;
+      const checkLines = getIncidentChecks().map((check) => {
+        const mark = check.checked ? "[x]" : "[ ]";
+        return `${mark} ${check.dataset.incidentCheck}`;
+      });
+
+      return [
+        "【值班交班摘要】",
+        `事件時間：${formatDisplayDateTime(fields.startedAt)}`,
+        `嚴重度：${fields.severity || "-"}`,
+        `目前狀態：${fields.status || "-"}`,
+        `告警來源：${fields.source || "-"}`,
+        `客戶 / 單位：${fields.customer || "-"}`,
+        `系統 / 設備：${fields.system || "-"}`,
+        `事件主旨：${fields.title || "-"}`,
+        "",
+        "【影響範圍】",
+        fields.impact || "-",
+        "",
+        "【已通知對象】",
+        fields.notified || "-",
+        "",
+        "【下一步】",
+        fields.nextStep || "-",
+        "",
+        "【處理紀錄】",
+        fields.notes || "-",
+        "",
+        "【Checklist】",
+        checkLines.join("\n"),
+      ].join("\n");
+    }
+
+    function updateHandoverSummary() {
+      const output = document.getElementById("handoverSummary");
+      if (output) {
+        output.value = buildHandoverSummary();
+      }
+    }
+
+    async function copyHandoverSummary() {
+      try {
+        updateHandoverSummary();
+        await navigator.clipboard.writeText(document.getElementById("handoverSummary").value);
+        alert("已複製交班摘要");
+      } catch (err) {
+        setError("交班摘要複製失敗：" + err.message);
+      }
+    }
+
+    function clearIncidentState() {
+      if (!confirm("確定要清空目前事件紀錄嗎？")) {
+        return;
+      }
+
+      getIncidentFields().forEach((field) => {
+        field.value = "";
+      });
+
+      getIncidentChecks().forEach((check) => {
+        check.checked = false;
+      });
+
+      localStorage.removeItem(INCIDENT_STORAGE_KEY);
+      updateHandoverSummary();
+    }
+
+    function initIncidentPanel() {
+      loadIncidentState();
+      updateHandoverSummary();
+
+      getIncidentFields().forEach((field) => {
+        field.addEventListener("input", () => {
+          saveIncidentState();
+          updateHandoverSummary();
+        });
+      });
+
+      getIncidentChecks().forEach((check) => {
+        check.addEventListener("change", () => {
+          saveIncidentState();
+          updateHandoverSummary();
+        });
+      });
+    }
+
     function showSopTab(tab) {
+      // 先把所有 SOP tab 隱藏，再顯示被點到的那一個。
       document.querySelectorAll(".sop-tab").forEach((el) => el.style.display = "none");
       const t = document.getElementById(`sop-${tab}`);
       if (t) t.style.display = "block";
     }
 
     function openDailyLinks() {
+      // 一次開很多網址時，瀏覽器可能會擋 popup。
+      // 這裡用 setTimeout 分批開，成功率會高一點。
       const urls = [
         "https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?groupBy=status",
         "https://chat.line.biz/U8c3714570b470532700282ab54913f8a",
@@ -758,6 +1212,7 @@
       try {
         clearError();
 
+        // POST /increment 會讓 Redis 裡的 counter +1。
         const res = await fetch("/increment", {
           method: "POST",
           cache: "no-store",
@@ -784,6 +1239,7 @@
           throw new Error("未輸入 Reset Token");
         }
 
+        // Reset token 放在 header，不放在網址，也不寫死在 HTML。
         const res = await fetch("/reset", {
           method: "POST",
           cache: "no-store",
@@ -794,7 +1250,10 @@
 
         const data = await res.json();
 
+        // HTTP 狀態不是 2xx 時，res.ok 會是 false。
+        // throw 會跳到下面 catch，顯示錯誤。
         if (!res.ok) {
+          // token 錯誤時清掉 sessionStorage，下一次按 Reset 會重新要求輸入。
           if (res.status === 403) {
             sessionStorage.removeItem("reset_token");
           }
@@ -808,6 +1267,12 @@
       }
     }
 
+    // 頁面第一次載入時：
+    // 1. trackView() 記錄一次瀏覽並更新訪客統計
+    // 2. loadCount() 載入 Current Count
+    // 3. showSopTab("dell") 預設顯示 Dell SOP
+    // 4. 每 30 秒 loadStats() 更新統計
+    initIncidentPanel();
     trackView();
     loadCount();
     showSopTab("dell");
