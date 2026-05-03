@@ -625,11 +625,29 @@
       let visitorId = localStorage.getItem("visitor_id");
 
       if (!visitorId) {
-        visitorId = crypto.randomUUID();
+        // 用瀏覽器產生一個匿名 ID，讓同一台瀏覽器不要被重複算成新訪客。
+        visitorId = window.crypto && window.crypto.randomUUID
+          ? window.crypto.randomUUID()
+          : `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`;
         localStorage.setItem("visitor_id", visitorId);
       }
 
       return visitorId;
+    }
+
+    function getResetToken() {
+      let token = sessionStorage.getItem("reset_token");
+
+      if (!token) {
+        // Reset 是高風險操作，所以 token 由使用者輸入，不寫死在 HTML 裡。
+        token = prompt("請輸入 Reset Token");
+
+        if (token) {
+          sessionStorage.setItem("reset_token", token);
+        }
+      }
+
+      return token;
     }
 
     function renderStats(data) {
@@ -760,15 +778,27 @@
     async function resetCounter() {
       try {
         clearError();
+        const resetToken = getResetToken();
+
+        if (!resetToken) {
+          throw new Error("未輸入 Reset Token");
+        }
 
         const res = await fetch("/reset", {
           method: "POST",
           cache: "no-store",
+          headers: {
+            "x-reset-token": resetToken,
+          },
         });
 
         const data = await res.json();
 
         if (!res.ok) {
+          if (res.status === 403) {
+            sessionStorage.removeItem("reset_token");
+          }
+
           throw new Error(data.error || "Reset failed");
         }
 

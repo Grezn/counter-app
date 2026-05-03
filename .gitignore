@@ -3,6 +3,17 @@
 *.tfstate
 *.tfstate.*
 
+# 秘密和本機環境變數不要進 Git；只 commit .env.example。
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Node.js 本機安裝輸出
+node_modules/
+
 # local temp files
 app/200
 app/403

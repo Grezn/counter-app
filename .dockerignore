@@ -1,0 +1,24 @@
+# Git 歷史和 CI 設定不需要放進 runtime image。
+.git
+.github
+
+# 本機 dependencies/logs 不要複製進 image，dependencies 會在 image 裡重新安裝。
+node_modules
+npm-debug.log*
+
+# 不要把秘密設定檔複製進 Docker image。
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Terraform 是基礎設施設定，不是 Node.js container 需要的檔案。
+infra/
+**/.terraform
+**/*.tfstate
+**/*.tfstate.*
+
+# app/ 是根目錄 app 的重複副本，root build 不需要把它打進 image。
+app/

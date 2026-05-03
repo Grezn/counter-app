@@ -46,10 +46,46 @@ jobs:
           docker push $IMAGE_URI:$IMAGE_TAG
 
       - name: Start ASG instance refresh
+        id: refresh
         run: |
-          aws autoscaling start-instance-refresh \
+          REFRESH_ID=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name $ASG_NAME \
-            --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":120}'
+            --preferences '{"MinHealthyPercentage":100,"InstanceWarmup":120}' \
+            --query 'InstanceRefreshId' \
+            --output text)
+
+          echo "refresh_id=$REFRESH_ID" >> "$GITHUB_OUTPUT"
+          echo "Started ASG instance refresh: $REFRESH_ID"
+
+      - name: Wait for ASG instance refresh
+        run: |
+          REFRESH_ID="${{ steps.refresh.outputs.refresh_id }}"
+
+          # 沒有這段等待，GitHub Actions 可能顯示成功，
+          # 但 ASG 後面其實換機失敗。
+          for attempt in {1..60}; do
+            STATUS=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name "$ASG_NAME" \
+              --instance-refresh-ids "$REFRESH_ID" \
+              --query 'InstanceRefreshes[0].Status' \
+              --output text)
+
+            echo "Attempt $attempt: refresh status is $STATUS"
+
+            case "$STATUS" in
+              Successful)
+                exit 0
+                ;;
+              Failed|Cancelled|RollbackFailed|RollbackSuccessful)
+                exit 1
+                ;;
+            esac
+
+            sleep 30
+          done
+
+          echo "Instance refresh did not finish in time"
+          exit 1
 
       - name: Show deployed image tags
         run: |

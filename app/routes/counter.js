@@ -6,6 +6,7 @@ const redisSvc = require("../services/redis");
 
 const router = express.Router();
 
+// 最近 30 秒內有出現過的訪客，會被算成 Active Now。
 const ACTIVE_WINDOW_SECONDS = 30;
 const DAILY_STATS_TTL_SECONDS = 60 * 60 * 24 * 30;
 
@@ -24,7 +25,8 @@ function getRedisStatus() {
 
 function isResetAuthorized(req) {
   const expected = process.env.RESET_TOKEN;
-  if (!expected) return true; // 若沒設 token，維持相容行為
+  if (!expected) return false;
+
   const provided = req.headers["x-reset-token"];
   return typeof provided === "string" && provided === expected;
 }
@@ -50,7 +52,13 @@ function getTodayKey() {
 }
 
 function getVisitorId(req) {
-  if (req.body && req.body.visitorId) {
+  // 瀏覽器會把 visitorId 存在 localStorage。
+  // 後端還是要檢查長度，避免奇怪的請求塞很大的資料進 Redis。
+  if (
+    req.body &&
+    typeof req.body.visitorId === "string" &&
+    req.body.visitorId.length <= 128
+  ) {
     return req.body.visitorId;
   }
 
@@ -214,6 +222,12 @@ router.post("/increment", async (req, res) => {
 
 router.post("/reset", async (req, res) => {
   try {
+    if (!process.env.RESET_TOKEN) {
+      return res.status(503).json({
+        error: "reset token is not configured",
+      });
+    }
+
     if (!isResetAuthorized(req)) {
       return res.status(403).json({ error: "forbidden" });
     }

@@ -12,8 +12,15 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const APP_VERSION = process.env.APP_VERSION || "v6";
 const INSTANCE_ID = os.hostname();
+let server;
 
-app.use(express.json());
+// 這個服務跑在 AWS ALB 後面，所以要信任 ALB 轉來的 proxy headers。
+// 例如 X-Forwarded-For 可以幫我們看見原始使用者 IP。
+app.set("trust proxy", true);
+app.disable("x-powered-by");
+
+// 這個 app 只需要很小的 JSON，限制大小可以降低被亂塞大 payload 的風險。
+app.use(express.json({ limit: "16kb" }));
 
 function writeLog(payload) {
   console.log(JSON.stringify({
@@ -78,7 +85,7 @@ app.use("/", healthRoutes);
 async function startServer() {
   await connectRedis();
 
-  app.listen(PORT, "0.0.0.0", () => {
+  server = app.listen(PORT, "0.0.0.0", () => {
     writeLog({
       level: "info",
       type: "app",
@@ -92,16 +99,31 @@ startServer();
 
 const { getRedisClient } = require("./services/redis");
 
-function shutdown(signal) {
-  console.log(`Received ${signal}, shutting down...`);
+async function shutdown(signal) {
+  writeLog({
+    level: "info",
+    type: "app",
+    event: "shutdown_started",
+    signal,
+  });
 
   const client = getRedisClient();
 
-  if (client) {
-    client.quit().catch(() => {});
-  }
+  try {
+    // ASG instance refresh 會送 SIGTERM。
+    // 先關 HTTP server，讓進行中的請求結束，再關 Redis。
+    if (server) {
+      await new Promise((resolve) => server.close(resolve));
+    }
 
-  process.exit(0);
+    if (client && client.isOpen) {
+      await client.quit();
+    }
+  } catch (err) {
+    console.error("Shutdown failed:", err.message);
+  } finally {
+    process.exit(0);
+  }
 }
 
 process.on("SIGTERM", shutdown);

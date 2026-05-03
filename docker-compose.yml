@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   app:
     image: ${IMAGE_URI:-131730003210.dkr.ecr.us-east-1.amazonaws.com/docker-demo:latest}
@@ -10,10 +8,15 @@ services:
     environment:
       PORT: "3000"
       APP_VERSION: "${APP_VERSION:-latest}"
-      REDIS_HOST: "${REDIS_HOST}"
+      # 優先使用 REDIS_URL。
+      # REDIS_HOST/REDIS_PORT 保留給 EC2 user data 分開寫入時使用。
+      REDIS_URL: "${REDIS_URL:-}"
+      REDIS_HOST: "${REDIS_HOST:-}"
       REDIS_PORT: "${REDIS_PORT:-6379}"
+      # /reset 需要這個 token。正式值請放 EC2 env/SSM/Secrets Manager，不要放 GitHub。
+      RESET_TOKEN: "${RESET_TOKEN:-}"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/ready"]
       interval: 30s
       timeout: 5s
       retries: 3
