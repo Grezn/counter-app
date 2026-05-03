@@ -57,11 +57,11 @@ retry() {
 
 install_packages() {
   if command -v dnf >/dev/null 2>&1; then
-    dnf update -y
-    dnf install -y docker awscli jq curl
+    # Amazon Linux 2023 通常已經有 curl-minimal。
+    # 再安裝完整 curl 會衝突，所以這裡不要裝 curl。
+    dnf install -y docker awscli jq
   else
-    yum update -y
-    yum install -y docker awscli jq curl
+    yum install -y docker awscli jq
   fi
 }
 
