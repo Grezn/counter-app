@@ -339,6 +339,14 @@
       grid-column: span 2;
     }
 
+    .incident-core-title {
+      grid-column: 1 / -1;
+      margin: 6px 0 0;
+      color: #e0f2fe;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
     .field label {
       color: #bfdbfe;
       font-size: 0.84rem;
@@ -365,20 +373,27 @@
       line-height: 1.5;
     }
 
-    .field-hint {
-      color: #94a3b8;
-      font-size: 0.8rem;
-      line-height: 1.35;
+    .incident-details {
+      grid-column: 1 / -1;
+      border: 1px solid rgba(147, 197, 253, 0.18);
+      border-radius: 12px;
+      background: rgba(2, 6, 23, 0.22);
+      padding: 10px 12px 12px;
     }
 
-    .form-section-title {
-      grid-column: 1 / -1;
-      margin: 8px 0 0;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      color: #e0f2fe;
-      font-size: 1rem;
+    .incident-details summary {
+      cursor: pointer;
+      color: #dbeafe;
+      font-size: 0.92rem;
       font-weight: 800;
+      list-style-position: inside;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
     }
 
     .choice-group {
@@ -528,7 +543,8 @@
       }
 
       .incident-grid,
-      .incident-workflow {
+      .incident-workflow,
+      .details-grid {
         grid-template-columns: 1fr;
       }
 
@@ -627,7 +643,7 @@
       <div class="incident-header">
         <div>
           <h2 class="incident-title">值班事件處理台</h2>
-          <p class="incident-subtitle">記錄目前事件狀態、處理檢查點與交班摘要。</p>
+          <p class="incident-subtitle">先留下接手工程師最需要的資訊；報修表單細節可展開補充。</p>
         </div>
         <div class="incident-actions">
           <button class="action-btn" onclick="setIncidentNow()">填入現在時間</button>
@@ -637,6 +653,8 @@
       </div>
 
       <div class="incident-grid">
+        <div class="incident-core-title">接手重點</div>
+
         <div class="field">
           <label for="incidentStartedAt">事件時間</label>
           <input id="incidentStartedAt" type="datetime-local" data-incident-field="startedAt" />
@@ -667,7 +685,17 @@
         </div>
 
         <div class="field">
-          <label for="incidentSource">告警來源</label>
+          <label for="incidentCustomer">客戶 / 單位</label>
+          <input id="incidentCustomer" type="text" data-incident-field="customer" placeholder="客戶或內部單位" />
+        </div>
+
+        <div class="field">
+          <label for="incidentSystem">系統 / 設備</label>
+          <input id="incidentSystem" type="text" data-incident-field="system" placeholder="服務、設備或主機名稱" />
+        </div>
+
+        <div class="field">
+          <label for="incidentSource">來源</label>
           <select id="incidentSource" data-incident-field="source">
             <option value="">未填</option>
             <option value="Email">Email</option>
@@ -679,144 +707,132 @@
           </select>
         </div>
 
-        <div class="field">
-          <label for="incidentCustomer">客戶 / 單位</label>
-          <input id="incidentCustomer" type="text" data-incident-field="customer" placeholder="例如：客戶名稱、內部單位" />
-        </div>
-
-        <div class="field">
-          <label for="incidentSystem">系統 / 設備</label>
-          <input id="incidentSystem" type="text" data-incident-field="system" placeholder="例如：主機、服務、設備名稱" />
-        </div>
-
         <div class="field full">
-          <label for="incidentTitle">事件主旨</label>
-          <input id="incidentTitle" type="text" data-incident-field="title" placeholder="例如：XX 服務連線異常 / 告警編號" />
-        </div>
-
-        <div class="form-section-title">報修表單資訊</div>
-
-        <div class="field">
-          <label for="incidentDealer">經銷商名稱</label>
-          <input id="incidentDealer" type="text" data-incident-field="dealer" placeholder="輸入經銷商名稱" />
+          <label for="incidentTitle">一句話主旨</label>
+          <input id="incidentTitle" type="text" data-incident-field="title" placeholder="例如：XX 客戶 VPN 連線失敗，需要二線接手確認" />
         </div>
 
         <div class="field full">
           <label for="incidentProblemDescription">問題描述</label>
-          <textarea id="incidentProblemDescription" data-incident-field="problemDescription" placeholder="客戶描述的問題、錯誤訊息、發生時間、已嘗試的處理方式"></textarea>
+          <textarea id="incidentProblemDescription" data-incident-field="problemDescription" placeholder="只寫接手需要知道的現象、錯誤訊息、發生時間。"></textarea>
         </div>
 
-        <div class="field">
-          <label for="incidentProductName">產品名稱</label>
-          <select id="incidentProductName" data-incident-field="productName">
-            <option value="">選取產品</option>
-            <option value="AWS">AWS</option>
-            <option value="Dell Server/Storage">Dell Server/Storage</option>
-            <option value="PureStorage">PureStorage</option>
-            <option value="Akamai">Akamai</option>
-            <option value="CyCraft / 奧義智慧">CyCraft / 奧義智慧</option>
-            <option value="其他">其他</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="incidentContractId">合約編號</label>
-          <span class="field-hint">無則填無</span>
-          <input id="incidentContractId" type="text" data-incident-field="contractId" />
-        </div>
-
-        <div class="field">
-          <label for="incidentModel">產品型號</label>
-          <span class="field-hint">無則填無</span>
-          <input id="incidentModel" type="text" data-incident-field="model" />
-        </div>
-
-        <div class="field">
-          <label for="incidentSerial">產品序號</label>
-          <span class="field-hint">無則填無</span>
-          <input id="incidentSerial" type="text" data-incident-field="serial" />
-        </div>
-
-        <div class="field">
-          <label for="incidentRepairTarget">報修對象</label>
-          <input id="incidentRepairTarget" type="text" data-incident-field="repairTarget" placeholder="例如：客戶 / 經銷商 / 內部單位" />
-        </div>
-
-        <div class="field">
-          <label for="incidentOwner">負責業務 / 工程師</label>
-          <input id="incidentOwner" type="text" data-incident-field="owner" placeholder="對接窗口" />
-        </div>
-
-        <div class="field">
-          <label for="incidentContactMethod">聯繫方式 / 稱呼</label>
-          <input id="incidentContactMethod" type="text" data-incident-field="contactMethod" />
-        </div>
-
-        <div class="field full">
-          <label>服務類型</label>
-          <div class="choice-group">
-            <label class="choice-item"><input type="radio" name="serviceType" value="一般諮詢" data-incident-radio="serviceType" />一般諮詢</label>
-            <label class="choice-item"><input type="radio" name="serviceType" value="產品報修" data-incident-radio="serviceType" />產品報修</label>
-            <label class="choice-item"><input type="radio" name="serviceType" value="協助客戶報修" data-incident-radio="serviceType" />協助客戶報修</label>
-            <label class="choice-item"><input type="radio" name="serviceType" value="AWS - 邀請組織" data-incident-radio="serviceType" />AWS - 邀請組織</label>
-            <label class="choice-item"><input type="radio" name="serviceType" value="其他" data-incident-radio="serviceType" />其他</label>
-          </div>
-          <input id="incidentServiceTypeOther" type="text" data-incident-field="serviceTypeOther" placeholder="服務類型為其他時填寫" />
-        </div>
-
-        <div class="field full">
-          <label>是否為客戶</label>
-          <div class="choice-group">
-            <label class="choice-item"><input type="radio" name="isCustomer" value="是" data-incident-radio="isCustomer" />是</label>
-            <label class="choice-item"><input type="radio" name="isCustomer" value="否" data-incident-radio="isCustomer" />否</label>
-          </div>
-        </div>
-
-        <div class="field full">
-          <label>後續處理方式</label>
-          <span class="field-hint">可複選，對應 Microsoft Forms 欄位 12。</span>
-          <div class="choice-group">
-            <label class="choice-item"><input type="checkbox" data-incident-followup="發Mail" />發Mail</label>
-            <label class="choice-item"><input type="checkbox" data-incident-followup="Webex告知" />Webex告知</label>
-            <label class="choice-item"><input type="checkbox" data-incident-followup="請相關工程師協助排修" />請相關工程師協助排修</label>
-            <label class="choice-item"><input type="checkbox" data-incident-followup="通知業務" />通知業務</label>
-            <label class="choice-item"><input type="checkbox" data-incident-followup="通報於公務群組" />通報於公務群組</label>
-            <label class="choice-item"><input type="checkbox" data-incident-followup="測試演練" />測試演練</label>
-            <label class="choice-item"><input type="checkbox" data-incident-followup="其他" />其他</label>
-          </div>
-          <input id="incidentFollowupOther" type="text" data-incident-field="followupOther" placeholder="後續處理方式為其他時填寫" />
-        </div>
-
-        <div class="field full">
-          <label for="incidentHandoverOwner">後續接手人員</label>
-          <span class="field-hint">工程師 / 業務 / 部門 / 無</span>
-          <textarea id="incidentHandoverOwner" data-incident-field="handoverOwner"></textarea>
-        </div>
-
-        <div class="field full">
-          <label for="incidentExtraInfo">其他補充</label>
-          <textarea id="incidentExtraInfo" data-incident-field="extraInfo"></textarea>
-        </div>
-
-        <div class="field full">
+        <div class="field span-2">
           <label for="incidentImpact">影響範圍</label>
-          <textarea id="incidentImpact" data-incident-field="impact" placeholder="目前觀察到的影響、受影響服務、是否影響客戶使用"></textarea>
+          <textarea id="incidentImpact" data-incident-field="impact" placeholder="誰受影響、是否影響服務、是否已有 workaround。"></textarea>
         </div>
 
-        <div class="field full">
-          <label for="incidentNotified">已通知對象</label>
-          <textarea id="incidentNotified" data-incident-field="notified" placeholder="已通知的人、時間、管道，例如：22:10 已電話通知值班工程師"></textarea>
+        <div class="field">
+          <label for="incidentHandoverOwner">接手人員</label>
+          <textarea id="incidentHandoverOwner" data-incident-field="handoverOwner" placeholder="工程師 / 業務 / 部門 / 無"></textarea>
         </div>
 
-        <div class="field full">
+        <div class="field span-2">
           <label for="incidentNextStep">下一步</label>
-          <textarea id="incidentNextStep" data-incident-field="nextStep" placeholder="下一個要追蹤的動作、等待誰回覆、預計何時再確認"></textarea>
+          <textarea id="incidentNextStep" data-incident-field="nextStep" placeholder="下一個動作、等待誰回覆、預計何時再確認。"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="incidentNotified">已通知</label>
+          <textarea id="incidentNotified" data-incident-field="notified" placeholder="人員、時間、管道。"></textarea>
         </div>
 
         <div class="field full">
           <label for="incidentNotes">處理紀錄</label>
-          <textarea id="incidentNotes" data-incident-field="notes" placeholder="依時間補處理紀錄，例如：22:15 確認告警；22:20 已轉二線"></textarea>
+          <textarea id="incidentNotes" data-incident-field="notes" placeholder="依時間補處理紀錄，例如：22:15 確認告警；22:20 已轉二線。"></textarea>
         </div>
+
+        <details class="incident-details">
+          <summary>報修表單補充資訊</summary>
+          <div class="details-grid">
+            <div class="field">
+              <label for="incidentProductName">產品名稱</label>
+              <select id="incidentProductName" data-incident-field="productName">
+                <option value="">選取產品</option>
+                <option value="AWS">AWS</option>
+                <option value="Dell Server/Storage">Dell Server/Storage</option>
+                <option value="PureStorage">PureStorage</option>
+                <option value="Akamai">Akamai</option>
+                <option value="CyCraft / 奧義智慧">CyCraft / 奧義智慧</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="incidentContractId">合約編號</label>
+              <input id="incidentContractId" type="text" data-incident-field="contractId" placeholder="無則填無" />
+            </div>
+
+            <div class="field">
+              <label for="incidentSerial">產品序號</label>
+              <input id="incidentSerial" type="text" data-incident-field="serial" placeholder="無則填無" />
+            </div>
+
+            <div class="field">
+              <label for="incidentModel">產品型號</label>
+              <input id="incidentModel" type="text" data-incident-field="model" placeholder="無則填無" />
+            </div>
+
+            <div class="field">
+              <label for="incidentDealer">經銷商名稱</label>
+              <input id="incidentDealer" type="text" data-incident-field="dealer" placeholder="輸入經銷商名稱" />
+            </div>
+
+            <div class="field">
+              <label for="incidentRepairTarget">報修對象</label>
+              <input id="incidentRepairTarget" type="text" data-incident-field="repairTarget" placeholder="客戶 / 經銷商 / 內部單位" />
+            </div>
+
+            <div class="field">
+              <label for="incidentOwner">負責業務 / 工程師</label>
+              <input id="incidentOwner" type="text" data-incident-field="owner" placeholder="對接窗口" />
+            </div>
+
+            <div class="field">
+              <label for="incidentContactMethod">聯繫方式 / 稱呼</label>
+              <input id="incidentContactMethod" type="text" data-incident-field="contactMethod" />
+            </div>
+
+            <div class="field">
+              <label>是否為客戶</label>
+              <div class="choice-group">
+                <label class="choice-item"><input type="radio" name="isCustomer" value="是" data-incident-radio="isCustomer" />是</label>
+                <label class="choice-item"><input type="radio" name="isCustomer" value="否" data-incident-radio="isCustomer" />否</label>
+              </div>
+            </div>
+
+            <div class="field full">
+              <label>服務類型</label>
+              <div class="choice-group">
+                <label class="choice-item"><input type="radio" name="serviceType" value="一般諮詢" data-incident-radio="serviceType" />一般諮詢</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="產品報修" data-incident-radio="serviceType" />產品報修</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="協助客戶報修" data-incident-radio="serviceType" />協助客戶報修</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="AWS - 邀請組織" data-incident-radio="serviceType" />AWS - 邀請組織</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="其他" data-incident-radio="serviceType" />其他</label>
+              </div>
+              <input id="incidentServiceTypeOther" type="text" data-incident-field="serviceTypeOther" placeholder="服務類型為其他時填寫" />
+            </div>
+
+            <div class="field full">
+              <label>後續處理方式</label>
+              <div class="choice-group">
+                <label class="choice-item"><input type="checkbox" data-incident-followup="發Mail" />發Mail</label>
+                <label class="choice-item"><input type="checkbox" data-incident-followup="Webex告知" />Webex告知</label>
+                <label class="choice-item"><input type="checkbox" data-incident-followup="請相關工程師協助排修" />請相關工程師協助排修</label>
+                <label class="choice-item"><input type="checkbox" data-incident-followup="通知業務" />通知業務</label>
+                <label class="choice-item"><input type="checkbox" data-incident-followup="通報於公務群組" />通報於公務群組</label>
+                <label class="choice-item"><input type="checkbox" data-incident-followup="測試演練" />測試演練</label>
+                <label class="choice-item"><input type="checkbox" data-incident-followup="其他" />其他</label>
+              </div>
+              <input id="incidentFollowupOther" type="text" data-incident-field="followupOther" placeholder="後續處理方式為其他時填寫" />
+            </div>
+
+            <div class="field full">
+              <label for="incidentExtraInfo">其他補充</label>
+              <textarea id="incidentExtraInfo" data-incident-field="extraInfo"></textarea>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div class="incident-workflow">
@@ -1281,6 +1297,12 @@
       const state = readIncidentStateFromPage();
       const fields = state.fields;
       const radios = state.radios;
+      const valueOrDash = (value) => {
+        const normalized = typeof value === "string" ? value.trim() : value;
+        return normalized || "-";
+      };
+      const hasValue = (value) => valueOrDash(value) !== "-";
+      const line = (label, value) => `${label}：${valueOrDash(value)}`;
       const serviceType = radios.serviceType === "其他" && fields.serviceTypeOther
         ? `其他：${fields.serviceTypeOther}`
         : (radios.serviceType || "-");
@@ -1294,51 +1316,51 @@
           return followup.dataset.incidentFollowup;
         });
       const followupText = followupLines.length ? followupLines.join("、") : "-";
-      const checkLines = getIncidentChecks().map((check) => {
-        const mark = check.checked ? "[x]" : "[ ]";
-        return `${mark} ${check.dataset.incidentCheck}`;
-      });
+      const doneChecks = getIncidentChecks()
+        .filter((check) => check.checked)
+        .map((check) => check.dataset.incidentCheck);
+      const reportLines = [
+        ["產品名稱", fields.productName],
+        ["合約編號", fields.contractId],
+        ["產品型號", fields.model],
+        ["產品序號", fields.serial],
+        ["經銷商名稱", fields.dealer],
+        ["報修對象", fields.repairTarget],
+        ["負責業務 / 工程師", fields.owner],
+        ["聯繫方式 / 稱呼", fields.contactMethod],
+        ["是否為客戶", radios.isCustomer],
+        ["後續處理方式", followupText],
+        ["其他補充", fields.extraInfo],
+      ]
+        .filter(([, value]) => hasValue(value))
+        .map(([label, value]) => line(label, value));
 
       return [
-        "【值班交班摘要】",
-        `事件時間：${formatDisplayDateTime(fields.startedAt)}`,
-        `嚴重度：${fields.severity || "-"}`,
-        `目前狀態：${fields.status || "-"}`,
-        `告警來源：${fields.source || "-"}`,
-        `客戶 / 單位：${fields.customer || "-"}`,
-        `系統 / 設備：${fields.system || "-"}`,
-        `事件主旨：${fields.title || "-"}`,
+        "【接手重點】",
+        `[${valueOrDash(fields.severity)} / ${valueOrDash(fields.status)}] ${valueOrDash(fields.title)}`,
+        line("事件時間", formatDisplayDateTime(fields.startedAt)),
+        line("客戶 / 單位", fields.customer),
+        line("系統 / 設備", fields.system),
+        line("來源", fields.source),
+        line("服務類型", serviceType),
         "",
-        "【報修表單資訊】",
-        `經銷商名稱：${fields.dealer || "-"}`,
-        `問題描述：${fields.problemDescription || "-"}`,
-        `產品名稱：${fields.productName || "-"}`,
-        `合約編號：${fields.contractId || "-"}`,
-        `產品型號：${fields.model || "-"}`,
-        `產品序號：${fields.serial || "-"}`,
-        `服務類型：${serviceType}`,
-        `報修對象：${fields.repairTarget || "-"}`,
-        `負責業務 / 工程師：${fields.owner || "-"}`,
-        `聯繫方式 / 稱呼：${fields.contactMethod || "-"}`,
-        `是否為客戶：${radios.isCustomer || "-"}`,
-        `後續處理方式：${followupText}`,
-        `後續接手人員：${fields.handoverOwner || "-"}`,
-        `其他補充：${fields.extraInfo || "-"}`,
+        "【問題 / 影響】",
+        line("問題描述", fields.problemDescription),
+        line("影響範圍", fields.impact),
         "",
-        "【影響範圍】",
-        fields.impact || "-",
-        "",
-        "【已通知對象】",
-        fields.notified || "-",
-        "",
-        "【下一步】",
-        fields.nextStep || "-",
+        "【接手動作】",
+        line("下一步", fields.nextStep),
+        line("接手人員", fields.handoverOwner),
+        line("已通知", fields.notified),
         "",
         "【處理紀錄】",
-        fields.notes || "-",
+        valueOrDash(fields.notes),
         "",
-        "【Checklist】",
-        checkLines.join("\n"),
+        "【已完成檢查】",
+        doneChecks.length ? doneChecks.join("、") : "-",
+        "",
+        "【報修補充】",
+        reportLines.length ? reportLines.join("\n") : "-",
       ].join("\n");
     }
 
