@@ -144,7 +144,7 @@ router.post("/track-view", async (req, res) => {
     });
 
     res.json({
-      // 回給前端的資料。public/index.html 會用這些值更新畫面。
+      // 回給前端的資料。public/app.js 會用這些值更新畫面。
       today,
       timezone: "Asia/Taipei",
       totalPageViews,

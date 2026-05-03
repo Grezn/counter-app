@@ -38,9 +38,15 @@ routes/counter.js
   首頁、訪客統計、計數器 +1、reset 都在這裡。
 
 public/index.html
-  前端畫面和 JavaScript。
+  前端 HTML 結構，只放畫面內容。
+
+public/styles.css
+  前端樣式，控制排版、顏色、表單、按鈕和 RWD。
+
+public/app.js
+  前端互動邏輯。
   按鈕點擊後會用 fetch 呼叫後端 API。
-  值班事件處理台也在這裡，資料存在瀏覽器 localStorage。
+  值班事件處理台的 localStorage 暫存和交班摘要產生也在這裡。
 
 Dockerfile
   把 Node.js app 打包成 Docker image。
@@ -211,7 +217,7 @@ Redis 不能用時，/ready 會回 500。
 
 建議照這個順序讀：
 
-1. `public/index.html` 最下面的 `<script>`：先看前端按鈕會呼叫哪些 API。
+1. `public/app.js`：先看前端按鈕會呼叫哪些 API。
 2. `routes/counter.js`：看 API 收到 request 後怎麼操作 Redis。
 3. `services/redis.js`：看 Redis URL 怎麼組出來。
 4. `server.js`：看 Express app 怎麼啟動和掛 route。
