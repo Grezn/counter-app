@@ -439,6 +439,10 @@ function getFilteredRunbooks() {
       ...(runbook.escalateWhen || []),
       ...(runbook.contacts || []),
       ...(runbook.mailRecipients || []),
+      ...((runbook.extraSections || []).flatMap((section) => [
+        section.title,
+        ...(section.items || []),
+      ])),
     ].join(" ").toLowerCase();
 
     return searchableText.includes(keyword);
@@ -490,6 +494,14 @@ function appendRunbookList(parent, title, items) {
   parent.appendChild(section);
 }
 
+function appendRunbookExtraSections(parent, sections) {
+  // 不同產品的 SOP 會有自己的特殊段落。
+  // extraSections 讓資料可以自由新增「案件追蹤」「Case 範本」「Q&A」等內容。
+  (sections || []).forEach((section) => {
+    appendRunbookList(parent, section.title, section.items);
+  });
+}
+
 function fillIncidentNextStepFromRunbook(runbook) {
   // 讓 SOP 不只可以看，也可以快速帶進事件表單的「下一步」。
   const nextStep = document.getElementById("incidentNextStep");
@@ -532,6 +544,7 @@ function createRunbookCard(runbook) {
   appendRunbookList(body, "升級條件", runbook.escalateWhen);
   appendRunbookList(body, "聯絡資訊", runbook.contacts);
   appendRunbookList(body, "信件收件人", runbook.mailRecipients);
+  appendRunbookExtraSections(body, runbook.extraSections);
 
   const actions = document.createElement("div");
   actions.className = "runbook-actions";

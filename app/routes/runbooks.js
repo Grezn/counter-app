@@ -28,6 +28,10 @@ function hasKeyword(runbook, keyword) {
     ...(runbook.escalateWhen || []),
     ...(runbook.contacts || []),
     ...(runbook.mailRecipients || []),
+    ...((runbook.extraSections || []).flatMap((section) => [
+      section.title,
+      ...(section.items || []),
+    ])),
   ].join(" ").toLowerCase();
 
   return searchableText.includes(keyword);

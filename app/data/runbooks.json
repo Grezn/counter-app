@@ -3,22 +3,37 @@
   "note": "這裡會透過 /api/runbooks 顯示到前端。請只放允許值班人員在此系統查看的 SOP 資訊；更詳細或敏感的正式文件仍建議放在 SharePoint / KB / ITOP。",
   "categories": [
     {
-      "id": "general-duty",
-      "name": "一般值班",
-      "description": "非上班時間收到客戶報修信件時的判斷、電話通知與紀錄方式。"
+      "id": "dell-server-storage",
+      "name": "Dell Server/Storage",
+      "description": "Dell Server/Storage 非上班時間收到客戶報修信件時的判斷、電話通知與紀錄方式。"
     },
     {
       "id": "purestorage",
       "name": "PureStorage",
       "description": "PureStorage ASP / AWS MSP 值班合作與信件分類規則。"
+    },
+    {
+      "id": "akamai",
+      "name": "Akamai",
+      "description": "Akamai CDN / AAP / Linode / EAA 進線、開 Case、追蹤與升級流程。"
+    },
+    {
+      "id": "cycraft",
+      "name": "奧義智慧",
+      "description": "CyCraft / Xensor 告警通報、隔離、Release、工單狀態與結案規則。"
+    },
+    {
+      "id": "minio",
+      "name": "MinIO",
+      "description": "MinIO Subnet Issue / Panic Alert 建立與 PM、SE 通知流程。"
     }
   ],
   "runbooks": [
     {
-      "id": "general-duty-mail-call",
-      "category": "general-duty",
-      "title": "一般產品報修值班 SOP",
-      "summary": "非上班時間收到需回覆的客戶報修信件時，撥打值班電話、轉寄信件並完成通話紀錄。",
+      "id": "dell-server-storage-mail-call",
+      "category": "dell-server-storage",
+      "title": "Dell Server/Storage 值班 SOP",
+      "summary": "Dell Server/Storage 非上班時間收到需回覆的客戶報修信件時，撥打值班電話、轉寄信件並完成通話紀錄。",
       "severity": "依信件內容判斷",
       "dutyRules": [
         "非上班時間 18:00 至次日 09:00、國定假日、假日 7 x 24 都要回報。",
@@ -137,6 +152,397 @@
         {
           "label": "信件分類規則",
           "href": "https://dtimis.sharepoint.com/:p:/s/P400-P400/ETJdIxpw25NOhh-NQDuMnc0BCJmYUARuoV_Naspof7MkUA?e=Vf1rf1"
+        }
+      ]
+    },
+    {
+      "id": "akamai-duty-case-flow",
+      "category": "akamai",
+      "title": "Akamai 進線與開 Case SOP",
+      "summary": "Akamai CDN / AAP / Linode / EAA 進線後，判斷是否要排查或開立 Case，並依 5x8 / 非 5x8 時段升級。",
+      "severity": "Case 固定 3-Low Impact，特殊事件依 SOP 判斷",
+      "dutyRules": [
+        "MSP 有流程上的問題找 Bowie。",
+        "若有明確開單需求，直接進入開立 Case 步驟，完成後回報值班群組。",
+        "若沒有明確開單需求，先判斷是否為 CDN / AAP 可排查問題；無法排查再開 Case。",
+        "5x8 時段回報二線並簡述問題；非 5x8 時段提供客戶資訊範本、開立 Case 並回報值班群組。",
+        "未收到二線工程師明確回覆，不可視為處理完成。"
+      ],
+      "replyRules": [
+        "Line 群組：5x8 時段 15 分鐘無回應，@主要 SE、@次要 SE；30 分鐘仍無回覆，依主要 SE、次要 SE、Kevin、Alvin 升級。",
+        "Line 群組：非 5x8 時段 15 分鐘無回應，先與客戶確認是否需立即介入，並使用 Webex 聯繫 SE。",
+        "信件進線：直接進入開立 Case 步驟。",
+        "電話進線：詢問客戶基本聯絡資訊後，寄信請客戶填寫資訊範本，再進入開立 Case 步驟。"
+      ],
+      "triggers": [
+        "Akamai 客戶透過 Line、信件或電話進線。",
+        "客戶要求開立 Case 或問題諮詢。",
+        "客戶詢問 CDN / AAP / Linode / EAA 相關問題。",
+        "特殊客戶光寶僅協助向原廠開立 Case。"
+      ],
+      "firstChecks": [
+        "確認是否有明確開單需求。",
+        "確認目前是否為 5x8 時段。",
+        "確認案件類型：開立 Case 或問題諮詢。",
+        "收集 Account Name、聯絡窗口姓名、Mail、產品類別、案件標題、問題描述與附件。",
+        "若資訊未齊全，不可開立 Case。不得以客戶口述直接開單。"
+      ],
+      "steps": [
+        "若需開 Case，Category 選 Technical Support Issue。",
+        "Product 不知道則選 Other；Problem 不知道則選 Other。",
+        "Subject 使用「客戶 Account Name - 問題標題」。",
+        "Description 填入客戶問題，Severity 固定 3-Low Impact。",
+        "Upload File 上傳客戶附件，若有。",
+        "Name 使用 Akamai-support，Phone Number 使用 +886800008669，Email 使用 akamai-support@metaage.com.tw。",
+        "完成後回報 Akamai 值班群組與客戶。"
+      ],
+      "escalateWhen": [
+        "5x8 時段 30 分鐘仍無 SE 回覆。",
+        "非 5x8 時段客戶要求立即介入。",
+        "無法完成 CDN / AAP 排查。",
+        "Prolexic 流量清洗需求或疑似攻擊事件。"
+      ],
+      "contacts": [
+        "開 Case Name：Akamai-support",
+        "開 Case Phone Number：+886800008669",
+        "開 Case Email：akamai-support@metaage.com.tw",
+        "Prolexic GCIC 聯絡人：Aaron Wu，+886953640182，aaron.wu@staff.1111.com.tw",
+        "Prolexic 開 Case 用 Email：gcic@metaage.com.tw",
+        "Prolexic 原廠收信 Mail：managesecurity@akamai.com",
+        "緊急電話開 Case：美國 1-866-800-0366，新加坡 +65-6576-9350"
+      ],
+      "mailRecipients": [
+        "蓋亞：support@gaia.net; alan.liu@metaguru.com.tw; weishiau@metaage.com.tw; bowiehsieh@metaage.com.tw; andychan@metaage.com.tw; gary.chen@metaage.com.tw",
+        "歐米：shmilyliu@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw; andychan@metaage.com.tw; weishiau@metaage.com.tw",
+        "智雲：twop@myserver.asia; webber@myserver.asia; nimoliang@metaage.com.tw; bowiehsieh@metaage.com.tw; jeffchu@metaage.com.tw; joe_chen@metaage.com.tw; gary.chen@metaage.com.tw",
+        "摩速：gary.chen@mlytics.com; francis.lien@mlytics.com; wesley.tsai@mlytics.com; simon.shaw@mlytics.com; victor.chen@mlytics.com; willy.hong@mlytics.com; nimoliang@metaage.com.tw; gary.chen@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw",
+        "AJ：akamai-support@ajinfotech.com.tw; senachen@metaage.com.tw; andychan@metaage.com.tw; gary.chen@metaage.com.tw; bowiehsieh@metaage.com.tw"
+      ],
+      "extraSections": [
+        {
+          "title": "客戶資訊範本",
+          "items": [
+            "中文：您好，請幫我填寫以下資料以利於後續處理：案件類型、Account Name、聯絡窗口姓名、聯絡窗口 Mail、產品類別、案件標題、問題描述。",
+            "英文：Hello, please help provide the following information to facilitate further processing: Case Type, Account Name, Contact Person Name, Contact Person Email, Product Category, Case Title, Issue Description.",
+            "若客戶已有給部分資料，請先行填入。"
+          ]
+        },
+        {
+          "title": "可開 Case 類型",
+          "items": [
+            "Report、Billing 顯示異常相關。",
+            "憑證部署、Cache、站台無法訪問、顯示異常、訪問緩慢。",
+            "原先使用正常但突然故障之報修。",
+            "Access log 調閱、攻擊事件判斷。",
+            "正常使用中的設定要進行設定調整之確認。",
+            "不可開 Case：新配置且尚未使用中的設定除錯相關。"
+          ]
+        },
+        {
+          "title": "內部回報範本",
+          "items": [
+            "原廠 CaseID、案件類型、Account Name、聯絡窗口姓名、聯絡窗口 Mail、產品類別、案件標題、問題描述、MSP 排查內容描述。",
+            "Line 群組提問：@負責SE 您好，[Line群名稱] [客戶名稱] 有提出問題，問題內容：",
+            "轉交二線回覆：[客戶Account] 的案件已轉交二線工程師 [XXX] 接手處理，後續該案件轉由 [XXX] 負責。"
+          ]
+        },
+        {
+          "title": "Prolexic 流量清洗",
+          "items": [
+            "必須再次與客戶確認要開啟 Prolexic 流量清洗，才可開立 Case。",
+            "目前僅接受 GCIC 清洗流量需求。",
+            "信件主旨需帶客戶名稱，例如 GCIC Please Cleaning Flow。",
+            "信件內容只能使用英文。",
+            "原廠 SOCC 團隊會身份驗證，需提供客戶名稱與開 Case Email。",
+            "開立完成後，複製 Akamai 回信內 Case 編號，再回覆 Akamai 清洗與監控 24 小時。"
+          ]
+        },
+        {
+          "title": "案件追蹤",
+          "items": [
+            "5x8 上班時段使用 Webex 群組追蹤。",
+            "下班、休假日時段使用 Support Chat 追蹤。",
+            "Webex 詢問範本：Hi Team，請協助追蹤確認一下 Case [CaseID] 目前的案件處理進度，謝謝。",
+            "Support Chat：Account 選 Metaage Corporation - Tier 1 Reseller，Support > Support Chat > Technical Support > Launch Chat。",
+            "Short Description：This case [CaseID] has not received any response so far。",
+            "Products 選 Other；交談需使用英文。"
+          ]
+        },
+        {
+          "title": "ACC Portal 新增帳號",
+          "items": [
+            "請客戶提供 Account Name、Email、First Name、Last Name、Contract、Group、Role。",
+            "切換到客戶 Account，進入 Identity & Access > Settings。",
+            "Allowed email domains 新增客戶 email domain，若已存在則保持預設。",
+            "進入 User and API Clients > Create user，填入 Email、姓名、Time zone Asia/Taipei、Country Taiwan。",
+            "根據客戶給的 Account + Contract 選 Role，確認後 Submit。"
+          ]
+        },
+        {
+          "title": "EAA 報修流程",
+          "items": [
+            "客戶以 Mail 或 Line 進線時，確認資訊是否符合範本且包含截圖或 Agent log。",
+            "資訊不足時提供 SOP 或資訊範本請客戶搜集，完成後再開 Case。",
+            "開立 Akamai Case 時，將客戶聯絡人 Email 直接 Loop CC。",
+            "若客戶來信為英文，提供英文範本。",
+            "EAA 可開單：Web/Agent 無法連線、連線緩慢、Agent 安裝或更新後無法連線、身分驗證問題、Mobile 使用問題、Report 無法查到連線紀錄。",
+            "EAA 不可開單：新配置且尚未使用中的設定除錯相關。"
+          ]
+        },
+        {
+          "title": "Linode 問題",
+          "items": [
+            "既有使用中帳戶移轉至 Metaage：提供 Linode 帳戶移轉說明。",
+            "如何從 Linode 平台開立 Ticket：提供 Linode 開立 Ticket SOP。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "label": "原 SOP",
+          "href": "https://dtimis.sharepoint.com/sites/ST640-Akamai/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FST640%2DAkamai%2FShared%20Documents%2FST610%2DAkamai%2FSOP%20%2D%20MSP%20%E7%B6%AD%E9%81%8B%2FAkamai%20CDN%5FAAP%5FLinode%20%20%E7%B6%AD%E9%81%8BSOP%5F20251216&p=true&ga=1"
+        },
+        {
+          "label": "案件追蹤 SOP",
+          "href": "https://dtimis.sharepoint.com/:b:/s/ST640-Akamai/EYnaweTc-CREpiF1qv_aIqUBPBNHRBs-IvC9PEX3hg2aAA?e=bCnrTe"
+        },
+        {
+          "label": "ACC Portal 新增帳號 SOP",
+          "href": "https://dtimis.sharepoint.com/sites/ST640-Akamai/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FST640%2DAkamai%2FShared%20Documents%2FST610%2DAkamai%2FSOP%20%2D%20MSP%20%E7%B6%AD%E9%81%8B%2FAkamai%20ACC%20Portal%E6%96%B0%E5%A2%9E%E5%B8%B3%E8%99%9FSOP%2Epdf&parent=%2Fsites%2FST640%2DAkamai%2FShared%20Documents%2FST610%2DAkamai%2FSOP%20%2D%20MSP%20%E7%B6%AD%E9%81%8B&p=true&ga=1"
+        },
+        {
+          "label": "EAA 報修流程",
+          "href": "https://dtimis.sharepoint.com/sites/ST640-Akamai/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FST640%2DAkamai%2FShared%20Documents%2FST610%2DAkamai%2FSOP%20%2D%20MSP%20%E7%B6%AD%E9%81%8B%2FAkamai%20EAA%20%E5%A0%B1%E4%BF%AESOP%5FFor%20MSP%5F20260112%2FAkamai%20EAA%20%E5%A0%B1%E4%BF%AESOP%5FFor%20MSP%5F20260112%2Epdf&parent=%2Fsites%2FST640%2DAkamai%2FShared%20Documents%2FST610%2DAkamai%2FSOP%20%2D%20MSP%20%E7%B6%AD%E9%81%8B%2FAkamai%20EAA%20%E5%A0%B1%E4%BF%AESOP%5FFor%20MSP%5F20260112&p=true&ga=1"
+        },
+        {
+          "label": "Akamai SE 分工表 & 合約表",
+          "href": "https://dtimis.sharepoint.com/:x:/s/Akamai/ETHz6f4DQcVFlFGsN1DVUigBQY7vez2y6nQ029TmudRiRg?e=0h5LwZ"
+        },
+        {
+          "label": "Akamai 流程問題意見回覆表",
+          "href": "https://dtimis.sharepoint.com/:x:/s/ST640-Akamai/EdkCvWGpjyVLgajFyy2KFFQB2Sn1ZeQzKZG5REGFb4x9AA?e=ZNyPqy"
+        }
+      ]
+    },
+    {
+      "id": "cycraft-xensor-alert",
+      "category": "cycraft",
+      "title": "奧義智慧 Xensor 告警處理 SOP",
+      "summary": "收到 cycraft-support 告警信後，於 Xcockpit / Xensor 查詢 AlertID，依 investigated / inprogress 狀態通報客戶並處理隔離或結案。",
+      "severity": "資安告警，依客戶授權處置",
+      "dutyRules": [
+        "收到 cycraft-support@metaage.com.tw 信件後開始處理。",
+        "通報以收到告警信件為主；Xcockpit 超過 15 分鐘未顯示，直接通報並回報二線群組 Metaage奧義-維運團隊。",
+        "所有處置行為需明確標示經客戶授權。",
+        "Isolate / Release / Quarantine 用詞需一致。",
+        "每封信件皆需明確提到後續確認時間點，例如 3 天。"
+      ],
+      "replyRules": [
+        "inprogress：等待轉換成 investigated 後通報客戶。",
+        "investigated：通報客戶，以電話通報為主，Email 留底。",
+        "客戶同意隔離：將工單狀態改為 Confirmed 並進行 isolate。",
+        "客戶不同意隔離：暫緩隔離端點，在 Xcockpit 留筆記並告知風險。"
+      ],
+      "triggers": [
+        "收到 cycraft-support@metaage.com.tw 告警信。",
+        "Xensor / Xcockpit MDR 平台出現高風險資安事件。",
+        "客戶需確認 isolate、release、close 或 quarantine。"
+      ],
+      "firstChecks": [
+        "確認客戶 Account 與信件內容的端點名稱。",
+        "複製 AlertID 至 Xcockpit Incidents 的 Alert ID 搜尋。",
+        "點擊工單進入後判斷狀態。",
+        "點擊 Change State 旁的下拉選單，Rename the Incident 加上編號。",
+        "向客戶確認是否要進行 isolate 動作。"
+      ],
+      "steps": [
+        "登入 Xcockpit，進入 Incidents，以 Alert ID 搜尋工單。",
+        "若狀態為 investigated，先電話通報客戶並以 Email 留底。",
+        "確認客戶是否授權 isolate。",
+        "若授權，將工單狀態修改為 Confirmed，並執行 isolate Endpoint。",
+        "若不授權，暫緩隔離，留下 Note 並告知風險。",
+        "三天後再與客戶確認是否 release 端點或 close 案件。"
+      ],
+      "escalateWhen": [
+        "Xcockpit 超過 15 分鐘未顯示告警。",
+        "客戶未明確授權但風險仍存在。",
+        "端點仍處於 Isolate 狀態或需後續 MDR 追蹤。",
+        "需要 Delete File、Terminate Process 或 Restore Quarantined File 等 Remediation 指令。"
+      ],
+      "contacts": [
+        "To：客戶主要聯絡人。",
+        "Cc：客戶指定窗口、邁達特 MSSP 團隊、邁達特工程師、業務。",
+        "固定 CC：cycraft-support@metaage.com.tw; silviachu@metaage.com.tw; yipingyang@metaage.com.tw",
+        "大同主聯絡人 ANDY TANG：0935930567，andy.tang@etatung.com；次聯絡人 JOE.TSENG：0918318839，Joe.Tseng@etatung.com",
+        "紘康主聯絡人 張凱程 Mike：02-28804288 #5106，mis@sis.com；次聯絡人 陳惠茹 Joy：02-28804288 #5100，mis@sis.com",
+        "京站實業 2025/7/1 至 2026/6/14 MSSP 改為 5x8：何誼信 0939868715，andrewho@qsquare.com.tw；備份林先生 02-2182-8888 #9232",
+        "聲寶主聯絡人 張欣豪：0953629091，paulchang@sampo.com.tw；次聯絡人 張哲晟：0922794019，cc_chang@sampo.com.tw",
+        "矽統主聯絡人 張育霖：03-5166000 #1150/84242，0926-586400，yulin_chang@sis.com；次聯絡人 楊明恩：03-5166000 #1152/8227，0972-241313，man@sis.com",
+        "瑞盟行銷主聯絡人 朱俊翰 Hank：0903-569-959，hankchu@bramen.com.tw；次聯絡人 張宛琪 Skylar：0927-028-001，skylar@bramen.com.tw",
+        "佳世達主聯絡人 林亨緯：0910-395-493，ivan.hw.lin@qisda.com",
+        "薩摩亞商新茂環球有限公司：Arvin 0922-645-897 arvin.kuan@oppo-aed.tw；Leo 0912-282-166 leo.hsu@oppo-aed.tw；Mark 0916-911-230 mark.yeh@oppo-aed.tw",
+        "怡進工業 POC：Chuck 0939-875-158，chuck@transpak.com.tw；Kelly 0933-160-540。Chuck 有開勿擾，請務必打三通以上打到通。"
+      ],
+      "mailRecipients": [],
+      "extraSections": [
+        {
+          "title": "信件主旨與主架構",
+          "items": [
+            "主旨：XENSOR - 告警端點 [端點名稱] [公司名稱] [高風險/可疑活動行為]事件。",
+            "內容需包含案件名稱、案件狀態 confirmed / closed、告警端點、處置說明、後續確認事項。",
+            "需明確表示邁達特 MSSP 團隊經客戶授權後，於奧義智慧 MDR 平台執行處置。"
+          ]
+        },
+        {
+          "title": "處置段落範本",
+          "items": [
+            "已隔離、持續追蹤：取得授權後在 Xensor 平台執行網路隔離 Isolate，案件狀態 confirmed。",
+            "未隔離、採取 Quarantine：客戶授權仍在內部調查，暫緩 Isolate，透過 MPM Quarantine 偵測與阻擋可疑行為。",
+            "已隔離、暫不 Release：客戶調查及授權後，目前暫緩 Release 或 Close。",
+            "已 Release 並關閉案件：完成 Release，並正式關閉本次告警案件，案件狀態 closed。",
+            "未隔離、直接關閉：客戶評估暫無實際風險，未 Isolate 並關閉案件。"
+          ]
+        },
+        {
+          "title": "Isolate 端點步驟",
+          "items": [
+            "登入 Xensor，點選 EndPoint。",
+            "依告警信件群組點擊，避免全主機搜尋太久。",
+            "搜尋端點名稱並進入端點，切到 REMEDIATION。",
+            "Create New Command，Description 填 isolate，Expire 選 in 1 hours，Action 選 isolate Endpoint。",
+            "Send and Execute，確認 Status 為 Closed；Execute Status 顯示 OK 代表隔離成功。"
+          ]
+        },
+        {
+          "title": "Release 端點步驟",
+          "items": [
+            "登入 Xensor，進入 EndPoint 搜尋端點並確認狀態為 isolated。",
+            "REMEDIATION > Create New Command。",
+            "Description 填 release endpoint，Expire 選 in 1 hours，Action 選 Release Endpoint。",
+            "Send and Execute，確認 Status 為 Closed；Execute Status 顯示 OK 代表成功。"
+          ]
+        },
+        {
+          "title": "工單狀態與命名",
+          "items": [
+            "Change State 可將工單狀態改為 Confirmed 或 Closed。",
+            "Reason 可填：已通報，尚未 isolate 端點；已通報，已 isolate 端點；已追蹤，已 isolate 端點。",
+            "Rename the Incident 格式：YYYY-MMDD-流水編號-事件類型，例如 2025-0510-001-Malware。",
+            "Note 需記錄客戶授權內容、客戶處置與原因、稽核依據、結案原因。"
+          ]
+        },
+        {
+          "title": "案件狀態判斷",
+          "items": [
+            "Confirmed：端點仍處於 Isolate、尚需與客戶後續確認、尚未決定 Release 或 Close。",
+            "Closed：風險已排除或確認無實際威脅、不再需要 MDR 追蹤、客戶明確同意結案，三項同時成立才可 Close。"
+          ]
+        },
+        {
+          "title": "Remediation 指令",
+          "items": [
+            "Delete File：端點存在可疑或不符規範檔案，可用 Path 或 MD5。",
+            "Terminate Process：可疑檔案正在執行導致 Delete File 無法成功時使用。",
+            "Restore Quarantined File：客戶確認檔案沒問題，需要解除 Agent 隔離檔案。",
+            "解除隔離前務必提醒客戶，該檔案會被加入高階白名單，需由原廠協助才能解除。"
+          ]
+        },
+        {
+          "title": "Q&A",
+          "items": [
+            "MPM 模組 Quarantine：奧義內建防禦功能，quarantine 會主動查殺檔案並告警，detect 只告警不查殺。",
+            "結案通報可用 Line 客戶群組、電話或信件，但必須保留 Email 作為文字證明。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "label": "原 SOP",
+          "href": "https://dtimis.sharepoint.com/:p:/s/P400-P400/IQCz7AR2A6PqTYX2wNdSZLIRATkUsgzfgCtIQ-1FxeSZO3I?e=Sra3CX"
+        },
+        {
+          "label": "KB SOP",
+          "href": "https://kb.aws-metaage.com/%E5%A5%A7%E7%BE%A9%E6%99%BA%E6%85%A7-sop/"
+        },
+        {
+          "label": "流程圖(大)",
+          "href": "https://dtimis.sharepoint.com/sites/P400-P400/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2F%E5%A5%A7%E7%BE%A9%E6%99%BA%E6%85%A7%E7%94%A2%E5%93%81%E4%BB%8B%E7%B4%B9%26SOP%2FSOP%20%E6%B5%81%E7%A8%8B%E5%9C%96%20%28%E5%A4%A7%29%2Epng&parent=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2F%E5%A5%A7%E7%BE%A9%E6%99%BA%E6%85%A7%E7%94%A2%E5%93%81%E4%BB%8B%E7%B4%B9%26SOP&p=true&ga=1"
+        }
+      ]
+    },
+    {
+      "id": "minio-subnet-issue",
+      "category": "minio",
+      "title": "MinIO Subnet Issue / Panic SOP",
+      "summary": "在 iTop 收到 MinIO 客戶 Case 後，翻譯成英文並於 MinIO Subnet 建立 Issue；緊急狀況才建立 Panic Alert。",
+      "severity": "MinIO SLA 5x8；MinIO Support 7x24 皆會回應",
+      "dutyRules": [
+        "目前客戶：林口長庚、MOMO、新光人壽、華泰電子。",
+        "MinIO SLA 為 5x8。",
+        "MinIO Support 為 7x24 皆會回應。",
+        "5x8 以外時間可先轉至 MinIO，待 5x8 時間再回應到 iTop。"
+      ],
+      "replyRules": [
+        "一般情況使用 Issues 建立 New Issue。",
+        "緊急情況才使用 Panic；非緊急情況請勿使用。",
+        "建立完畢後需發信告知 PM 及技術單位。"
+      ],
+      "triggers": [
+        "在 iTop 看見客戶開立 Case，或收到信件通知。",
+        "客戶說明 MinIO 問題需轉 MinIO Support。",
+        "客戶明確表示是緊急狀況。"
+      ],
+      "firstChecks": [
+        "確認客戶是否為目前 MinIO 客戶。",
+        "確認是否為緊急情況。",
+        "將客戶問題內容複製並翻譯成英文。",
+        "確認是否有附件或 Cluster 需要一併提供。"
+      ],
+      "steps": [
+        "一般情況：登入 MinIO Subnet。",
+        "點選左側 Issues，在上方搜尋欄輸入 Issue 名稱。",
+        "點選 New Issue。注意：送出後就會建立且無法刪除。",
+        "貼上翻譯好的英文問題內容，右側可上傳檔案及連結客戶 Cluster。",
+        "建立完畢後發信告知 PM 及技術單位。"
+      ],
+      "escalateWhen": [
+        "客戶明確說明是緊急狀況。",
+        "需建立 Panic Alert。",
+        "5x8 外已先轉 MinIO，待上班時段需回覆 iTop。"
+      ],
+      "contacts": [
+        "PM Team：williamtzeng@metaage.com.tw; ericaliu@metaage.com.tw; melodylin@metaage.com.tw; harrywang@metaage.com.tw",
+        "SE Team：seanlee@metaage.com.tw; henryhuang@metaage.com.tw"
+      ],
+      "mailRecipients": [
+        "PM Team：williamtzeng@metaage.com.tw; ericaliu@metaage.com.tw; melodylin@metaage.com.tw; harrywang@metaage.com.tw",
+        "SE Team：seanlee@metaage.com.tw; henryhuang@metaage.com.tw"
+      ],
+      "extraSections": [
+        {
+          "title": "緊急情況 Panic Alert",
+          "items": [
+            "非緊急情況請勿使用 Panic。",
+            "在 iTop 看見客戶開立 Case 且客戶說明是緊急狀況。",
+            "將內容複製翻譯成英文。",
+            "登入 MinIO Subnet，點選左側 Panic。",
+            "點擊 Create Panic Alert，貼上翻譯好的英文問題內容。",
+            "建立完畢後發信告知 PM 及技術單位。"
+          ]
+        }
+      ],
+      "links": [
+        {
+          "label": "原 SOP",
+          "href": "https://dtimis.sharepoint.com/sites/P400-P400/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2FMinio%5FSOP%2FMinIO%20Subnet%20%E6%93%8D%E4%BD%9C%E6%89%8B%E5%86%8A%5F251202%2Epdf&parent=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2FMinio%5FSOP&p=true&ga=1"
+        },
+        {
+          "label": "iTop",
+          "href": "https://www.support-metaage.com/pages/UI.php"
+        },
+        {
+          "label": "Subnet 登入頁面",
+          "href": "https://subnet.min.io/"
         }
       ]
     }
