@@ -405,6 +405,25 @@ function getPersonalLinksGrid() {
   return document.getElementById("personalLinksGrid");
 }
 
+function openLinkElements(selector) {
+  const links = Array.from(document.querySelectorAll(selector))
+    .map((link) => link.href)
+    .filter(Boolean);
+
+  if (!links.length) {
+    alert("沒有可開啟的連結");
+    return;
+  }
+
+  links.forEach((url, idx) => {
+    setTimeout(() => window.open(url, "_blank", "noopener,noreferrer"), idx * 120);
+  });
+}
+
+function openCoreLinks() {
+  openLinkElements("#coreLinksGrid a.quick-link");
+}
+
 function loadPersonalLinks() {
   const input = getPersonalLinksInput();
   if (!input) {

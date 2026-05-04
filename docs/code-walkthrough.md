@@ -190,7 +190,7 @@ localStorage key: noc_incident_state
 - SOP 細節
 - token、密碼、AWS / Redis / ECR 資訊
 
-目前快速入口只保留不敏感的公開服務連結。個人值班連結改放在瀏覽器 `localStorage`，key 是：
+目前快速入口保留每日值班必用的固定連結，這些固定連結會出現在前端原始碼中。其他不想寫進 repo 的個人值班連結改放在瀏覽器 `localStorage`，key 是：
 
 ```text
 noc_personal_links

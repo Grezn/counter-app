@@ -271,13 +271,17 @@
 
     <section class="links-panel">
       <h2 class="links-title">個人值班快速入口</h2>
-      <div class="links-note">固定保留公開服務；公司內部入口用本機連結卡片呈現，不寫死在原始碼。</div>
+      <div class="links-note">保留每日值班必用入口；額外連結可放在本機常用入口。</div>
 
-      <div class="links-grid">
-        <a class="quick-link" href="https://outlook.office.com/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
-        <a class="quick-link" href="https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#" target="_blank" rel="noopener noreferrer">AWS Console（us-east-1）</a>
-        <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
-        <a class="quick-link" href="https://health.aws.amazon.com/health/status" target="_blank" rel="noopener noreferrer">AWS Health Dashboard</a>
+      <div class="personal-links-header">
+        <h3 class="links-title">每日值班</h3>
+        <button class="bulk-open" onclick="openCoreLinks()">一鍵開啟固定入口</button>
+      </div>
+      <div id="coreLinksGrid" class="links-grid personal-links-grid">
+        <a class="quick-link" href="https://outlook.cloud.microsoft/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
+        <a class="quick-link" href="https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/" target="_blank" rel="noopener noreferrer">官方 LINE</a>
+        <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">設備檢查表</a>
+        <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">輪班表</a>
       </div>
 
       <div class="personal-links-header">
