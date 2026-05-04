@@ -46,7 +46,7 @@ public/styles.css
 public/app.js
   前端互動邏輯。
   按鈕點擊後會用 fetch 呼叫後端 API。
-  值班事件處理台、本機個人連結的 localStorage 暫存，以及交班摘要產生也在這裡。
+  值班事件處理台的 localStorage 暫存、交班摘要產生，以及快速入口一鍵開啟也在這裡。
 
 Dockerfile
   把 Node.js app 打包成 Docker image。
@@ -73,7 +73,6 @@ infra/user-data.sh
 ```text
 trackView()
 loadCount()
-loadPersonalLinks()
 setInterval(loadStats, 30000)
 ```
 
@@ -190,21 +189,7 @@ localStorage key: noc_incident_state
 - SOP 細節
 - token、密碼、AWS / Redis / ECR 資訊
 
-目前快速入口保留每日值班必用的固定連結，這些固定連結會出現在前端原始碼中。其他不想寫進 repo 的個人值班連結改放在瀏覽器 `localStorage`，key 是：
-
-```text
-noc_personal_links
-```
-
-這樣 repo 和前端原始碼不會帶著公司內部連結，但使用者自己的瀏覽器仍然可以暫存常用入口。畫面會把本機連結 render 成快速入口卡片，保留原本點卡片與一鍵開啟的使用方式。
-
-格式範例：
-
-```text
-工作交辦小卡 | https://example.com/ticket
-值班班表 | https://example.com/roster
-https://example.com/only-url
-```
+目前快速入口保留每日值班、AWS、公司連接和其他常用入口。這些固定連結會出現在前端原始碼中，因為它們本身仍需要各系統帳密或 SSO 才能使用。
 
 正式 SOP、電話、信箱和客戶資料應放在公司授權系統。
 

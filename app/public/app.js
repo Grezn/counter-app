@@ -395,16 +395,6 @@ function initIncidentPanel() {
   });
 }
 
-const PERSONAL_LINKS_KEY = "noc_personal_links";
-
-function getPersonalLinksInput() {
-  return document.getElementById("personalLinksInput");
-}
-
-function getPersonalLinksGrid() {
-  return document.getElementById("personalLinksGrid");
-}
-
 function openLinkElements(selector) {
   const links = Array.from(document.querySelectorAll(selector))
     .map((link) => link.href)
@@ -420,118 +410,12 @@ function openLinkElements(selector) {
   });
 }
 
+function openLinkGroup(groupId) {
+  openLinkElements(`#${groupId} a.quick-link`);
+}
+
 function openCoreLinks() {
-  openLinkElements("#coreLinksGrid a.quick-link");
-}
-
-function loadPersonalLinks() {
-  const input = getPersonalLinksInput();
-  if (!input) {
-    renderPersonalLinks();
-    return;
-  }
-
-  input.value = localStorage.getItem(PERSONAL_LINKS_KEY) || "";
-  renderPersonalLinks();
-}
-
-function savePersonalLinks() {
-  const input = getPersonalLinksInput();
-  if (!input) return;
-
-  localStorage.setItem(PERSONAL_LINKS_KEY, input.value.trim());
-  renderPersonalLinks();
-  alert("已儲存到這台瀏覽器");
-}
-
-function clearPersonalLinks() {
-  if (!confirm("確定要清空這台瀏覽器的個人連結嗎？")) {
-    return;
-  }
-
-  localStorage.removeItem(PERSONAL_LINKS_KEY);
-  const input = getPersonalLinksInput();
-  if (input) {
-    input.value = "";
-  }
-
-  renderPersonalLinks();
-}
-
-function parsePersonalLinkLine(line) {
-  const trimmed = line.trim();
-  if (!trimmed) return null;
-
-  const parts = trimmed.includes("|")
-    ? trimmed.split("|")
-    : [trimmed];
-  const rawUrl = (parts.length > 1 ? parts.slice(1).join("|") : parts[0]).trim();
-  const rawLabel = parts.length > 1 ? parts[0].trim() : "";
-
-  try {
-    const url = new URL(rawUrl);
-    if (url.protocol !== "https:") {
-      return null;
-    }
-
-    return {
-      label: rawLabel || url.hostname,
-      url: url.toString(),
-    };
-  } catch (err) {
-    return null;
-  }
-}
-
-function getPersonalLinks() {
-  const input = getPersonalLinksInput();
-  const source = input
-    ? input.value
-    : localStorage.getItem(PERSONAL_LINKS_KEY) || "";
-
-  return source
-    .split(/\r?\n/)
-    .map(parsePersonalLinkLine)
-    .filter(Boolean);
-}
-
-function renderPersonalLinks() {
-  const grid = getPersonalLinksGrid();
-  if (!grid) return;
-
-  const links = getPersonalLinks();
-  grid.innerHTML = "";
-
-  if (!links.length) {
-    const empty = document.createElement("div");
-    empty.className = "quick-link empty";
-    empty.textContent = "尚未設定本機連結。展開下方管理區後，每行填一個連結。";
-    grid.appendChild(empty);
-    return;
-  }
-
-  links.forEach((link) => {
-    const anchor = document.createElement("a");
-    anchor.className = "quick-link";
-    anchor.href = link.url;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
-    anchor.textContent = link.label;
-    grid.appendChild(anchor);
-  });
-}
-
-function openPersonalLinks() {
-  const links = getPersonalLinks();
-
-  if (!links.length) {
-    alert("尚未設定可開啟的 HTTPS 連結");
-    return;
-  }
-
-  links.forEach((link, idx) => {
-    setTimeout(() => window.open(link.url, "_blank", "noopener,noreferrer"), idx * 120);
-  });
+  openLinkGroup("coreLinksGrid");
 }
 
 async function increment() {
@@ -596,10 +480,8 @@ async function resetCounter() {
 // 頁面第一次載入時：
 // 1. trackView() 記錄一次瀏覽並更新訪客統計
 // 2. loadCount() 載入 Current Count
-// 3. loadPersonalLinks() 載入這台瀏覽器自己的快速連結
-// 4. 每 30 秒 loadStats() 更新統計
+// 3. 每 30 秒 loadStats() 更新統計
 initIncidentPanel();
-loadPersonalLinks();
 trackView();
 loadCount();
 setInterval(loadStats, 30000);
