@@ -1,0 +1,184 @@
+{
+  "version": "2026-05-04",
+  "note": "這裡只放可以讓前端顯示的值班處理骨架；真正敏感的客戶資料、帳密、電話、內部 SOP 細節請放在 KB、SharePoint 或 ITOP。",
+  "categories": [
+    {
+      "id": "first-response",
+      "name": "初判",
+      "description": "收到告警或客戶訊息後，先整理接手者最需要的資訊。"
+    },
+    {
+      "id": "aws",
+      "name": "AWS",
+      "description": "AWS Console、帳號、服務狀態與升級方向。"
+    },
+    {
+      "id": "customer-repair",
+      "name": "客戶報修",
+      "description": "把客戶問題整理成工程師可以接手的格式。"
+    },
+    {
+      "id": "handover",
+      "name": "交班",
+      "description": "事件未結束時，留下下一班可以直接接手的摘要。"
+    }
+  ],
+  "runbooks": [
+    {
+      "id": "first-response-triage",
+      "category": "first-response",
+      "title": "收到告警或報修時的初判",
+      "summary": "先確認事件是否真的影響服務，再決定通知與升級方向。",
+      "severity": "通用",
+      "triggers": [
+        "監控告警出現",
+        "客戶透過電話、LINE、Email 回報異常",
+        "設備檢查表出現不符合預期的結果"
+      ],
+      "firstChecks": [
+        "確認發生時間、來源、客戶或系統名稱",
+        "確認是否仍在發生，或只是短暫告警",
+        "確認影響範圍：單一使用者、單一客戶、或多客戶",
+        "把目前已知資訊填入值班事件處理台"
+      ],
+      "steps": [
+        "先記錄一句話主旨，讓接手者不用重新理解事件",
+        "補上問題描述、影響範圍、已通知對象",
+        "如果影響服務可用性，優先通知值班工程師或主管",
+        "把下一步寫清楚：等待誰、預計何時再確認、需要誰接手"
+      ],
+      "escalateWhen": [
+        "客戶服務中斷或大量使用者受影響",
+        "同一告警短時間內重複發生",
+        "無法判斷影響範圍，但客戶已明確回報業務受影響"
+      ],
+      "links": [
+        {
+          "label": "設備檢查表",
+          "href": "https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u"
+        },
+        {
+          "label": "輪班表",
+          "href": "https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA"
+        }
+      ]
+    },
+    {
+      "id": "aws-console-access",
+      "category": "aws",
+      "title": "AWS Console / SSO 登入異常",
+      "summary": "先分辨是個人帳號、公司 SSO、瀏覽器、或 AWS 區域性問題。",
+      "severity": "一般",
+      "triggers": [
+        "AWS Console 無法登入",
+        "公司 SSO 頁面無法開啟",
+        "MFA 或權限錯誤導致無法查看資源"
+      ],
+      "firstChecks": [
+        "確認是否只有單一使用者發生",
+        "確認使用者是否可以開啟公司 SSO 入口",
+        "確認是否有錯誤碼或截圖",
+        "確認是否能用不同瀏覽器或無痕視窗重試"
+      ],
+      "steps": [
+        "請回報者提供錯誤畫面、時間與操作路徑",
+        "用公司 SSO 入口確認是否為登入入口問題",
+        "若是權限不足，記錄帳號、角色、要查的 AWS account 或 service",
+        "如果疑似 AWS 服務事件，再查 AWS Health 或官方狀態頁"
+      ],
+      "escalateWhen": [
+        "多人同時無法登入",
+        "生產環境操作被阻擋",
+        "看起來是 IAM / SSO 權限設定問題，需要管理者處理"
+      ],
+      "links": [
+        {
+          "label": "AWS Console",
+          "href": "https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#"
+        },
+        {
+          "label": "公司 SSO",
+          "href": "https://metaage.awsapps.com/start#/"
+        }
+      ]
+    },
+    {
+      "id": "customer-repair-handoff",
+      "category": "customer-repair",
+      "title": "客戶報修資訊整理",
+      "summary": "把客戶描述轉成工程師可以接手的欄位，避免來回追問。",
+      "severity": "依影響判斷",
+      "triggers": [
+        "客戶表示系統異常",
+        "業務或客服轉來報修",
+        "需要建立正式報修或交給工程師處理"
+      ],
+      "firstChecks": [
+        "確認客戶名稱、聯絡方式、問題描述",
+        "確認產品名稱、型號、序號或合約編號是否已取得",
+        "確認目前是否影響營運或服務可用性",
+        "確認是否已有截圖、錯誤訊息或發生時間"
+      ],
+      "steps": [
+        "先把缺少的欄位標成「待補」，不要卡住初步通報",
+        "把報修對象、負責業務或工程師填入事件表單",
+        "把後續處理方式勾選清楚，例如發 Mail、Webex 告知或通知業務",
+        "將正式報修細節放到公司授權系統，不放在前端頁面"
+      ],
+      "escalateWhen": [
+        "客戶表示服務中斷",
+        "合約或序號資訊不完整但事件急迫",
+        "需要跨部門或廠商協助"
+      ],
+      "links": [
+        {
+          "label": "ITOP",
+          "href": "https://support.aws-sysage.com/pages/UI.php"
+        },
+        {
+          "label": "KB",
+          "href": "https://kb.aws-metaage.com/"
+        }
+      ]
+    },
+    {
+      "id": "handover-summary",
+      "category": "handover",
+      "title": "交班摘要檢查",
+      "summary": "交班時只留下接手者下一步會用到的資訊。",
+      "severity": "通用",
+      "triggers": [
+        "事件尚未結束但即將換班",
+        "需要交給二線、主管或其他工程師接手",
+        "已通知多人，需要整理目前狀態"
+      ],
+      "firstChecks": [
+        "確認事件時間、目前狀態、下一步都有填",
+        "確認已通知對象與通知時間",
+        "確認是否有明確接手人員",
+        "確認處理紀錄是否照時間順序補上"
+      ],
+      "steps": [
+        "按「複製交班摘要」產生文字",
+        "把摘要貼到指定交班管道或工單",
+        "若下一步有時間點，寫明預計何時回查",
+        "如果沒有人接手，明確寫「待指派」並通知主管或值班窗口"
+      ],
+      "escalateWhen": [
+        "沒有明確接手人但事件仍在影響服務",
+        "下一步需要權限或資源才能處理",
+        "客戶仍在等待回覆"
+      ],
+      "links": [
+        {
+          "label": "Outlook 郵件",
+          "href": "https://outlook.cloud.microsoft/mail/"
+        },
+        {
+          "label": "官方 LINE",
+          "href": "https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/"
+        }
+      ]
+    }
+  ]
+}

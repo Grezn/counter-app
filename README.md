@@ -9,7 +9,9 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - `server.js`：Express 伺服器入口。
 - `routes/counter.js`：計數器、訪客統計、Reset API。
 - `routes/health.js`：健康檢查 API。
+- `routes/runbooks.js`：SOP / Runbook API，從後端 JSON 讀資料給前端顯示。
 - `services/redis.js`：Redis/ElastiCache 連線設定。
+- `data/runbooks.json`：值班 SOP / Runbook 資料，只放可顯示在前端的處理骨架。
 - `public/index.html`：前端 Dashboard。
 - `.github/workflows/deploy.yml`：CI/CD，自動 build/push image 並刷新 ASG。
 - `infra/envs/prod`：AWS ALB / Target Group / ASG 的 Terraform 設定。

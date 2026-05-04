@@ -395,6 +395,221 @@ function initIncidentPanel() {
   });
 }
 
+const RUNBOOK_STATE = {
+  categories: [],
+  runbooks: [],
+  activeCategory: "all",
+  keyword: "",
+};
+
+function createTextElement(tagName, className, text) {
+  // 建立 HTML 元素時使用 textContent，不用 innerHTML。
+  // 這樣即使後端資料有特殊字元，也不會被瀏覽器當成程式碼執行。
+  const element = document.createElement(tagName);
+  if (className) element.className = className;
+  element.textContent = text || "";
+  return element;
+}
+
+function getRunbookCategoryName(categoryId) {
+  const category = RUNBOOK_STATE.categories.find((item) => item.id === categoryId);
+  return category ? category.name : categoryId;
+}
+
+function getFilteredRunbooks() {
+  const keyword = RUNBOOK_STATE.keyword.trim().toLowerCase();
+
+  return RUNBOOK_STATE.runbooks.filter((runbook) => {
+    const categoryMatched = RUNBOOK_STATE.activeCategory === "all"
+      || runbook.category === RUNBOOK_STATE.activeCategory;
+
+    if (!categoryMatched) return false;
+    if (!keyword) return true;
+
+    const searchableText = [
+      runbook.title,
+      runbook.summary,
+      runbook.severity,
+      ...(runbook.triggers || []),
+      ...(runbook.firstChecks || []),
+      ...(runbook.steps || []),
+      ...(runbook.escalateWhen || []),
+    ].join(" ").toLowerCase();
+
+    return searchableText.includes(keyword);
+  });
+}
+
+function renderRunbookCategories() {
+  const container = document.getElementById("runbookCategories");
+  if (!container) return;
+
+  const allButton = createRunbookCategoryButton("all", "全部");
+  const buttons = RUNBOOK_STATE.categories.map((category) => (
+    createRunbookCategoryButton(category.id, category.name)
+  ));
+
+  container.replaceChildren(allButton, ...buttons);
+}
+
+function createRunbookCategoryButton(categoryId, label) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = categoryId === RUNBOOK_STATE.activeCategory
+    ? "runbook-category active"
+    : "runbook-category";
+  button.textContent = label;
+
+  button.addEventListener("click", () => {
+    RUNBOOK_STATE.activeCategory = categoryId;
+    renderRunbookCategories();
+    renderRunbooks();
+  });
+
+  return button;
+}
+
+function appendRunbookList(parent, title, items) {
+  if (!items || items.length === 0) return;
+
+  const section = document.createElement("div");
+  section.className = "runbook-detail";
+  section.appendChild(createTextElement("h4", "", title));
+
+  const list = document.createElement("ul");
+  items.forEach((item) => {
+    list.appendChild(createTextElement("li", "", item));
+  });
+
+  section.appendChild(list);
+  parent.appendChild(section);
+}
+
+function fillIncidentNextStepFromRunbook(runbook) {
+  // 讓 SOP 不只可以看，也可以快速帶進事件表單的「下一步」。
+  const nextStep = document.getElementById("incidentNextStep");
+  if (!nextStep) return;
+
+  nextStep.value = [
+    `[Runbook] ${runbook.title}`,
+    ...(runbook.steps || []).map((step, idx) => `${idx + 1}. ${step}`),
+  ].join("\n");
+
+  saveIncidentState();
+  updateHandoverSummary();
+}
+
+function createRunbookCard(runbook) {
+  const card = document.createElement("article");
+  card.className = "runbook-card";
+
+  const header = document.createElement("div");
+  header.className = "runbook-card-header";
+
+  const titleBlock = document.createElement("div");
+  titleBlock.appendChild(createTextElement("h3", "runbook-card-title", runbook.title));
+  titleBlock.appendChild(createTextElement("p", "runbook-card-summary", runbook.summary));
+
+  const tag = createTextElement("span", "runbook-tag", getRunbookCategoryName(runbook.category));
+  header.appendChild(titleBlock);
+  header.appendChild(tag);
+
+  const meta = createTextElement("div", "runbook-card-meta", `嚴重度：${runbook.severity || "未分類"}`);
+
+  const body = document.createElement("div");
+  body.className = "runbook-card-body";
+  appendRunbookList(body, "觸發情境", runbook.triggers);
+  appendRunbookList(body, "先確認", runbook.firstChecks);
+  appendRunbookList(body, "處理步驟", runbook.steps);
+  appendRunbookList(body, "升級條件", runbook.escalateWhen);
+
+  const actions = document.createElement("div");
+  actions.className = "runbook-actions";
+
+  (runbook.links || []).forEach((link) => {
+    const anchor = document.createElement("a");
+    anchor.className = "runbook-link";
+    anchor.href = link.href;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.textContent = link.label;
+    actions.appendChild(anchor);
+  });
+
+  const fillButton = document.createElement("button");
+  fillButton.type = "button";
+  fillButton.className = "runbook-fill";
+  fillButton.textContent = "帶入下一步";
+  fillButton.addEventListener("click", () => fillIncidentNextStepFromRunbook(runbook));
+  actions.appendChild(fillButton);
+
+  card.appendChild(header);
+  card.appendChild(meta);
+  card.appendChild(body);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function renderRunbooks() {
+  const list = document.getElementById("runbookList");
+  if (!list) return;
+
+  const filteredRunbooks = getFilteredRunbooks();
+
+  if (filteredRunbooks.length === 0) {
+    list.replaceChildren(createTextElement("div", "runbook-empty", "找不到符合條件的 Runbook"));
+    return;
+  }
+
+  list.replaceChildren(...filteredRunbooks.map(createRunbookCard));
+}
+
+async function loadRunbooks() {
+  const meta = document.getElementById("runbookMeta");
+  const list = document.getElementById("runbookList");
+
+  try {
+    const res = await fetch("/api/runbooks", {
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Load runbooks failed");
+    }
+
+    RUNBOOK_STATE.categories = data.categories || [];
+    RUNBOOK_STATE.runbooks = data.runbooks || [];
+
+    if (meta) {
+      meta.textContent = `v${data.version} / ${RUNBOOK_STATE.runbooks.length} items`;
+    }
+
+    renderRunbookCategories();
+    renderRunbooks();
+  } catch (err) {
+    if (meta) meta.textContent = "Unavailable";
+    if (list) {
+      list.replaceChildren(createTextElement("div", "runbook-empty", "Runbook 載入失敗：" + err.message));
+    }
+  }
+}
+
+function initRunbookPanel() {
+  const search = document.getElementById("runbookSearch");
+
+  if (search) {
+    search.addEventListener("input", () => {
+      RUNBOOK_STATE.keyword = search.value;
+      renderRunbooks();
+    });
+  }
+
+  loadRunbooks();
+}
+
 function openLinkElements(selector) {
   const links = Array.from(document.querySelectorAll(selector))
     .map((link) => link.href)
@@ -482,6 +697,7 @@ async function resetCounter() {
 // 2. loadCount() 載入 Current Count
 // 3. 每 30 秒 loadStats() 更新統計
 initIncidentPanel();
+initRunbookPanel();
 trackView();
 loadCount();
 setInterval(loadStats, 30000);

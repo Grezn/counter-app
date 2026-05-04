@@ -636,6 +636,197 @@ button {
   resize: vertical;
 }
 
+.runbook-panel {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #d8dee8;
+}
+
+.runbook-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.runbook-title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  color: #172033;
+}
+
+.runbook-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.runbook-meta {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #bfd3f5;
+  color: #1e3a8a;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.runbook-controls {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.runbook-controls input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #172033;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 0.92rem;
+}
+
+.runbook-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.runbook-category {
+  width: auto;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.86rem;
+}
+
+.runbook-category.active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.runbook-list {
+  display: grid;
+  gap: 12px;
+}
+
+.runbook-card {
+  padding: 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #d8dee8;
+}
+
+.runbook-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.runbook-card-title {
+  margin: 0 0 6px;
+  color: #172033;
+  font-size: 1rem;
+}
+
+.runbook-card-summary {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.runbook-tag {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.runbook-card-meta {
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.runbook-card-body {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.runbook-detail h4 {
+  margin: 0 0 6px;
+  color: #334155;
+  font-size: 0.86rem;
+}
+
+.runbook-detail ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.runbook-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.runbook-link,
+.runbook-fill {
+  width: auto;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.runbook-link {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.runbook-fill {
+  color: #ffffff;
+  background: #334155;
+  border: 1px solid #334155;
+}
+
+.runbook-empty {
+  padding: 14px;
+  border-radius: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 0.92rem;
+}
+
 .copy-btn {
   width: auto;
   margin: 0 0 0 8px;
@@ -661,6 +852,93 @@ a {
   color: #93c5fd;
 }
 
+/* 明亮版內部工具風格：保留操作台感，但避免整頁過暗。 */
+body {
+  background: #edf1f5;
+  color: #172033;
+}
+
+.card {
+  background: #f8fafc;
+  border-color: #d8dee8;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.12);
+}
+
+.ops-chip,
+.stat-box,
+.core-links-block,
+.link-drawer,
+.checklist-box,
+.summary-box {
+  background: #ffffff;
+  border-color: #d8dee8;
+  color: #172033;
+}
+
+.links-panel,
+.incident-panel {
+  background: #ffffff;
+  border-color: #d8dee8;
+}
+
+.sub,
+.label,
+.links-note,
+.incident-subtitle,
+.drawer-hint,
+.link-count,
+.runbook-card-summary {
+  color: #64748b;
+}
+
+.links-title,
+.incident-title,
+.incident-core-title,
+.workflow-title,
+.field label,
+.link-drawer summary {
+  color: #172033;
+}
+
+.quick-link,
+.field input:not([type="radio"]):not([type="checkbox"]),
+.field select,
+.field textarea,
+.summary-output {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #172033;
+}
+
+.quick-link {
+  color: #1e3a8a;
+}
+
+.quick-link:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.incident-details,
+.oncall-checklist {
+  background: #f8fafc;
+  border-color: #d8dee8;
+  color: #334155;
+}
+
+.choice-item,
+.check-item,
+.footer {
+  color: #334155;
+}
+
+.footer {
+  border-top-color: #d8dee8;
+}
+
+a {
+  color: #1d4ed8;
+}
 
 @media (max-width: 1200px) {
   .card {
@@ -688,7 +966,9 @@ a {
 
   .incident-grid,
   .incident-workflow,
-  .details-grid {
+  .details-grid,
+  .runbook-card-body,
+  .runbook-controls {
     grid-template-columns: 1fr;
   }
 

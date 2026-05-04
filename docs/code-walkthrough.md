@@ -37,6 +37,14 @@ routes/health.js
 routes/counter.js
   首頁、訪客統計、計數器 +1、reset 都在這裡。
 
+routes/runbooks.js
+  /api/runbooks。
+  從後端 data/runbooks.json 讀 SOP / Runbook 資料，再回傳給前端顯示。
+
+data/runbooks.json
+  值班 SOP / Runbook 資料。
+  只放可以顯示在前端的處理骨架，不放帳密、客戶資料或內部敏感細節。
+
 public/index.html
   前端 HTML 結構，只放畫面內容。
 
@@ -46,7 +54,7 @@ public/styles.css
 public/app.js
   前端互動邏輯。
   按鈕點擊後會用 fetch 呼叫後端 API。
-  值班事件處理台的 localStorage 暫存、交班摘要產生，以及快速入口一鍵開啟也在這裡。
+  值班事件處理台的 localStorage 暫存、交班摘要產生、SOP / Runbook 顯示，以及快速入口一鍵開啟也在這裡。
 
 Dockerfile
   把 Node.js app 打包成 Docker image。

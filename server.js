@@ -5,8 +5,10 @@ const crypto = require("crypto");
 
 // routes/ 底下放的是「不同功能的網址」。
 // counterRoutes 管首頁、計數器、訪客統計；healthRoutes 管健康檢查。
+// runbookRoutes 管 SOP / Runbook API，讓前端不用把資料寫死在 HTML。
 const counterRoutes = require("./routes/counter");
 const healthRoutes = require("./routes/health");
+const runbookRoutes = require("./routes/runbooks");
 const { connectRedis } = require("./services/redis");
 
 // 建立 Express app。你可以把 app 想成「網站伺服器本體」。
@@ -110,10 +112,11 @@ app.get("/whoami", (req, res) => {
   });
 });
 
-// 把 routes/counter.js 和 routes/health.js 掛到網站根路徑。
+// 把 routes/*.js 掛到網站根路徑。
 // 例如 counterRoutes 裡的 router.post("/increment") 會變成 /increment。
 app.use("/", counterRoutes);
 app.use("/", healthRoutes);
+app.use("/", runbookRoutes);
 
 async function startServer() {
   // 先連 Redis，再開始 listen。
