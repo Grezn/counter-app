@@ -431,9 +431,14 @@ function getFilteredRunbooks() {
       runbook.summary,
       runbook.severity,
       ...(runbook.triggers || []),
+      ...(runbook.dutyRules || []),
+      ...(runbook.replyRules || []),
+      ...(runbook.ignoreRules || []),
       ...(runbook.firstChecks || []),
       ...(runbook.steps || []),
       ...(runbook.escalateWhen || []),
+      ...(runbook.contacts || []),
+      ...(runbook.mailRecipients || []),
     ].join(" ").toLowerCase();
 
     return searchableText.includes(keyword);
@@ -518,10 +523,15 @@ function createRunbookCard(runbook) {
 
   const body = document.createElement("div");
   body.className = "runbook-card-body";
+  appendRunbookList(body, "值班規則", runbook.dutyRules);
+  appendRunbookList(body, "信件判斷", runbook.replyRules);
+  appendRunbookList(body, "不需處理", runbook.ignoreRules);
   appendRunbookList(body, "觸發情境", runbook.triggers);
   appendRunbookList(body, "先確認", runbook.firstChecks);
   appendRunbookList(body, "處理步驟", runbook.steps);
   appendRunbookList(body, "升級條件", runbook.escalateWhen);
+  appendRunbookList(body, "聯絡資訊", runbook.contacts);
+  appendRunbookList(body, "信件收件人", runbook.mailRecipients);
 
   const actions = document.createElement("div");
   actions.className = "runbook-actions";

@@ -1,182 +1,142 @@
 {
   "version": "2026-05-04",
-  "note": "這裡只放可以讓前端顯示的值班處理骨架；真正敏感的客戶資料、帳密、電話、內部 SOP 細節請放在 KB、SharePoint 或 ITOP。",
+  "note": "這裡會透過 /api/runbooks 顯示到前端。請只放允許值班人員在此系統查看的 SOP 資訊；更詳細或敏感的正式文件仍建議放在 SharePoint / KB / ITOP。",
   "categories": [
     {
-      "id": "first-response",
-      "name": "初判",
-      "description": "收到告警或客戶訊息後，先整理接手者最需要的資訊。"
+      "id": "general-duty",
+      "name": "一般值班",
+      "description": "非上班時間收到客戶報修信件時的判斷、電話通知與紀錄方式。"
     },
     {
-      "id": "aws",
-      "name": "AWS",
-      "description": "AWS Console、帳號、服務狀態與升級方向。"
-    },
-    {
-      "id": "customer-repair",
-      "name": "客戶報修",
-      "description": "把客戶問題整理成工程師可以接手的格式。"
-    },
-    {
-      "id": "handover",
-      "name": "交班",
-      "description": "事件未結束時，留下下一班可以直接接手的摘要。"
+      "id": "purestorage",
+      "name": "PureStorage",
+      "description": "PureStorage ASP / AWS MSP 值班合作與信件分類規則。"
     }
   ],
   "runbooks": [
     {
-      "id": "first-response-triage",
-      "category": "first-response",
-      "title": "收到告警或報修時的初判",
-      "summary": "先確認事件是否真的影響服務，再決定通知與升級方向。",
-      "severity": "通用",
+      "id": "general-duty-mail-call",
+      "category": "general-duty",
+      "title": "一般產品報修值班 SOP",
+      "summary": "非上班時間收到需回覆的客戶報修信件時，撥打值班電話、轉寄信件並完成通話紀錄。",
+      "severity": "依信件內容判斷",
+      "dutyRules": [
+        "非上班時間 18:00 至次日 09:00、國定假日、假日 7 x 24 都要回報。",
+        "若值班電話 Call in 三通未接，則 Call in 主管電話。",
+        "每月需紀錄撥打通數。"
+      ],
+      "replyRules": [
+        "客戶產品類別非 Client 端，例如非 NB / Desktop / Monitor 之報修信件。",
+        "客戶來信詢問原廠未回應之信件。",
+        "客戶反應值班手機撥打無回應等。"
+      ],
       "triggers": [
-        "監控告警出現",
-        "客戶透過電話、LINE、Email 回報異常",
-        "設備檢查表出現不符合預期的結果"
+        "收到客戶報修信件。",
+        "收到客戶詢問原廠未回應的信件。",
+        "收到客戶反應值班手機無回應的信件。"
       ],
       "firstChecks": [
-        "確認發生時間、來源、客戶或系統名稱",
-        "確認是否仍在發生，或只是短暫告警",
-        "確認影響範圍：單一使用者、單一客戶、或多客戶",
-        "把目前已知資訊填入值班事件處理台"
+        "先依信件判斷規則確認是否需要回覆。",
+        "確認客戶問題與產品類別。",
+        "確認是否需要撥打值班電話。"
       ],
       "steps": [
-        "先記錄一句話主旨，讓接手者不用重新理解事件",
-        "補上問題描述、影響範圍、已通知對象",
-        "如果影響服務可用性，優先通知值班工程師或主管",
-        "把下一步寫清楚：等待誰、預計何時再確認、需要誰接手"
+        "收到客戶報修信件後，先依判斷規則確認是否需回覆。",
+        "撥打值班電話，簡述客戶問題及產品類別，並詢問當前值班人員姓名。",
+        "將客戶信件使用「轉寄」，收件人為值班人員信箱，CC 給指定信箱。",
+        "完成通話記錄用表格，即完成處理。"
       ],
       "escalateWhen": [
-        "客戶服務中斷或大量使用者受影響",
-        "同一告警短時間內重複發生",
-        "無法判斷影響範圍，但客戶已明確回報業務受影響"
+        "值班電話 Call in 三通未接。",
+        "客戶明確反應值班手機撥打無回應。",
+        "事件看起來影響服務可用性或客戶急迫處理。"
+      ],
+      "contacts": [
+        "值班手機：0936030276",
+        "主管手機 Ice：0972797257",
+        "主管手機 Gary：0917156071"
+      ],
+      "mailRecipients": [
+        "CC：slm@ginnet.com.tw",
+        "CC：support@ginnet.com.tw",
+        "ST230 Ice Chang 張有為：icechang@ginnet.com.tw",
+        "ST230 Kevin Hsieh 謝孟諭：kevinhsieh@ginnet.com.tw",
+        "ST230 Kai Lei 雷愷豐：kailei@ginnet.com.tw",
+        "ST230 William Hsu 許維麟：williamhsu@ginnet.com.tw",
+        "ST240 Jay Chang 張嘉傑：jaychang@ginnet.com.tw",
+        "ST240 Steven Sung 宋信賢：stevensung@ginnet.com.tw",
+        "ST250 Clark Cheng 鄭弘彬：clarkcheng@ginnet.com.tw",
+        "ST250 Mike Hsu 徐順義：mikehsu@ginnet.com.tw",
+        "ST250 Sam Huang 黃彥智：samhuang@ginnet.com.tw",
+        "ST250 Toma Tseng 曾翊欽：tomatseng@ginnet.com.tw"
       ],
       "links": [
         {
-          "label": "設備檢查表",
-          "href": "https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u"
+          "label": "原 SOP",
+          "href": "https://dtimis.sharepoint.com/:p:/s/P400-P400/ERb0KkfJZS9Fhbg2VofdJ1ABl3eWXHKmV5koyT1wgI_b6g?e=F5VZZT"
         },
         {
-          "label": "輪班表",
-          "href": "https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA"
+          "label": "通話記錄用表格",
+          "href": "https://dtimis.sharepoint.com/:x:/s/P400-P400/EVifIvg8Ue9JphI-FLq4gyoBT1_Y7oU9O-6fYA8K9-Po7g?e=pzaknJ"
         }
       ]
     },
     {
-      "id": "aws-console-access",
-      "category": "aws",
-      "title": "AWS Console / SSO 登入異常",
-      "summary": "先分辨是個人帳號、公司 SSO、瀏覽器、或 AWS 區域性問題。",
-      "severity": "一般",
+      "id": "purestorage-duty-mail",
+      "category": "purestorage",
+      "title": "PureStorage 值班信件分類 SOP",
+      "summary": "PureStorage 相關信件需判斷是否為第一封報修、詢問或 Dispatch 表單，並在 SLA 內回覆客戶。",
+      "severity": "SLA 4 小時內回覆",
+      "dutyRules": [
+        "非上班時間 18:00 至次日 09:00、國定假日、假日 7 x 24 都要回報。",
+        "原廠要求 SLA 必須在四小時內回覆客戶。",
+        "若值班電話 Call in 三通未接，則 Call in 主管電話。",
+        "若值班電話與主管電話都未接，則先回應客戶 Mail，並告知已轉告相關工程師。"
+      ],
+      "replyRules": [
+        "Support 之第一封來信。",
+        "經銷商或客戶之第一封來信報修或詢問。",
+        "Support 來信需填寫 Dispatch 表單之信件。"
+      ],
+      "ignoreRules": [
+        "設備 Alert，例如 Info、Warning、Critical。",
+        "Support 與客戶後續回應。"
+      ],
       "triggers": [
-        "AWS Console 無法登入",
-        "公司 SSO 頁面無法開啟",
-        "MFA 或權限錯誤導致無法查看資源"
+        "PureStorage Support 第一封來信。",
+        "經銷商或客戶第一封報修或詢問。",
+        "Support 要求填寫 Dispatch 表單。"
       ],
       "firstChecks": [
-        "確認是否只有單一使用者發生",
-        "確認使用者是否可以開啟公司 SSO 入口",
-        "確認是否有錯誤碼或截圖",
-        "確認是否能用不同瀏覽器或無痕視窗重試"
+        "確認是否屬於主要需應對之信件。",
+        "確認是否為設備 Alert 或後續回應；若是則不需理會。",
+        "確認距離來信時間是否仍在四小時 SLA 內。"
       ],
       "steps": [
-        "請回報者提供錯誤畫面、時間與操作路徑",
-        "用公司 SSO 入口確認是否為登入入口問題",
-        "若是權限不足，記錄帳號、角色、要查的 AWS account 或 service",
-        "如果疑似 AWS 服務事件，再查 AWS Health 或官方狀態頁"
+        "依信件分類規則判斷是否需回覆。",
+        "若需回覆，先整理客戶、問題、產品或設備資訊。",
+        "撥打 PureStorage 值班人員手機。",
+        "若值班電話三通未接，改撥 PureStorage 主管手機。",
+        "若兩者都未接，先回應客戶 Mail，並告知已轉告相關工程師。"
       ],
       "escalateWhen": [
-        "多人同時無法登入",
-        "生產環境操作被阻擋",
-        "看起來是 IAM / SSO 權限設定問題，需要管理者處理"
+        "四小時 SLA 快到期但尚未有人接手。",
+        "值班電話與主管電話都未接。",
+        "客戶或經銷商第一封來信內容顯示服務受影響。"
       ],
+      "contacts": [
+        "PureStorage 值班人員手機：0917157536",
+        "PureStorage 主管 Libraer 手機：0953779897"
+      ],
+      "mailRecipients": [],
       "links": [
         {
-          "label": "AWS Console",
-          "href": "https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#"
+          "label": "原 SOP",
+          "href": "https://dtimis.sharepoint.com/sites/P400-P400/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2FPureStorage%5FSOP%2F4%20%2D%20Pure%20Storage%20ASP%20%5F%20AWS%20MSP%20%E5%80%BC%E7%8F%AD%E5%90%88%E4%BD%9C%E5%85%A7%E5%AE%B9%2Epdf&parent=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2FPureStorage%5FSOP&p=true&ga=1"
         },
         {
-          "label": "公司 SSO",
-          "href": "https://metaage.awsapps.com/start#/"
-        }
-      ]
-    },
-    {
-      "id": "customer-repair-handoff",
-      "category": "customer-repair",
-      "title": "客戶報修資訊整理",
-      "summary": "把客戶描述轉成工程師可以接手的欄位，避免來回追問。",
-      "severity": "依影響判斷",
-      "triggers": [
-        "客戶表示系統異常",
-        "業務或客服轉來報修",
-        "需要建立正式報修或交給工程師處理"
-      ],
-      "firstChecks": [
-        "確認客戶名稱、聯絡方式、問題描述",
-        "確認產品名稱、型號、序號或合約編號是否已取得",
-        "確認目前是否影響營運或服務可用性",
-        "確認是否已有截圖、錯誤訊息或發生時間"
-      ],
-      "steps": [
-        "先把缺少的欄位標成「待補」，不要卡住初步通報",
-        "把報修對象、負責業務或工程師填入事件表單",
-        "把後續處理方式勾選清楚，例如發 Mail、Webex 告知或通知業務",
-        "將正式報修細節放到公司授權系統，不放在前端頁面"
-      ],
-      "escalateWhen": [
-        "客戶表示服務中斷",
-        "合約或序號資訊不完整但事件急迫",
-        "需要跨部門或廠商協助"
-      ],
-      "links": [
-        {
-          "label": "ITOP",
-          "href": "https://support.aws-sysage.com/pages/UI.php"
-        },
-        {
-          "label": "KB",
-          "href": "https://kb.aws-metaage.com/"
-        }
-      ]
-    },
-    {
-      "id": "handover-summary",
-      "category": "handover",
-      "title": "交班摘要檢查",
-      "summary": "交班時只留下接手者下一步會用到的資訊。",
-      "severity": "通用",
-      "triggers": [
-        "事件尚未結束但即將換班",
-        "需要交給二線、主管或其他工程師接手",
-        "已通知多人，需要整理目前狀態"
-      ],
-      "firstChecks": [
-        "確認事件時間、目前狀態、下一步都有填",
-        "確認已通知對象與通知時間",
-        "確認是否有明確接手人員",
-        "確認處理紀錄是否照時間順序補上"
-      ],
-      "steps": [
-        "按「複製交班摘要」產生文字",
-        "把摘要貼到指定交班管道或工單",
-        "若下一步有時間點，寫明預計何時回查",
-        "如果沒有人接手，明確寫「待指派」並通知主管或值班窗口"
-      ],
-      "escalateWhen": [
-        "沒有明確接手人但事件仍在影響服務",
-        "下一步需要權限或資源才能處理",
-        "客戶仍在等待回覆"
-      ],
-      "links": [
-        {
-          "label": "Outlook 郵件",
-          "href": "https://outlook.cloud.microsoft/mail/"
-        },
-        {
-          "label": "官方 LINE",
-          "href": "https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/"
+          "label": "信件分類規則",
+          "href": "https://dtimis.sharepoint.com/:p:/s/P400-P400/ETJdIxpw25NOhh-NQDuMnc0BCJmYUARuoV_Naspof7MkUA?e=Vf1rf1"
         }
       ]
     }

@@ -20,9 +20,14 @@ function hasKeyword(runbook, keyword) {
     runbook.summary,
     runbook.severity,
     ...(runbook.triggers || []),
+    ...(runbook.dutyRules || []),
+    ...(runbook.replyRules || []),
+    ...(runbook.ignoreRules || []),
     ...(runbook.firstChecks || []),
     ...(runbook.steps || []),
     ...(runbook.escalateWhen || []),
+    ...(runbook.contacts || []),
+    ...(runbook.mailRecipients || []),
   ].join(" ").toLowerCase();
 
   return searchableText.includes(keyword);

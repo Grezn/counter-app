@@ -852,16 +852,16 @@ a {
   color: #93c5fd;
 }
 
-/* 明亮版內部工具風格：保留操作台感，但避免整頁過暗。 */
+/* 柔和灰階內部工具風：避免全黑，也避免整片白色太刺眼。 */
 body {
-  background: #edf1f5;
+  background: #c8d1dc;
   color: #172033;
 }
 
 .card {
-  background: #f8fafc;
-  border-color: #d8dee8;
-  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.12);
+  background: #dbe2eb;
+  border-color: #aebaca;
+  box-shadow: 0 16px 38px rgba(31, 41, 55, 0.16);
 }
 
 .ops-chip,
@@ -869,16 +869,18 @@ body {
 .core-links-block,
 .link-drawer,
 .checklist-box,
-.summary-box {
-  background: #ffffff;
-  border-color: #d8dee8;
+.summary-box,
+.runbook-card {
+  background: #eef2f6;
+  border-color: #bac5d2;
   color: #172033;
 }
 
 .links-panel,
-.incident-panel {
-  background: #ffffff;
-  border-color: #d8dee8;
+.incident-panel,
+.runbook-panel {
+  background: #e5ebf2;
+  border-color: #b8c3d1;
 }
 
 .sub,
@@ -904,9 +906,10 @@ body {
 .field input:not([type="radio"]):not([type="checkbox"]),
 .field select,
 .field textarea,
-.summary-output {
-  background: #ffffff;
-  border-color: #cbd5e1;
+.summary-output,
+.runbook-controls input {
+  background: #f3f6f9;
+  border-color: #aebaca;
   color: #172033;
 }
 
@@ -915,15 +918,40 @@ body {
 }
 
 .quick-link:hover {
-  background: #eff6ff;
-  border-color: #93c5fd;
+  background: #dfeaf8;
+  border-color: #7fa4d6;
 }
 
 .incident-details,
 .oncall-checklist {
-  background: #f8fafc;
-  border-color: #d8dee8;
+  background: #edf1f5;
+  border-color: #bac5d2;
   color: #334155;
+}
+
+.runbook-category {
+  background: #edf1f5;
+  border-color: #aebaca;
+  color: #334155;
+}
+
+.runbook-category.active {
+  background: #34578d;
+  border-color: #34578d;
+  color: #ffffff;
+}
+
+.runbook-meta,
+.runbook-tag,
+.runbook-link {
+  background: #dce8f7;
+  border-color: #adc6e8;
+  color: #23436f;
+}
+
+.runbook-fill {
+  background: #2f3b4d;
+  border-color: #2f3b4d;
 }
 
 .choice-item,
@@ -933,7 +961,7 @@ body {
 }
 
 .footer {
-  border-top-color: #d8dee8;
+  border-top-color: #aebaca;
 }
 
 a {
