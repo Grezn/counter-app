@@ -401,11 +401,19 @@ function getPersonalLinksInput() {
   return document.getElementById("personalLinksInput");
 }
 
+function getPersonalLinksGrid() {
+  return document.getElementById("personalLinksGrid");
+}
+
 function loadPersonalLinks() {
   const input = getPersonalLinksInput();
-  if (!input) return;
+  if (!input) {
+    renderPersonalLinks();
+    return;
+  }
 
   input.value = localStorage.getItem(PERSONAL_LINKS_KEY) || "";
+  renderPersonalLinks();
 }
 
 function savePersonalLinks() {
@@ -413,6 +421,7 @@ function savePersonalLinks() {
   if (!input) return;
 
   localStorage.setItem(PERSONAL_LINKS_KEY, input.value.trim());
+  renderPersonalLinks();
   alert("已儲存到這台瀏覽器");
 }
 
@@ -426,6 +435,8 @@ function clearPersonalLinks() {
   if (input) {
     input.value = "";
   }
+
+  renderPersonalLinks();
 }
 
 function parsePersonalLinkLine(line) {
@@ -436,6 +447,7 @@ function parsePersonalLinkLine(line) {
     ? trimmed.split("|")
     : [trimmed];
   const rawUrl = (parts.length > 1 ? parts.slice(1).join("|") : parts[0]).trim();
+  const rawLabel = parts.length > 1 ? parts[0].trim() : "";
 
   try {
     const url = new URL(rawUrl);
@@ -443,26 +455,63 @@ function parsePersonalLinkLine(line) {
       return null;
     }
 
-    return url.toString();
+    return {
+      label: rawLabel || url.hostname,
+      url: url.toString(),
+    };
   } catch (err) {
     return null;
   }
 }
 
-function openPersonalLinks() {
+function getPersonalLinks() {
   const input = getPersonalLinksInput();
-  const links = (input ? input.value : "")
+  const source = input
+    ? input.value
+    : localStorage.getItem(PERSONAL_LINKS_KEY) || "";
+
+  return source
     .split(/\r?\n/)
     .map(parsePersonalLinkLine)
     .filter(Boolean);
+}
+
+function renderPersonalLinks() {
+  const grid = getPersonalLinksGrid();
+  if (!grid) return;
+
+  const links = getPersonalLinks();
+  grid.innerHTML = "";
+
+  if (!links.length) {
+    const empty = document.createElement("div");
+    empty.className = "quick-link empty";
+    empty.textContent = "尚未設定本機連結。展開下方管理區後，每行填一個連結。";
+    grid.appendChild(empty);
+    return;
+  }
+
+  links.forEach((link) => {
+    const anchor = document.createElement("a");
+    anchor.className = "quick-link";
+    anchor.href = link.url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.textContent = link.label;
+    grid.appendChild(anchor);
+  });
+}
+
+function openPersonalLinks() {
+  const links = getPersonalLinks();
 
   if (!links.length) {
     alert("尚未設定可開啟的 HTTPS 連結");
     return;
   }
 
-  links.forEach((url, idx) => {
-    setTimeout(() => window.open(url, "_blank", "noopener,noreferrer"), idx * 120);
+  links.forEach((link, idx) => {
+    setTimeout(() => window.open(link.url, "_blank", "noopener,noreferrer"), idx * 120);
   });
 }
 

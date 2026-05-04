@@ -196,7 +196,17 @@ localStorage key: noc_incident_state
 noc_personal_links
 ```
 
-這樣 repo 和前端原始碼不會帶著公司內部連結，但使用者自己的瀏覽器仍然可以暫存常用入口。正式 SOP、電話、信箱和客戶資料應放在公司授權系統。
+這樣 repo 和前端原始碼不會帶著公司內部連結，但使用者自己的瀏覽器仍然可以暫存常用入口。畫面會把本機連結 render 成快速入口卡片，保留原本點卡片與一鍵開啟的使用方式。
+
+格式範例：
+
+```text
+工作交辦小卡 | https://example.com/ticket
+值班班表 | https://example.com/roster
+https://example.com/only-url
+```
+
+正式 SOP、電話、信箱和客戶資料應放在公司授權系統。
 
 ## /health 和 /ready 差在哪
 
