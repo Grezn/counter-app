@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Counter NOC Dashboard</title>
+  <title>NOC 值班工作台</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
@@ -13,12 +13,12 @@
   <div class="card">
     <div class="header-row">
       <div>
-        <h1>Counter NOC Dashboard</h1>
-        <div class="sub">Personal NOC / On-call Battle Panel</div>
+        <h1>NOC 值班工作台</h1>
+        <div class="sub">計數、事件交班與常用入口</div>
       </div>
-      <div class="mascot">
-        <div class="mascot-avatar">🛰️</div>
-        <div><strong>NOC 小助手</strong><br/>保持冷靜，一步一步處理</div>
+      <div class="ops-chip">
+        <span>ON-CALL</span>
+        <strong>Personal Console</strong>
       </div>
     </div>
 
@@ -270,50 +270,63 @@
     </section>
 
     <section class="links-panel">
-      <h2 class="links-title">個人值班快速入口</h2>
-      <div class="links-note">每日值班、AWS、公司系統與其他常用入口。</div>
-
-      <div class="link-section-header">
-        <h3 class="links-title">每日值班</h3>
+      <div class="links-panel-header">
+        <div>
+          <h2 class="links-title">值班入口</h2>
+          <div class="links-note">每日固定入口放在外層；備用入口收在下方清單。</div>
+        </div>
         <button class="bulk-open" onclick="openCoreLinks()">一鍵開啟每日值班</button>
       </div>
-      <div id="coreLinksGrid" class="links-grid link-group-grid">
-        <a class="quick-link" href="https://outlook.cloud.microsoft/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
-        <a class="quick-link" href="https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/" target="_blank" rel="noopener noreferrer">官方 LINE</a>
-        <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">設備檢查表</a>
-        <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">輪班表</a>
+
+      <div class="core-links-block">
+        <div class="link-section-header compact">
+          <h3 class="links-title">每日值班</h3>
+          <span class="link-count">4 links</span>
+        </div>
+        <div id="coreLinksGrid" class="links-grid core-links-grid">
+          <a class="quick-link" href="https://outlook.cloud.microsoft/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
+          <a class="quick-link" href="https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/" target="_blank" rel="noopener noreferrer">官方 LINE</a>
+          <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">設備檢查表</a>
+          <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">輪班表</a>
+        </div>
       </div>
 
-      <div class="link-section-header">
-        <h3 class="links-title">AWS</h3>
-        <button class="bulk-open" onclick="openLinkGroup('awsLinksGrid')">一鍵開啟 AWS</button>
-      </div>
-      <div id="awsLinksGrid" class="links-grid link-group-grid">
-        <a class="quick-link" href="https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#" target="_blank" rel="noopener noreferrer">AWS Console</a>
-        <a class="quick-link" href="https://metaage.awsapps.com/start#/" target="_blank" rel="noopener noreferrer">公司 SSO</a>
-        <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
-        <a class="quick-link" href="https://explore.skillbuilder.aws/learn" target="_blank" rel="noopener noreferrer">AWS Skill Builder</a>
-      </div>
+      <details class="link-drawer">
+        <summary>
+          <span>更多入口</span>
+          <span class="drawer-hint">AWS / 公司系統 / 其他</span>
+        </summary>
 
-      <div class="link-section-header">
-        <h3 class="links-title">公司連接</h3>
-        <button class="bulk-open" onclick="openLinkGroup('companyLinksGrid')">一鍵開啟公司連接</button>
-      </div>
-      <div id="companyLinksGrid" class="links-grid link-group-grid">
-        <a class="quick-link" href="https://kb.aws-metaage.com/" target="_blank" rel="noopener noreferrer">KB</a>
-        <a class="quick-link" href="https://bpm.metaage.com.tw/Gaia/portal" target="_blank" rel="noopener noreferrer">BPM</a>
-        <a class="quick-link" href="https://www.cloudman.app/" target="_blank" rel="noopener noreferrer">CloudMan</a>
-        <a class="quick-link" href="https://dtimis-my.sharepoint.com/" target="_blank" rel="noopener noreferrer">OneDrive</a>
-        <a class="quick-link" href="https://support.aws-sysage.com/pages/UI.php" target="_blank" rel="noopener noreferrer">ITOP</a>
-      </div>
+        <div class="link-drawer-body">
+          <div class="link-drawer-section">
+            <h3 class="links-title">AWS</h3>
+            <div id="awsLinksGrid" class="links-grid drawer-links-grid">
+              <a class="quick-link" href="https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#" target="_blank" rel="noopener noreferrer">AWS Console</a>
+              <a class="quick-link" href="https://metaage.awsapps.com/start#/" target="_blank" rel="noopener noreferrer">公司 SSO</a>
+              <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
+              <a class="quick-link" href="https://explore.skillbuilder.aws/learn" target="_blank" rel="noopener noreferrer">AWS Skill Builder</a>
+            </div>
+          </div>
 
-      <div class="link-section-header">
-        <h3 class="links-title">其他</h3>
-        <button class="bulk-open" onclick="openLinkGroup('otherLinksGrid')">一鍵開啟其他</button>
-      </div>
-      <div id="otherLinksGrid" class="links-grid link-group-grid">
-        <a class="quick-link" href="https://jp.dubber.net/%E5%B8%B3%E6%88%B6/d63e63ada4f3448093cbe9792c66f12a/%E9%8C%84%E9%9F%B3" target="_blank" rel="noopener noreferrer">電話錄音下載</a>
-      </div>
+          <div class="link-drawer-section">
+            <h3 class="links-title">公司連接</h3>
+            <div id="companyLinksGrid" class="links-grid drawer-links-grid">
+              <a class="quick-link" href="https://kb.aws-metaage.com/" target="_blank" rel="noopener noreferrer">KB</a>
+              <a class="quick-link" href="https://bpm.metaage.com.tw/Gaia/portal" target="_blank" rel="noopener noreferrer">BPM</a>
+              <a class="quick-link" href="https://www.cloudman.app/" target="_blank" rel="noopener noreferrer">CloudMan</a>
+              <a class="quick-link" href="https://dtimis-my.sharepoint.com/" target="_blank" rel="noopener noreferrer">OneDrive</a>
+              <a class="quick-link" href="https://support.aws-sysage.com/pages/UI.php" target="_blank" rel="noopener noreferrer">ITOP</a>
+            </div>
+          </div>
+
+          <div class="link-drawer-section">
+            <h3 class="links-title">其他</h3>
+            <div id="otherLinksGrid" class="links-grid drawer-links-grid">
+              <a class="quick-link" href="https://jp.dubber.net/%E5%B8%B3%E6%88%B6/d63e63ada4f3448093cbe9792c66f12a/%E9%8C%84%E9%9F%B3" target="_blank" rel="noopener noreferrer">電話錄音下載</a>
+            </div>
+          </div>
+        </div>
+      </details>
 
       <div class="oncall-checklist">
         <strong>值班小 checklist：</strong>
@@ -326,7 +339,7 @@
     </section>
 
     <div class="footer">
-      <div><strong>Security:</strong> Internal SOP, phone numbers, email lists, and private URLs are not embedded in this page.</div>
+      <div><strong>Security:</strong> 固定入口只保存登入頁連結；帳密、token、客戶資料與內部 SOP 不放在前端。</div>
     </div>
   </div>
   <script src="/app.js"></script>
