@@ -696,12 +696,19 @@ button:disabled {
   color: #dcfce7;
 }
 
+.action-btn.webex {
+  background: #3b1d69;
+  border-color: #6d45a7;
+  color: #f3e8ff;
+}
+
 .action-btn.danger {
   background: #b42318;
   border-color: #dc2626;
   color: #fff7f7;
 }
 
+.webex-call-status,
 .jira-status {
   display: flex;
   align-items: center;
@@ -714,8 +721,15 @@ button:disabled {
   font-weight: 700;
 }
 
+.webex-call-status:empty,
 .jira-status:empty {
   display: none;
+}
+
+.webex-call-status {
+  background: rgba(168, 85, 247, 0.14);
+  border: 1px solid rgba(216, 180, 254, 0.32);
+  color: #e9d5ff;
 }
 
 .jira-status.pending {
@@ -736,6 +750,7 @@ button:disabled {
   color: #fecaca;
 }
 
+.webex-call-status a,
 .jira-status a {
   color: inherit;
   text-decoration: underline;
@@ -1158,6 +1173,12 @@ body {
   color: #ecfeff;
 }
 
+.action-btn.webex {
+  background: #6d28d9;
+  border-color: #7c3aed;
+  color: #faf5ff;
+}
+
 .action-btn {
   background: #1e3a8a;
   border-color: #2563eb;
@@ -1180,6 +1201,12 @@ body {
   background: #fee2e2;
   border-color: #fca5a5;
   color: #7f1d1d;
+}
+
+.webex-call-status {
+  background: #f3e8ff;
+  border-color: #d8b4fe;
+  color: #581c87;
 }
 
 .choice-item,

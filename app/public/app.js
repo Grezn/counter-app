@@ -183,6 +183,8 @@ async function loadCount() {
 }
 
 const INCIDENT_STORAGE_KEY = "noc_incident_state";
+const WEBEX_TEST_PHONE = "+886800008669";
+const WEBEX_TEST_POST_CONNECT_KEY = "3";
 
 function getIncidentFields() {
   // 用 data-incident-field 找到事件表單欄位。
@@ -411,6 +413,42 @@ async function copyHandoverSummary() {
   } catch (err) {
     setError("交班摘要複製失敗：" + err.message);
   }
+}
+
+function setWebexCallStatus(message, fallbackUrl) {
+  const status = document.getElementById("webexCallStatus");
+  if (!status) return;
+
+  if (!message) {
+    status.replaceChildren();
+    return;
+  }
+
+  const messageNode = document.createElement("span");
+  messageNode.textContent = message;
+
+  if (!fallbackUrl) {
+    status.replaceChildren(messageNode);
+    return;
+  }
+
+  const fallbackLink = document.createElement("a");
+  fallbackLink.href = fallbackUrl;
+  fallbackLink.textContent = "改用系統撥號";
+  status.replaceChildren(messageNode, fallbackLink);
+}
+
+function startWebexTestCall() {
+  const phone = WEBEX_TEST_PHONE.replace(/\s+/g, "");
+  const webexUrl = `webextel://login?telephone=${encodeURIComponent(phone)}&x-source=${encodeURIComponent("MSP On-Call Console")}`;
+  const fallbackUrl = `tel:${phone}`;
+
+  setWebexCallStatus(
+    `已嘗試開啟 Webex 撥打 ${phone}；公司電話接通後請按 ${WEBEX_TEST_POST_CONNECT_KEY}。`,
+    fallbackUrl,
+  );
+
+  window.location.href = webexUrl;
 }
 
 function setJiraStatus(message, type, linkUrl) {
