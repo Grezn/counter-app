@@ -337,10 +337,9 @@ button:disabled {
 
 .link-drawer {
   margin-top: 12px;
-  border-radius: 10px;
-  border: 1px solid #303846;
-  background: #11151b;
-  overflow: hidden;
+  border: 0;
+  background: transparent;
+  overflow: visible;
 }
 
 .link-drawer summary {
@@ -353,6 +352,9 @@ button:disabled {
   cursor: pointer;
   font-weight: 800;
   list-style: none;
+  border: 1px solid #303846;
+  border-radius: 8px;
+  background: #11151b;
 }
 
 .link-drawer summary::-webkit-details-marker {
@@ -370,6 +372,10 @@ button:disabled {
   content: "收合";
 }
 
+.link-drawer[open] summary {
+  margin-bottom: 10px;
+}
+
 .drawer-hint {
   color: #8ea0b8;
   font-size: 0.84rem;
@@ -378,8 +384,10 @@ button:disabled {
 }
 
 .link-drawer-body {
-  padding: 0 12px 12px;
-  border-top: 1px solid #2d3540;
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  border-top: 0;
 }
 
 .links-panel-inner::-webkit-scrollbar {
@@ -397,11 +405,12 @@ button:disabled {
 }
 
 .link-drawer-section {
-  padding-top: 12px;
+  padding-top: 0;
 }
 
 .link-drawer-section + .link-drawer-section {
-  margin-top: 12px;
+  margin-top: 0;
+  padding-top: 12px;
   border-top: 1px solid #2d3540;
 }
 
@@ -775,7 +784,8 @@ button:disabled {
 
 .runbook-title {
   margin: 0 0 6px;
-  font-size: 1.1rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
   color: #172033;
 }
 
@@ -840,11 +850,11 @@ button:disabled {
 
 .runbook-list {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .runbook-card {
-  padding: 14px;
+  padding: 18px;
   border-radius: 10px;
   background: #f8fafc;
   border: 1px solid #d8dee8;
@@ -860,7 +870,8 @@ button:disabled {
 .runbook-card-title {
   margin: 0 0 6px;
   color: #172033;
-  font-size: 1rem;
+  font-size: 1.25rem;
+  line-height: 1.25;
 }
 
 .runbook-card-summary {
@@ -881,7 +892,12 @@ button:disabled {
 }
 
 .runbook-card-meta {
-  margin-top: 10px;
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #bfd3f5;
   color: #64748b;
   font-size: 0.84rem;
   font-weight: 700;
@@ -890,14 +906,22 @@ button:disabled {
 .runbook-card-body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 12px;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.runbook-detail {
+  padding: 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #d8dee8;
 }
 
 .runbook-detail h4 {
   margin: 0 0 6px;
   color: #334155;
-  font-size: 0.86rem;
+  font-size: 1rem;
+  line-height: 1.3;
 }
 
 .runbook-detail ul {
@@ -906,6 +930,54 @@ button:disabled {
   color: #475569;
   font-size: 0.9rem;
   line-height: 1.55;
+}
+
+.runbook-mail-section {
+  grid-column: 1 / -1;
+}
+
+.mail-recipient-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+.mail-copy {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid #adc6e8;
+  background: #f8fbff;
+  color: #172033;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+.mail-copy:hover,
+.mail-copy:focus-visible {
+  border-color: #0d9488;
+  background: #ecfeff;
+}
+
+.mail-copy.copied {
+  border-color: #14b8a6;
+  background: #ccfbf1;
+}
+
+.mail-copy-label {
+  color: #0f766e;
+  font-weight: 800;
+}
+
+.mail-copy-value {
+  color: #1e3a8a;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
 }
 
 .runbook-actions {
@@ -1173,6 +1245,15 @@ html[data-theme="light"] .incident-details summary {
   color: #172033;
 }
 
+html[data-theme="light"] .link-drawer {
+  background: transparent;
+}
+
+html[data-theme="light"] .link-drawer summary {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
 html[data-theme="light"] .links-panel-inner::-webkit-scrollbar-track {
   background: #e2e8f0;
 }
@@ -1196,7 +1277,6 @@ html[data-theme="dark"] .card {
 html[data-theme="dark"] .theme-switch,
 html[data-theme="dark"] .stat-box,
 html[data-theme="dark"] .core-links-block,
-html[data-theme="dark"] .link-drawer,
 html[data-theme="dark"] .checklist-box,
 html[data-theme="dark"] .summary-box,
 html[data-theme="dark"] .runbook-card {
@@ -1209,6 +1289,16 @@ html[data-theme="dark"] .links-panel,
 html[data-theme="dark"] .incident-panel,
 html[data-theme="dark"] .runbook-panel {
   background: #172033;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .link-drawer {
+  background: transparent;
+}
+
+html[data-theme="dark"] .link-drawer summary,
+html[data-theme="dark"] .runbook-detail {
+  background: #111827;
   border-color: #334155;
 }
 
@@ -1272,9 +1362,35 @@ html[data-theme="dark"] .runbook-detail ul {
 
 html[data-theme="dark"] .runbook-meta,
 html[data-theme="dark"] .runbook-tag,
-html[data-theme="dark"] .runbook-link {
+html[data-theme="dark"] .runbook-link,
+html[data-theme="dark"] .runbook-card-meta {
   background: #0f2d47;
   border-color: #1d4ed8;
+  color: #bfdbfe;
+}
+
+html[data-theme="dark"] .mail-copy {
+  background: #0f172a;
+  border-color: #475569;
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] .mail-copy:hover,
+html[data-theme="dark"] .mail-copy:focus-visible {
+  background: #12333b;
+  border-color: #14b8a6;
+}
+
+html[data-theme="dark"] .mail-copy.copied {
+  background: #134e4a;
+  border-color: #2dd4bf;
+}
+
+html[data-theme="dark"] .mail-copy-label {
+  color: #5eead4;
+}
+
+html[data-theme="dark"] .mail-copy-value {
   color: #bfdbfe;
 }
 

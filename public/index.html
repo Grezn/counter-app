@@ -88,10 +88,10 @@
           <label for="incidentSeverity">嚴重度</label>
           <select id="incidentSeverity" data-incident-field="severity">
             <option value="">未分類</option>
-            <option value="Info">Info</option>
-            <option value="Warning">Warning</option>
-            <option value="Critical">Critical</option>
-            <option value="Service Impact">Service Impact</option>
+            <option value="資訊">資訊</option>
+            <option value="提醒">提醒</option>
+            <option value="重大">重大</option>
+            <option value="服務影響">服務影響</option>
           </select>
         </div>
 
@@ -99,12 +99,12 @@
           <label for="incidentStatus">目前狀態</label>
           <select id="incidentStatus" data-incident-field="status">
             <option value="">未開始</option>
-            <option value="Triage">Triage</option>
-            <option value="Notified">Notified</option>
-            <option value="Monitoring">Monitoring</option>
-            <option value="Waiting">Waiting</option>
-            <option value="Resolved">Resolved</option>
-            <option value="Handover">Handover</option>
+            <option value="初步判斷">初步判斷</option>
+            <option value="已通知">已通知</option>
+            <option value="監控中">監控中</option>
+            <option value="等待回覆">等待回覆</option>
+            <option value="已解決">已解決</option>
+            <option value="待交班">待交班</option>
           </select>
         </div>
 
@@ -281,8 +281,8 @@
     <section class="runbook-panel">
       <div class="runbook-header">
         <div>
-          <h2 class="runbook-title">SOP / Runbook</h2>
-          <p class="runbook-subtitle">內容由後端 API 提供；前端只負責搜尋與顯示。</p>
+          <h2 class="runbook-title">SOP 速查與信件收件人</h2>
+          <p class="runbook-subtitle">依產品快速查處理步驟；信箱按鈕可直接複製貼到收件人或 CC。</p>
         </div>
         <div id="runbookMeta" class="runbook-meta">Loading...</div>
       </div>

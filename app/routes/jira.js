@@ -48,11 +48,15 @@ function getPriorityName(config, fields) {
 
   switch (fields.severity) {
     case "Critical":
+    case "重大":
     case "Service Impact":
+    case "服務影響":
       return "High";
     case "Warning":
+    case "提醒":
       return "Medium";
     case "Info":
+    case "資訊":
       return "Low";
     default:
       return "";
