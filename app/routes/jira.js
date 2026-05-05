@@ -46,21 +46,13 @@ function normalizeLabel(value) {
 function getPriorityName(config, fields) {
   if (config.defaultPriority) return config.defaultPriority;
 
-  switch (fields.severity) {
-    case "Critical":
-    case "重大":
-    case "Service Impact":
-    case "服務影響":
-      return "High";
-    case "Warning":
-    case "提醒":
-      return "Medium";
-    case "Info":
-    case "資訊":
-      return "Low";
-    default:
-      return "";
-  }
+  const severity = String(fields.severity || "").toLowerCase();
+  if (severity.includes("critical") || severity.includes("重大")) return "High";
+  if (severity.includes("service impact") || severity.includes("服務影響")) return "High";
+  if (severity.includes("warning") || severity.includes("警告") || severity.includes("提醒")) return "Medium";
+  if (severity.includes("info") || severity.includes("資訊")) return "Low";
+
+  return "";
 }
 
 function getConfiguredLabels(config, fields) {

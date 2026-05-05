@@ -244,18 +244,29 @@ function saveIncidentState() {
 function normalizeIncidentFieldValue(fieldName, value) {
   const maps = {
     severity: {
-      Info: "資訊",
-      Warning: "提醒",
-      Critical: "重大",
-      "Service Impact": "服務影響",
+      Info: "Info / 資訊",
+      "資訊": "Info / 資訊",
+      Warning: "Warning / 警告",
+      "提醒": "Warning / 警告",
+      "警告": "Warning / 警告",
+      Critical: "Critical / 重大",
+      "重大": "Critical / 重大",
+      "Service Impact": "Service Impact / 服務影響",
+      "服務影響": "Service Impact / 服務影響",
     },
     status: {
-      Triage: "初步判斷",
-      Notified: "已通知",
-      Monitoring: "監控中",
-      Waiting: "等待回覆",
-      Resolved: "已解決",
-      Handover: "待交班",
+      Triage: "Triage / 初步判斷",
+      "初步判斷": "Triage / 初步判斷",
+      Notified: "Notified / 已通知",
+      "已通知": "Notified / 已通知",
+      Monitoring: "Monitoring / 監控中",
+      "監控中": "Monitoring / 監控中",
+      Waiting: "Waiting / 等待回覆",
+      "等待回覆": "Waiting / 等待回覆",
+      Resolved: "Resolved / 已解決",
+      "已解決": "Resolved / 已解決",
+      Handover: "Handover / 待交班",
+      "待交班": "Handover / 待交班",
     },
   };
 
@@ -663,88 +674,6 @@ function appendRunbookList(parent, title, items) {
   parent.appendChild(section);
 }
 
-function parseMailRecipient(item) {
-  const text = String(item || "").trim();
-  const separatorIndex = text.search(/[：:]/);
-
-  if (separatorIndex === -1) {
-    return {
-      label: "收件人",
-      value: text,
-    };
-  }
-
-  return {
-    label: text.slice(0, separatorIndex).trim() || "收件人",
-    value: text.slice(separatorIndex + 1).trim() || text,
-  };
-}
-
-async function copyTextToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return;
-    } catch {
-      // 例如非 HTTPS 或瀏覽器權限限制時，改用 textarea fallback。
-    }
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand("copy");
-  textarea.remove();
-}
-
-function appendMailRecipients(parent, items) {
-  if (!items || items.length === 0) return;
-
-  const section = document.createElement("div");
-  section.className = "runbook-detail runbook-mail-section";
-  section.appendChild(createTextElement("h4", "", "信件收件人"));
-
-  const list = document.createElement("div");
-  list.className = "mail-recipient-list";
-
-  items.forEach((item) => {
-    const recipient = parseMailRecipient(item);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "mail-copy";
-    button.title = "複製收件人";
-
-    const label = createTextElement("span", "mail-copy-label", recipient.label);
-    const value = createTextElement("span", "mail-copy-value", recipient.value);
-    button.appendChild(label);
-    button.appendChild(value);
-
-    button.addEventListener("click", async () => {
-      try {
-        await copyTextToClipboard(recipient.value);
-        button.classList.add("copied");
-        const originalTitle = button.title;
-        button.title = "已複製";
-        setTimeout(() => {
-          button.classList.remove("copied");
-          button.title = originalTitle;
-        }, 1200);
-      } catch (err) {
-        setError("信箱複製失敗：" + err.message);
-      }
-    });
-
-    list.appendChild(button);
-  });
-
-  section.appendChild(list);
-  parent.appendChild(section);
-}
-
 function appendRunbookExtraSections(parent, sections) {
   // 不同產品的 SOP 會有自己的特殊段落。
   // extraSections 讓資料可以自由新增「案件追蹤」「Case 範本」「Q&A」等內容。
@@ -794,7 +723,7 @@ function createRunbookCard(runbook) {
   appendRunbookList(body, "處理步驟", runbook.steps);
   appendRunbookList(body, "升級條件", runbook.escalateWhen);
   appendRunbookList(body, "聯絡資訊", runbook.contacts);
-  appendMailRecipients(body, runbook.mailRecipients);
+  appendRunbookList(body, "信件收件人", runbook.mailRecipients);
   appendRunbookExtraSections(body, runbook.extraSections);
 
   const actions = document.createElement("div");
@@ -914,6 +843,12 @@ function setLinksPanelOpen(isOpen) {
 
   panel.classList.toggle("open", isOpen);
 
+  if (!isOpen) {
+    panel.querySelectorAll("details[open]").forEach((details) => {
+      details.open = false;
+    });
+  }
+
   if (toggle) {
     toggle.setAttribute("aria-expanded", String(isOpen));
   }
@@ -936,6 +871,12 @@ function initLinksPanel() {
 
     if (!event.target.closest("#linksPanel")) {
       setLinksPanelOpen(false);
+      return;
+    }
+
+    const openDrawer = panel.querySelector(".link-drawer[open]");
+    if (openDrawer && !event.target.closest(".link-drawer")) {
+      openDrawer.open = false;
     }
   });
 
