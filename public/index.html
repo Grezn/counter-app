@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>NOC 值班工作台</title>
+  <title>MSP 值班中控台</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
@@ -13,12 +13,12 @@
   <div class="card">
     <div class="header-row">
       <div>
-        <h1>NOC 值班工作台</h1>
-        <div class="sub">計數、事件交班與常用入口</div>
+        <h1>MSP 值班中控台</h1>
+        <div class="sub">事件留存、交班摘要與常用入口</div>
       </div>
       <div class="ops-chip">
         <span>ON-CALL</span>
-        <strong>Personal Console</strong>
+        <strong>Operations Hub</strong>
       </div>
     </div>
 
@@ -57,7 +57,7 @@
     <section class="incident-panel">
       <div class="incident-header">
         <div>
-          <h2 class="incident-title">值班事件處理台</h2>
+          <h2 class="incident-title">事件留存與交班</h2>
           <p class="incident-subtitle">先留下接手工程師最需要的資訊；報修表單細節可展開補充。</p>
         </div>
         <div class="incident-actions">
@@ -297,7 +297,6 @@
             <div class="links-note">每日固定入口放在外層；備用入口收在下方清單。</div>
           </div>
           <button class="bulk-open" onclick="openCoreLinks()">一鍵開啟每日值班</button>
-          <button class="links-close" type="button" onclick="toggleLinksPanel(false)">收合</button>
         </div>
 
         <div class="core-links-block">

@@ -227,17 +227,6 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.links-close {
-  width: auto;
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid #aebaca;
-  background: #eef2f6;
-  color: #172033;
-  font-size: 0.88rem;
-}
-
 .links-title {
   font-size: 1rem;
   font-weight: 700;
@@ -959,35 +948,47 @@ a {
   color: #93c5fd;
 }
 
-/* 柔和灰階內部工具風：避免全黑，也避免整片白色太刺眼。 */
+/* 清爽中控台風格：低彩度底色搭配青綠主操作與深藍輔助。 */
 body {
-  background: #c8d1dc;
+  background: #e7edf3;
   color: #172033;
 }
 
 .card {
-  background: #dbe2eb;
-  border-color: #aebaca;
-  box-shadow: 0 16px 38px rgba(31, 41, 55, 0.16);
+  background: #f8fafc;
+  border-color: #c5d0dc;
+  box-shadow: 0 18px 42px rgba(30, 41, 59, 0.12);
 }
 
-.ops-chip,
+.ops-chip {
+  background: #e0f2fe;
+  border-color: #93c5fd;
+}
+
+.ops-chip span {
+  color: #0369a1;
+}
+
+.ops-chip strong {
+  color: #0f172a;
+}
+
 .stat-box,
 .core-links-block,
 .link-drawer,
 .checklist-box,
 .summary-box,
 .runbook-card {
-  background: #eef2f6;
-  border-color: #bac5d2;
+  background: #ffffff;
+  border-color: #cbd5e1;
   color: #172033;
 }
 
 .links-panel,
 .incident-panel,
 .runbook-panel {
-  background: #e5ebf2;
-  border-color: #b8c3d1;
+  background: #eef5f7;
+  border-color: #b8c8d6;
 }
 
 .sub,
@@ -1025,14 +1026,15 @@ body {
 }
 
 .quick-link:hover {
-  background: #dfeaf8;
-  border-color: #7fa4d6;
+  background: #ecfeff;
+  border-color: #14b8a6;
+  color: #0f766e;
 }
 
 .incident-details,
 .oncall-checklist {
-  background: #edf1f5;
-  border-color: #bac5d2;
+  background: #f8fafc;
+  border-color: #cbd5e1;
   color: #334155;
 }
 
@@ -1043,8 +1045,8 @@ body {
 }
 
 .runbook-category.active {
-  background: #34578d;
-  border-color: #34578d;
+  background: #0f766e;
+  border-color: #0f766e;
   color: #ffffff;
 }
 
@@ -1057,8 +1059,31 @@ body {
 }
 
 .runbook-fill {
-  background: #2f3b4d;
-  border-color: #2f3b4d;
+  background: #1e3a8a;
+  border-color: #1e3a8a;
+}
+
+.links-panel-tab {
+  background: #0f766e;
+  border-color: #0f766e;
+}
+
+.links-panel-tab:hover,
+.links-panel-tab:focus-visible {
+  background: #0d9488;
+}
+
+.bulk-open,
+.action-btn.jira {
+  background: #0f766e;
+  border-color: #0d9488;
+  color: #ecfeff;
+}
+
+.action-btn {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
 }
 
 .jira-status.pending {

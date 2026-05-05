@@ -790,6 +790,15 @@ function toggleLinksPanel(forceOpen) {
 }
 
 function initLinksPanel() {
+  document.addEventListener("click", (event) => {
+    const panel = document.getElementById("linksPanel");
+    if (!panel || !panel.classList.contains("open")) return;
+
+    if (!event.target.closest("#linksPanel")) {
+      setLinksPanelOpen(false);
+    }
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       setLinksPanelOpen(false);
