@@ -15,6 +15,42 @@ function clearError() {
   box.textContent = "";
 }
 
+function setTheme(theme) {
+  const normalizedTheme = theme === "dark" ? "dark" : "light";
+  document.documentElement.dataset.theme = normalizedTheme;
+
+  try {
+    localStorage.setItem("msp_theme", normalizedTheme);
+  } catch {
+    // 無法寫入 localStorage 時仍允許本次頁面切換主題。
+  }
+
+  const lightButton = document.getElementById("themeLightButton");
+  const darkButton = document.getElementById("themeDarkButton");
+
+  if (lightButton) {
+    lightButton.classList.toggle("active", normalizedTheme === "light");
+    lightButton.setAttribute("aria-pressed", String(normalizedTheme === "light"));
+  }
+
+  if (darkButton) {
+    darkButton.classList.toggle("active", normalizedTheme === "dark");
+    darkButton.setAttribute("aria-pressed", String(normalizedTheme === "dark"));
+  }
+}
+
+function initTheme() {
+  let savedTheme = "";
+
+  try {
+    savedTheme = localStorage.getItem("msp_theme") || "";
+  } catch {
+    savedTheme = "";
+  }
+
+  setTheme(savedTheme || document.documentElement.dataset.theme || "light");
+}
+
 function updateBadge(redisStatus) {
   // 更新畫面左上角的 Redis 狀態 badge。
   // redisStatus 來自後端回傳，例如 ready / connected / error。
@@ -872,6 +908,7 @@ async function resetCounter() {
 initIncidentPanel();
 initRunbookPanel();
 initLinksPanel();
+initTheme();
 trackView();
 loadCount();
 setInterval(loadStats, 30000);

@@ -36,6 +36,34 @@ h1 {
   flex-wrap: wrap;
 }
 
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #101418;
+  border: 1px solid #2d3540;
+}
+
+.theme-option {
+  width: auto;
+  min-width: 56px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  color: #a4adba;
+  border: 1px solid transparent;
+  font-size: 0.86rem;
+}
+
+.theme-option.active {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
 .ops-chip {
   display: flex;
   flex-direction: column;
@@ -219,12 +247,10 @@ button:disabled {
 }
 
 .links-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-bottom: 14px;
-  flex-wrap: wrap;
 }
 
 .links-title {
@@ -241,9 +267,9 @@ button:disabled {
 }
 
 .bulk-open {
-  width: auto;
+  width: 100%;
   margin: 0;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border-radius: 8px;
   border: 1px solid rgba(74, 222, 128, 0.4);
   background: #14532d;
@@ -352,21 +378,19 @@ button:disabled {
 }
 
 .link-drawer-body {
-  max-height: 300px;
-  overflow: auto;
   padding: 0 12px 12px;
   border-top: 1px solid #2d3540;
 }
 
-.link-drawer-body::-webkit-scrollbar {
+.links-panel-inner::-webkit-scrollbar {
   width: 10px;
 }
 
-.link-drawer-body::-webkit-scrollbar-track {
+.links-panel-inner::-webkit-scrollbar-track {
   background: #11151b;
 }
 
-.link-drawer-body::-webkit-scrollbar-thumb {
+.links-panel-inner::-webkit-scrollbar-thumb {
   background: #3b4656;
   border-radius: 999px;
   border: 2px solid #11151b;
@@ -1116,6 +1140,162 @@ body {
 
 a {
   color: #1d4ed8;
+}
+
+html[data-theme="light"] .badge.ok {
+  color: #065f46;
+  background: #d1fae5;
+  border-color: #34d399;
+}
+
+html[data-theme="light"] .badge.error {
+  color: #7f1d1d;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+html[data-theme="light"] .theme-switch {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .theme-option {
+  color: #475569;
+}
+
+html[data-theme="light"] .theme-option.active {
+  background: #0f766e;
+  border-color: #0d9488;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .incident-details summary {
+  color: #172033;
+}
+
+html[data-theme="light"] .links-panel-inner::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+html[data-theme="light"] .links-panel-inner::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-color: #e2e8f0;
+}
+
+html[data-theme="dark"] body {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] .card {
+  background: #18212f;
+  border-color: #334155;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] .theme-switch,
+html[data-theme="dark"] .stat-box,
+html[data-theme="dark"] .core-links-block,
+html[data-theme="dark"] .link-drawer,
+html[data-theme="dark"] .checklist-box,
+html[data-theme="dark"] .summary-box,
+html[data-theme="dark"] .runbook-card {
+  background: #111827;
+  border-color: #334155;
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] .links-panel,
+html[data-theme="dark"] .incident-panel,
+html[data-theme="dark"] .runbook-panel {
+  background: #172033;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .sub,
+html[data-theme="dark"] .label,
+html[data-theme="dark"] .links-note,
+html[data-theme="dark"] .incident-subtitle,
+html[data-theme="dark"] .drawer-hint,
+html[data-theme="dark"] .link-count,
+html[data-theme="dark"] .runbook-card-summary {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .links-title,
+html[data-theme="dark"] .incident-title,
+html[data-theme="dark"] .incident-core-title,
+html[data-theme="dark"] .workflow-title,
+html[data-theme="dark"] .field label,
+html[data-theme="dark"] .link-drawer summary,
+html[data-theme="dark"] .incident-details summary,
+html[data-theme="dark"] .runbook-card-title,
+html[data-theme="dark"] .runbook-detail h4 {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .quick-link,
+html[data-theme="dark"] .field input:not([type="radio"]):not([type="checkbox"]),
+html[data-theme="dark"] .field select,
+html[data-theme="dark"] .field textarea,
+html[data-theme="dark"] .summary-output,
+html[data-theme="dark"] .runbook-controls input {
+  background: #0f172a;
+  border-color: #475569;
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] .quick-link {
+  color: #bfdbfe;
+}
+
+html[data-theme="dark"] .quick-link:hover {
+  background: #12333b;
+  border-color: #14b8a6;
+  color: #99f6e4;
+}
+
+html[data-theme="dark"] .incident-details,
+html[data-theme="dark"] .oncall-checklist,
+html[data-theme="dark"] .runbook-category {
+  background: #111827;
+  border-color: #334155;
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] .check-item,
+html[data-theme="dark"] .choice-item,
+html[data-theme="dark"] .footer,
+html[data-theme="dark"] .runbook-detail ul {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .runbook-meta,
+html[data-theme="dark"] .runbook-tag,
+html[data-theme="dark"] .runbook-link {
+  background: #0f2d47;
+  border-color: #1d4ed8;
+  color: #bfdbfe;
+}
+
+html[data-theme="dark"] .badge.ok {
+  color: #dcfce7;
+  background: rgba(20, 184, 166, 0.24);
+  border-color: rgba(45, 212, 191, 0.55);
+}
+
+html[data-theme="dark"] .badge.error {
+  color: #fee2e2;
+  background: rgba(185, 28, 28, 0.28);
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+html[data-theme="dark"] .footer {
+  border-top-color: #334155;
+}
+
+html[data-theme="dark"] a {
+  color: #93c5fd;
 }
 
 @media (max-width: 1200px) {

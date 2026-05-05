@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>MSP 值班中控台</title>
+  <script>
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem("msp_theme") || "light";
+    } catch {
+      document.documentElement.dataset.theme = "light";
+    }
+  </script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
@@ -16,9 +23,9 @@
         <h1>MSP 值班中控台</h1>
         <div class="sub">事件留存、交班摘要與常用入口</div>
       </div>
-      <div class="ops-chip">
-        <span>ON-CALL</span>
-        <strong>Operations Hub</strong>
+      <div class="theme-switch" role="group" aria-label="主題切換">
+        <button id="themeLightButton" class="theme-option" type="button" onclick="setTheme('light')">亮色</button>
+        <button id="themeDarkButton" class="theme-option" type="button" onclick="setTheme('dark')">暗色</button>
       </div>
     </div>
 
