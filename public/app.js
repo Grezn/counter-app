@@ -344,6 +344,116 @@ async function copyHandoverSummary() {
   }
 }
 
+function setJiraStatus(message, type, linkUrl) {
+  const status = document.getElementById("jiraStatus");
+  if (!status) return;
+
+  status.className = type ? `jira-status ${type}` : "jira-status";
+
+  if (!message) {
+    status.replaceChildren();
+    return;
+  }
+
+  const messageNode = document.createElement("span");
+  messageNode.textContent = message;
+
+  if (!linkUrl) {
+    status.replaceChildren(messageNode);
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.href = linkUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = "開啟 Jira";
+  status.replaceChildren(messageNode, link);
+}
+
+function setCreateJiraButtonLoading(isLoading) {
+  const button = document.getElementById("createJiraIssueButton");
+  if (!button) return;
+
+  button.disabled = isLoading;
+  button.textContent = isLoading ? "建立中..." : "建立 Jira 小卡";
+}
+
+function markIncidentCheck(label) {
+  const check = getIncidentChecks().find((item) => item.dataset.incidentCheck === label);
+  if (check) {
+    check.checked = true;
+  }
+}
+
+function formatJiraCreateError(data) {
+  if (data && Array.isArray(data.missing) && data.missing.length) {
+    return `Jira 尚未設定：${data.missing.join("、")}`;
+  }
+
+  const details = data && data.details;
+  const messages = [];
+
+  if (details && Array.isArray(details.errorMessages)) {
+    messages.push(...details.errorMessages);
+  }
+
+  if (details && details.errors) {
+    messages.push(...Object.values(details.errors));
+  }
+
+  return messages.length ? messages.join("；") : (data && data.error) || "建立 Jira 小卡失敗";
+}
+
+function hasIncidentContent(state) {
+  return Object.values(state.fields || {}).some((value) => String(value || "").trim())
+    || Object.values(state.checks || {}).some(Boolean)
+    || Object.values(state.radios || {}).some(Boolean)
+    || Object.values(state.followups || {}).some(Boolean);
+}
+
+async function createJiraIssue() {
+  const state = readIncidentStateFromPage();
+
+  if (!hasIncidentContent(state)) {
+    setJiraStatus("先填寫事件內容，再建立 Jira 小卡。", "error");
+    return;
+  }
+
+  try {
+    clearError();
+    setJiraStatus("正在建立 Jira 小卡...", "pending");
+    setCreateJiraButtonLoading(true);
+    updateHandoverSummary();
+
+    const res = await fetch("/api/jira/issues", {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        incident: state,
+        handoverSummary: document.getElementById("handoverSummary").value,
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(formatJiraCreateError(data));
+    }
+
+    markIncidentCheck("補上 Jira / 小卡處理紀錄");
+    saveIncidentState();
+    updateHandoverSummary();
+    setJiraStatus(`已建立 Jira 小卡：${data.key}`, "success", data.url);
+  } catch (err) {
+    setJiraStatus("建立 Jira 小卡失敗：" + err.message, "error");
+  } finally {
+    setCreateJiraButtonLoading(false);
+  }
+}
+
 function clearIncidentState() {
   if (!confirm("確定要清空目前事件紀錄嗎？")) {
     return;
@@ -366,6 +476,7 @@ function clearIncidentState() {
   });
 
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
+  setJiraStatus("");
   updateHandoverSummary();
 }
 

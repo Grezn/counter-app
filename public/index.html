@@ -63,9 +63,11 @@
         <div class="incident-actions">
           <button class="action-btn" onclick="setIncidentNow()">填入現在時間</button>
           <button class="action-btn" onclick="copyHandoverSummary()">複製交班摘要</button>
+          <button id="createJiraIssueButton" class="action-btn jira" onclick="createJiraIssue()">建立 Jira 小卡</button>
           <button class="action-btn danger" onclick="clearIncidentState()">清空事件</button>
         </div>
       </div>
+      <div id="jiraStatus" class="jira-status" role="status" aria-live="polite"></div>
 
       <div class="incident-grid">
         <div class="incident-core-title">接手重點</div>
@@ -298,9 +300,10 @@
       <div class="core-links-block">
         <div class="link-section-header compact">
           <h3 class="links-title">每日值班</h3>
-          <span class="link-count">4 links</span>
+          <span class="link-count">5 links</span>
         </div>
         <div id="coreLinksGrid" class="links-grid core-links-grid">
+          <a class="quick-link" href="https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?filter=&groupBy=status" target="_blank" rel="noopener noreferrer">Jira</a>
           <a class="quick-link" href="https://outlook.cloud.microsoft/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
           <a class="quick-link" href="https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/" target="_blank" rel="noopener noreferrer">官方 LINE</a>
           <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">設備檢查表</a>

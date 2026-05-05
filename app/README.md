@@ -9,6 +9,7 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - `server.js`：Express 伺服器入口。
 - `routes/counter.js`：計數器、訪客統計、Reset API。
 - `routes/health.js`：健康檢查 API。
+- `routes/jira.js`：Jira Cloud issue 建立 API，負責保護 API token 並代送事件摘要。
 - `services/redis.js`：Redis/ElastiCache 連線設定。
 - `public/index.html`：前端 Dashboard。
 - `.github/workflows/deploy.yml`：CI/CD，自動 build/push image 並刷新 ASG。
@@ -23,6 +24,12 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - `REDIS_URL`：完整 Redis URL，優先使用這個。
 - `REDIS_HOST` / `REDIS_PORT`：如果沒有設定 `REDIS_URL`，程式會用這兩個組成 Redis URL。
 - `RESET_TOKEN`：Reset 按鈕需要的 token，正式環境請放在 SSM Parameter Store 或 Secrets Manager。
+- `JIRA_BASE_URL`：Jira Cloud 網站，例如 `https://your-domain.atlassian.net`。
+- `JIRA_REST_BASE_URL`：可選；若使用 scoped API token，可填 `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3`。
+- `JIRA_EMAIL` / `JIRA_API_TOKEN`：建立小卡用的 Atlassian 帳號 email 與 API token。
+- `JIRA_PROJECT_KEY`：要建立 issue 的 Jira project key，例如 `PMP`。
+- `JIRA_ISSUE_TYPE` / `JIRA_ISSUE_TYPE_ID`：issue type，預設使用 `Task`；若你的 Jira create screen 需要固定 ID，可填 `JIRA_ISSUE_TYPE_ID`。
+- `JIRA_LABELS`：建立小卡時加上的 labels，逗號分隔，預設 `noc-oncall`。
 
 ## 部署注意事項
 
@@ -35,6 +42,10 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 ## Reset 按鈕
 
 前端不會寫死 reset token。第一次按 Reset 時，瀏覽器會要求輸入 `RESET_TOKEN`，並暫存在這次分頁的 `sessionStorage`。
+
+## Jira 小卡
+
+前端的「建立 Jira 小卡」會把目前事件表單和交班摘要送到後端 `/api/jira/issues`，再由後端呼叫 Jira Cloud REST API 建立 issue。Jira token 不會出現在 HTML、JS 或瀏覽器 localStorage；正式環境請把 token 放在 EC2 env、SSM Parameter Store 或 Secrets Manager。
 
 ## EC2 權限
 

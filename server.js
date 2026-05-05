@@ -8,6 +8,7 @@ const crypto = require("crypto");
 // runbookRoutes 管 SOP / Runbook API，讓前端不用把資料寫死在 HTML。
 const counterRoutes = require("./routes/counter");
 const healthRoutes = require("./routes/health");
+const jiraRoutes = require("./routes/jira");
 const runbookRoutes = require("./routes/runbooks");
 const { connectRedis } = require("./services/redis");
 
@@ -39,8 +40,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// 這個 app 只需要很小的 JSON，限制大小可以降低被亂塞大 payload 的風險。
-app.use(express.json({ limit: "16kb" }));
+// 事件摘要會送到 Jira API；限制大小仍可避免被亂塞大 payload。
+app.use(express.json({ limit: "64kb" }));
 
 function writeLog(payload) {
   // 這裡把 log 統一輸出成 JSON，CloudWatch / docker logs 會比較好搜尋。
@@ -116,6 +117,7 @@ app.get("/whoami", (req, res) => {
 // 例如 counterRoutes 裡的 router.post("/increment") 會變成 /increment。
 app.use("/", counterRoutes);
 app.use("/", healthRoutes);
+app.use("/", jiraRoutes);
 app.use("/", runbookRoutes);
 
 async function startServer() {
