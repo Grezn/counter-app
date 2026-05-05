@@ -3,6 +3,8 @@ const { createClient } = require("redis");
 // client 是整個 app 共用的 Redis 連線。
 // 先在 connectRedis() 建立，其他檔案再透過 getRedisClient() 取得。
 let client;
+const REDIS_CONNECT_TIMEOUT_MS = Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 3000);
+const REDIS_CONNECT_MAX_RETRIES = Number(process.env.REDIS_CONNECT_MAX_RETRIES || 5);
 
 function getRedisUrl() {
   // 正式環境可以直接設定 REDIS_URL。
@@ -35,9 +37,11 @@ async function connectRedis() {
     client = createClient({
       url: redisUrl,
       socket: {
-        // Redis 短暫斷線時，node-redis 會自動重試。
-        // retries 越多等待越久，但最多等 3000ms。
-        reconnectStrategy: (retries) => Math.min(retries * 100, 3000),
+        connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
+        // 開機時 Redis 不通，仍要讓 HTTP server 起來回傳可診斷的錯誤。
+        reconnectStrategy: (retries) => (
+          retries > REDIS_CONNECT_MAX_RETRIES ? false : Math.min(retries * 100, 3000)
+        ),
       },
     });
 

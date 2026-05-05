@@ -13,6 +13,8 @@ services:
       REDIS_URL: "${REDIS_URL:-}"
       REDIS_HOST: "${REDIS_HOST:-}"
       REDIS_PORT: "${REDIS_PORT:-6379}"
+      REDIS_CONNECT_TIMEOUT_MS: "${REDIS_CONNECT_TIMEOUT_MS:-3000}"
+      REDIS_CONNECT_MAX_RETRIES: "${REDIS_CONNECT_MAX_RETRIES:-5}"
       # /reset 需要這個 token。正式值請放 EC2 env/SSM/Secrets Manager，不要放 GitHub。
       RESET_TOKEN: "${RESET_TOKEN:-}"
       # Jira 小卡建立功能。正式值請放 EC2 env/SSM/Secrets Manager，不要放前端。
@@ -21,9 +23,10 @@ services:
       JIRA_EMAIL: "${JIRA_EMAIL:-}"
       JIRA_API_TOKEN: "${JIRA_API_TOKEN:-}"
       JIRA_PROJECT_KEY: "${JIRA_PROJECT_KEY:-}"
-      JIRA_ISSUE_TYPE: "${JIRA_ISSUE_TYPE:-Task}"
+      JIRA_ISSUE_TYPE: "${JIRA_ISSUE_TYPE:-交接事項}"
       JIRA_ISSUE_TYPE_ID: "${JIRA_ISSUE_TYPE_ID:-}"
-      JIRA_LABELS: "${JIRA_LABELS:-noc-oncall}"
+      JIRA_LABELS: "${JIRA_LABELS:-電話連絡,noc-oncall}"
+      JIRA_DEFAULT_PRIORITY: "${JIRA_DEFAULT_PRIORITY:-}"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/ready"]
       interval: 30s

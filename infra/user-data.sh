@@ -4,8 +4,8 @@ set -euxo pipefail
 # 這份 user data 是給 ASG/EC2 開機時使用的。
 # 重點：
 # 1. EC2 要掛 IAM Role / Instance Profile，讓 aws cli 可以登入 ECR。
-# 2. RESET_TOKEN 建議放 SSM Parameter Store，不要寫死在 user data。
-# 3. docker run 會把 Redis 和 app 設定用環境變數傳進 container。
+# 2. RESET_TOKEN / JIRA_API_TOKEN 建議放 SSM Parameter Store，不要寫死在 user data。
+# 3. docker run 會把 Redis、Jira 和 app 設定用環境變數傳進 container。
 
 # ===== 記錄 log =====
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
@@ -30,10 +30,21 @@ CONTAINER_NAME="counter-app"
 APP_PORT="3000"
 HOST_PORT="80"
 
+# ===== Jira =====
+JIRA_BASE_URL="https://metaage-corp-p400.atlassian.net"
+JIRA_REST_BASE_URL=""
+JIRA_PROJECT_KEY="PMP"
+JIRA_ISSUE_TYPE="交接事項"
+JIRA_ISSUE_TYPE_ID=""
+JIRA_LABELS="電話連絡,noc-oncall"
+JIRA_DEFAULT_PRIORITY=""
+
 # ===== Secret =====
 # 建議先在 SSM 建立 SecureString：
 # aws ssm put-parameter --name /counter-app/prod/reset-token --type SecureString --value "你的長隨機token"
 RESET_TOKEN_PARAM_NAME="/counter-app/prod/reset-token"
+JIRA_EMAIL_PARAM_NAME="/counter-app/prod/jira-email"
+JIRA_API_TOKEN_PARAM_NAME="/counter-app/prod/jira-api-token"
 
 echo "[UserData] IMAGE_URI=${IMAGE_URI}"
 echo "[UserData] REDIS_ENDPOINT=${REDIS_ENDPOINT}:${REDIS_PORT}"
@@ -79,6 +90,17 @@ read_reset_token() {
     --output text
 }
 
+read_optional_parameter() {
+  local name="$1"
+
+  aws ssm get-parameter \
+    --region "$AWS_REGION" \
+    --name "$name" \
+    --with-decryption \
+    --query "Parameter.Value" \
+    --output text 2>/dev/null || true
+}
+
 # ===== 安裝 Docker / AWS CLI =====
 retry 3 install_packages
 
@@ -92,6 +114,16 @@ RESET_TOKEN="$(read_reset_token)"
 if [ -z "$RESET_TOKEN" ] || [ "$RESET_TOKEN" = "None" ]; then
   echo "[UserData] ERROR: RESET_TOKEN is empty"
   exit 1
+fi
+
+# ===== 讀取 Jira 設定 =====
+# Jira 是事件留存功能；沒設定時 app 仍會啟動，但建立小卡會顯示未設定。
+JIRA_EMAIL="$(read_optional_parameter "$JIRA_EMAIL_PARAM_NAME")"
+JIRA_API_TOKEN="$(read_optional_parameter "$JIRA_API_TOKEN_PARAM_NAME")"
+if [ -z "$JIRA_EMAIL" ] || [ "$JIRA_EMAIL" = "None" ] || [ -z "$JIRA_API_TOKEN" ] || [ "$JIRA_API_TOKEN" = "None" ]; then
+  echo "[UserData] WARN: Jira SSM parameters are not fully configured"
+  JIRA_EMAIL=""
+  JIRA_API_TOKEN=""
 fi
 
 # ===== ECR Login / 拉 image =====
@@ -128,6 +160,15 @@ docker run -d \
   -e "REDIS_PORT=${REDIS_PORT}" \
   -e "REDIS_URL=${REDIS_URL}" \
   -e "RESET_TOKEN=${RESET_TOKEN}" \
+  -e "JIRA_BASE_URL=${JIRA_BASE_URL}" \
+  -e "JIRA_REST_BASE_URL=${JIRA_REST_BASE_URL}" \
+  -e "JIRA_EMAIL=${JIRA_EMAIL}" \
+  -e "JIRA_API_TOKEN=${JIRA_API_TOKEN}" \
+  -e "JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}" \
+  -e "JIRA_ISSUE_TYPE=${JIRA_ISSUE_TYPE}" \
+  -e "JIRA_ISSUE_TYPE_ID=${JIRA_ISSUE_TYPE_ID}" \
+  -e "JIRA_LABELS=${JIRA_LABELS}" \
+  -e "JIRA_DEFAULT_PRIORITY=${JIRA_DEFAULT_PRIORITY}" \
   "$IMAGE_URI"
 
 # ===== 本機健康檢查 =====

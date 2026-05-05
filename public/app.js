@@ -767,6 +767,36 @@ function openCoreLinks() {
   openLinkGroup("coreLinksGrid");
 }
 
+function setLinksPanelOpen(isOpen) {
+  const panel = document.getElementById("linksPanel");
+  const toggle = document.getElementById("linksPanelToggle");
+  if (!panel) return;
+
+  panel.classList.toggle("open", isOpen);
+
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", String(isOpen));
+  }
+}
+
+function toggleLinksPanel(forceOpen) {
+  const panel = document.getElementById("linksPanel");
+  if (!panel) return;
+
+  const isOpen = typeof forceOpen === "boolean"
+    ? forceOpen
+    : !panel.classList.contains("open");
+  setLinksPanelOpen(isOpen);
+}
+
+function initLinksPanel() {
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      setLinksPanelOpen(false);
+    }
+  });
+}
+
 async function increment() {
   try {
     clearError();
@@ -832,6 +862,7 @@ async function resetCounter() {
 // 3. 每 30 秒 loadStats() 更新統計
 initIncidentPanel();
 initRunbookPanel();
+initLinksPanel();
 trackView();
 loadCount();
 setInterval(loadStats, 30000);

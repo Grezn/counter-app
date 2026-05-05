@@ -123,6 +123,28 @@ aws ssm get-parameter \
   --output text
 ```
 
+### Jira API Token
+
+如果 Jira token 曾經貼到聊天、文件或前端程式碼，先到 Atlassian 帳號撤銷舊 token，再建立新 token。正式部署時把 email 和新 token 放到 SSM：
+
+```bash
+aws ssm put-parameter \
+  --region us-east-1 \
+  --name /counter-app/prod/jira-email \
+  --type String \
+  --value "你的 Atlassian email" \
+  --overwrite
+
+aws ssm put-parameter \
+  --region us-east-1 \
+  --name /counter-app/prod/jira-api-token \
+  --type SecureString \
+  --value "新的 Jira API token" \
+  --overwrite
+```
+
+EC2 user data 會把這兩個參數讀進 container，前端不會看到 token。
+
 ## 正常部署
 
 平常只改程式碼時：

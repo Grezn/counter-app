@@ -288,73 +288,77 @@
       <div id="runbookList" class="runbook-list">Runbook 載入中...</div>
     </section>
 
-    <section class="links-panel">
-      <div class="links-panel-header">
-        <div>
-          <h2 class="links-title">值班入口</h2>
-          <div class="links-note">每日固定入口放在外層；備用入口收在下方清單。</div>
-        </div>
-        <button class="bulk-open" onclick="openCoreLinks()">一鍵開啟每日值班</button>
-      </div>
-
-      <div class="core-links-block">
-        <div class="link-section-header compact">
-          <h3 class="links-title">每日值班</h3>
-          <span class="link-count">5 links</span>
-        </div>
-        <div id="coreLinksGrid" class="links-grid core-links-grid">
-          <a class="quick-link" href="https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?filter=&groupBy=status" target="_blank" rel="noopener noreferrer">Jira</a>
-          <a class="quick-link" href="https://outlook.cloud.microsoft/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
-          <a class="quick-link" href="https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/" target="_blank" rel="noopener noreferrer">官方 LINE</a>
-          <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">設備檢查表</a>
-          <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">輪班表</a>
-        </div>
-      </div>
-
-      <details class="link-drawer">
-        <summary>
-          <span>更多入口</span>
-          <span class="drawer-hint">AWS / 公司系統 / 其他</span>
-        </summary>
-
-        <div class="link-drawer-body">
-          <div class="link-drawer-section">
-            <h3 class="links-title">AWS</h3>
-            <div id="awsLinksGrid" class="links-grid drawer-links-grid">
-              <a class="quick-link" href="https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#" target="_blank" rel="noopener noreferrer">AWS Console</a>
-              <a class="quick-link" href="https://metaage.awsapps.com/start#/" target="_blank" rel="noopener noreferrer">公司 SSO</a>
-              <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
-              <a class="quick-link" href="https://explore.skillbuilder.aws/learn" target="_blank" rel="noopener noreferrer">AWS Skill Builder</a>
-            </div>
+    <section id="linksPanel" class="links-panel" aria-label="值班入口">
+      <button id="linksPanelToggle" class="links-panel-tab" type="button" onclick="toggleLinksPanel()" aria-controls="linksPanel" aria-expanded="false">值班入口</button>
+      <div class="links-panel-inner">
+        <div class="links-panel-header">
+          <div>
+            <h2 class="links-title">值班入口</h2>
+            <div class="links-note">每日固定入口放在外層；備用入口收在下方清單。</div>
           </div>
+          <button class="bulk-open" onclick="openCoreLinks()">一鍵開啟每日值班</button>
+          <button class="links-close" type="button" onclick="toggleLinksPanel(false)">收合</button>
+        </div>
 
-          <div class="link-drawer-section">
-            <h3 class="links-title">公司連接</h3>
-            <div id="companyLinksGrid" class="links-grid drawer-links-grid">
-              <a class="quick-link" href="https://kb.aws-metaage.com/" target="_blank" rel="noopener noreferrer">KB</a>
-              <a class="quick-link" href="https://bpm.metaage.com.tw/Gaia/portal" target="_blank" rel="noopener noreferrer">BPM</a>
-              <a class="quick-link" href="https://www.cloudman.app/" target="_blank" rel="noopener noreferrer">CloudMan</a>
-              <a class="quick-link" href="https://dtimis-my.sharepoint.com/" target="_blank" rel="noopener noreferrer">OneDrive</a>
-              <a class="quick-link" href="https://support.aws-sysage.com/pages/UI.php" target="_blank" rel="noopener noreferrer">ITOP</a>
-            </div>
+        <div class="core-links-block">
+          <div class="link-section-header compact">
+            <h3 class="links-title">每日值班</h3>
+            <span class="link-count">5 links</span>
           </div>
-
-          <div class="link-drawer-section">
-            <h3 class="links-title">其他</h3>
-            <div id="otherLinksGrid" class="links-grid drawer-links-grid">
-              <a class="quick-link" href="https://jp.dubber.net/%E5%B8%B3%E6%88%B6/d63e63ada4f3448093cbe9792c66f12a/%E9%8C%84%E9%9F%B3" target="_blank" rel="noopener noreferrer">電話錄音下載</a>
-            </div>
+          <div id="coreLinksGrid" class="links-grid core-links-grid">
+            <a class="quick-link" href="https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?filter=&groupBy=status" target="_blank" rel="noopener noreferrer">Jira</a>
+            <a class="quick-link" href="https://outlook.cloud.microsoft/mail/" target="_blank" rel="noopener noreferrer">Outlook 郵件</a>
+            <a class="quick-link" href="https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/" target="_blank" rel="noopener noreferrer">官方 LINE</a>
+            <a class="quick-link" href="https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u" target="_blank" rel="noopener noreferrer">設備檢查表</a>
+            <a class="quick-link" href="https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA" target="_blank" rel="noopener noreferrer">輪班表</a>
           </div>
         </div>
-      </details>
 
-      <div class="oncall-checklist">
-        <strong>值班小 checklist：</strong>
-        <ul>
-          <li>先確認告警影響範圍，再通知相關窗口。</li>
-          <li>若影響服務可用性，優先做止血處置。</li>
-          <li>正式 SOP、電話、信箱與客戶資料請放在公司授權系統。</li>
-        </ul>
+        <details class="link-drawer">
+          <summary>
+            <span>更多入口</span>
+            <span class="drawer-hint">AWS / 公司系統 / 其他</span>
+          </summary>
+
+          <div class="link-drawer-body">
+            <div class="link-drawer-section">
+              <h3 class="links-title">AWS</h3>
+              <div id="awsLinksGrid" class="links-grid drawer-links-grid">
+                <a class="quick-link" href="https://us-east-1.console.aws.amazon.com/console/home?region=us-east-1#" target="_blank" rel="noopener noreferrer">AWS Console</a>
+                <a class="quick-link" href="https://metaage.awsapps.com/start#/" target="_blank" rel="noopener noreferrer">公司 SSO</a>
+                <a class="quick-link" href="https://calculator.aws/#/addService" target="_blank" rel="noopener noreferrer">AWS 計算機</a>
+                <a class="quick-link" href="https://explore.skillbuilder.aws/learn" target="_blank" rel="noopener noreferrer">AWS Skill Builder</a>
+              </div>
+            </div>
+
+            <div class="link-drawer-section">
+              <h3 class="links-title">公司連接</h3>
+              <div id="companyLinksGrid" class="links-grid drawer-links-grid">
+                <a class="quick-link" href="https://kb.aws-metaage.com/" target="_blank" rel="noopener noreferrer">KB</a>
+                <a class="quick-link" href="https://bpm.metaage.com.tw/Gaia/portal" target="_blank" rel="noopener noreferrer">BPM</a>
+                <a class="quick-link" href="https://www.cloudman.app/" target="_blank" rel="noopener noreferrer">CloudMan</a>
+                <a class="quick-link" href="https://dtimis-my.sharepoint.com/" target="_blank" rel="noopener noreferrer">OneDrive</a>
+                <a class="quick-link" href="https://support.aws-sysage.com/pages/UI.php" target="_blank" rel="noopener noreferrer">ITOP</a>
+              </div>
+            </div>
+
+            <div class="link-drawer-section">
+              <h3 class="links-title">其他</h3>
+              <div id="otherLinksGrid" class="links-grid drawer-links-grid">
+                <a class="quick-link" href="https://jp.dubber.net/%E5%B8%B3%E6%88%B6/d63e63ada4f3448093cbe9792c66f12a/%E9%8C%84%E9%9F%B3" target="_blank" rel="noopener noreferrer">電話錄音下載</a>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="oncall-checklist">
+          <strong>值班小 checklist：</strong>
+          <ul>
+            <li>先確認告警影響範圍，再通知相關窗口。</li>
+            <li>若影響服務可用性，優先做止血處置。</li>
+            <li>正式 SOP、電話、信箱與客戶資料請放在公司授權系統。</li>
+          </ul>
+        </div>
       </div>
     </section>
 

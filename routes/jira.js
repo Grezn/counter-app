@@ -19,9 +19,10 @@ function getJiraConfig() {
     email: process.env.JIRA_EMAIL || "",
     apiToken: process.env.JIRA_API_TOKEN || "",
     projectKey: process.env.JIRA_PROJECT_KEY || "",
-    issueTypeName: process.env.JIRA_ISSUE_TYPE || "Task",
+    issueTypeName: process.env.JIRA_ISSUE_TYPE || "交接事項",
     issueTypeId: process.env.JIRA_ISSUE_TYPE_ID || "",
-    labels: process.env.JIRA_LABELS || "noc-oncall",
+    labels: process.env.JIRA_LABELS || "電話連絡,noc-oncall",
+    defaultPriority: process.env.JIRA_DEFAULT_PRIORITY || "",
   };
 }
 
@@ -38,8 +39,24 @@ function normalizeLabel(value) {
   return String(value || "")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/[^\p{L}\p{N}_-]+/gu, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function getPriorityName(config, fields) {
+  if (config.defaultPriority) return config.defaultPriority;
+
+  switch (fields.severity) {
+    case "Critical":
+    case "Service Impact":
+      return "High";
+    case "Warning":
+      return "Medium";
+    case "Info":
+      return "Low";
+    default:
+      return "";
+  }
 }
 
 function getConfiguredLabels(config, fields) {
@@ -114,18 +131,22 @@ function buildCreateIssuePayload(config, incident, handoverSummary) {
   const issueType = config.issueTypeId
     ? { id: config.issueTypeId }
     : { name: config.issueTypeName };
-
-  return {
-    fields: {
-      project: {
-        key: config.projectKey,
-      },
-      issuetype: issueType,
-      summary: buildIssueSummary(fields),
-      description: summaryToAdf(handoverSummary),
-      labels: getConfiguredLabels(config, fields),
+  const jiraFields = {
+    project: {
+      key: config.projectKey,
     },
+    issuetype: issueType,
+    summary: buildIssueSummary(fields),
+    description: summaryToAdf(handoverSummary),
+    labels: getConfiguredLabels(config, fields),
   };
+  const priorityName = getPriorityName(config, fields);
+
+  if (priorityName) {
+    jiraFields.priority = { name: priorityName };
+  }
+
+  return { fields: jiraFields };
 }
 
 async function readJiraResponse(response) {

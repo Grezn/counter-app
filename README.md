@@ -25,13 +25,15 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - `APP_VERSION`：顯示在 `/whoami` 的版本字串。
 - `REDIS_URL`：完整 Redis URL，優先使用這個。
 - `REDIS_HOST` / `REDIS_PORT`：如果沒有設定 `REDIS_URL`，程式會用這兩個組成 Redis URL。
+- `REDIS_CONNECT_TIMEOUT_MS` / `REDIS_CONNECT_MAX_RETRIES`：Redis 開機連線逾時與重試上限；超過後網站仍會啟動，`/ready` 會回失敗。
 - `RESET_TOKEN`：Reset 按鈕需要的 token，正式環境請放在 SSM Parameter Store 或 Secrets Manager。
 - `JIRA_BASE_URL`：Jira Cloud 網站，例如 `https://your-domain.atlassian.net`。
 - `JIRA_REST_BASE_URL`：可選；若使用 scoped API token，可填 `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3`。
 - `JIRA_EMAIL` / `JIRA_API_TOKEN`：建立小卡用的 Atlassian 帳號 email 與 API token。
 - `JIRA_PROJECT_KEY`：要建立 issue 的 Jira project key，例如 `PMP`。
-- `JIRA_ISSUE_TYPE` / `JIRA_ISSUE_TYPE_ID`：issue type，預設使用 `Task`；若你的 Jira create screen 需要固定 ID，可填 `JIRA_ISSUE_TYPE_ID`。
-- `JIRA_LABELS`：建立小卡時加上的 labels，逗號分隔，預設 `noc-oncall`。
+- `JIRA_ISSUE_TYPE` / `JIRA_ISSUE_TYPE_ID`：issue type，預設使用 `交接事項`；若你的 Jira create screen 需要固定 ID，可填 `JIRA_ISSUE_TYPE_ID`。
+- `JIRA_LABELS`：建立小卡時加上的 labels，逗號分隔，預設 `電話連絡,noc-oncall`。
+- `JIRA_DEFAULT_PRIORITY`：可選；若留空會依嚴重度帶入 High / Medium / Low。
 
 ## 部署注意事項
 
@@ -40,6 +42,7 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - `/ready` 會檢查 Redis，因此 ALB / Docker health check 使用 `/ready` 比較適合正式部署。
 - GitHub Actions 會等待 ASG instance refresh 結果，避免「CI 顯示成功，但 EC2 換機其實失敗」。
 - EC2 user data 範本放在 `infra/user-data.sh`。正式環境建議讓 EC2 掛 IAM Role，不要在機器上放 IAM User access key。
+- Jira email / API token 的 SSM 參數名稱預設為 `/counter-app/prod/jira-email` 和 `/counter-app/prod/jira-api-token`。
 - ALB 來源 IP 限制腳本放在 `infra/restrict-alb-source-ip.sh`。
 - GitHub Actions OIDC 建立腳本放在 `infra/setup-github-oidc.sh`。
 - 程式碼導讀請看 `docs/code-walkthrough.md`。
@@ -53,12 +56,15 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 
 前端的「建立 Jira 小卡」會把目前事件表單和交班摘要送到後端 `/api/jira/issues`，再由後端呼叫 Jira Cloud REST API 建立 issue。Jira token 不會出現在 HTML、JS 或瀏覽器 localStorage；正式環境請把 token 放在 EC2 env、SSM Parameter Store 或 Secrets Manager。
 
+如果 API token 曾經貼到聊天、文件或前端程式碼，請先到 Atlassian 帳號撤銷舊 token，再建立新 token 填入後端環境變數。
+
 ## EC2 權限
 
 EC2 開機執行 user data 時，`aws ecr get-login-password` 需要 AWS 權限。建議用 EC2 Instance Profile / IAM Role，最少需要：
 
 - ECR 讀取 image：`ecr:GetAuthorizationToken`、`ecr:BatchCheckLayerAvailability`、`ecr:GetDownloadUrlForLayer`、`ecr:BatchGetImage`
 - 如果 Reset Token 放 SSM：`ssm:GetParameter`
+- 如果 Jira API token 放 SSM：`ssm:GetParameter`
 - 如果 SSM SecureString 用自訂 KMS key：`kms:Decrypt`
 
 GitHub Actions 目前用 IAM User access key 也能部署；之後要再加強時，可以改成 GitHub OIDC assume role，避免長期 access key 放在 GitHub secrets。
