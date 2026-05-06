@@ -5,7 +5,7 @@ set -euxo pipefail
 # 重點：
 # 1. EC2 要掛 IAM Role / Instance Profile，讓 aws cli 可以登入 ECR。
 # 2. RESET_TOKEN / JIRA_API_TOKEN 建議放 SSM Parameter Store，不要寫死在 user data。
-# 3. docker run 會把 Redis、Jira 和 app 設定用環境變數傳進 container。
+# 3. docker run 會把 Redis、Jira、氣象和 app 設定用環境變數傳進 container。
 
 # ===== 記錄 log =====
 exec > >(tee /var/log/user-data.log | logger -t user-data -s 2>/dev/console) 2>&1
@@ -39,12 +39,18 @@ JIRA_ISSUE_TYPE_ID=""
 JIRA_LABELS="電話連絡,noc-oncall"
 JIRA_DEFAULT_PRIORITY=""
 
+# ===== 中央氣象署氣象資料開放平台 =====
+CWA_LOCATION_NAME="臺北市"
+CWA_DATASET_ID="F-C0032-001"
+CWA_CACHE_TTL_MS="600000"
+
 # ===== Secret =====
 # 建議先在 SSM 建立 SecureString：
 # aws ssm put-parameter --name /counter-app/prod/reset-token --type SecureString --value "你的長隨機token"
 RESET_TOKEN_PARAM_NAME="/counter-app/prod/reset-token"
 JIRA_EMAIL_PARAM_NAME="/counter-app/prod/jira-email"
 JIRA_API_TOKEN_PARAM_NAME="/counter-app/prod/jira-api-token"
+CWA_API_KEY_PARAM_NAME="/counter-app/prod/cwa-api-key"
 
 echo "[UserData] IMAGE_URI=${IMAGE_URI}"
 echo "[UserData] REDIS_ENDPOINT=${REDIS_ENDPOINT}:${REDIS_PORT}"
@@ -126,6 +132,14 @@ if [ -z "$JIRA_EMAIL" ] || [ "$JIRA_EMAIL" = "None" ] || [ -z "$JIRA_API_TOKEN" 
   JIRA_API_TOKEN=""
 fi
 
+# ===== 讀取氣象署開放平台授權碼 =====
+# 沒設定時 app 仍會啟動，本地區氣象會顯示未設定。
+CWA_API_KEY="$(read_optional_parameter "$CWA_API_KEY_PARAM_NAME")"
+if [ -z "$CWA_API_KEY" ] || [ "$CWA_API_KEY" = "None" ]; then
+  echo "[UserData] WARN: CWA API key SSM parameter is not configured"
+  CWA_API_KEY=""
+fi
+
 # ===== ECR Login / 拉 image =====
 # 如果這裡失敗，通常代表 EC2 IAM Role 少了 ECR read 權限。
 retry 5 ecr_login
@@ -169,6 +183,10 @@ docker run -d \
   -e "JIRA_ISSUE_TYPE_ID=${JIRA_ISSUE_TYPE_ID}" \
   -e "JIRA_LABELS=${JIRA_LABELS}" \
   -e "JIRA_DEFAULT_PRIORITY=${JIRA_DEFAULT_PRIORITY}" \
+  -e "CWA_API_KEY=${CWA_API_KEY}" \
+  -e "CWA_LOCATION_NAME=${CWA_LOCATION_NAME}" \
+  -e "CWA_DATASET_ID=${CWA_DATASET_ID}" \
+  -e "CWA_CACHE_TTL_MS=${CWA_CACHE_TTL_MS}" \
   "$IMAGE_URI"
 
 # ===== 本機健康檢查 =====

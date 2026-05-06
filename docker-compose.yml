@@ -27,6 +27,11 @@ services:
       JIRA_ISSUE_TYPE_ID: "${JIRA_ISSUE_TYPE_ID:-}"
       JIRA_LABELS: "${JIRA_LABELS:-電話連絡,noc-oncall}"
       JIRA_DEFAULT_PRIORITY: "${JIRA_DEFAULT_PRIORITY:-}"
+      # 中央氣象署氣象資料開放平台。本地區氣象會由後端代理呼叫。
+      CWA_API_KEY: "${CWA_API_KEY:-}"
+      CWA_LOCATION_NAME: "${CWA_LOCATION_NAME:-臺北市}"
+      CWA_DATASET_ID: "${CWA_DATASET_ID:-F-C0032-001}"
+      CWA_CACHE_TTL_MS: "${CWA_CACHE_TTL_MS:-600000}"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/ready"]
       interval: 30s

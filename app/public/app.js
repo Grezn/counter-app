@@ -109,6 +109,71 @@ function renderStats(data) {
   updateBadge(data.redis);
 }
 
+function setWeatherText(message, detail) {
+  const meta = document.getElementById("weatherMeta");
+  const content = document.getElementById("weatherContent");
+  if (meta) meta.textContent = detail || "";
+  if (content) content.textContent = message;
+}
+
+function formatWeatherPeriod(startTime, endTime) {
+  if (!startTime && !endTime) return "最近一段預報";
+  const clean = (value) => String(value || "").replace("T", " ").slice(5, 16);
+  return `${clean(startTime)} - ${clean(endTime)}`;
+}
+
+function createWeatherMetric(label, value) {
+  const item = document.createElement("div");
+  item.className = "weather-metric";
+  item.appendChild(createTextElement("span", "weather-metric-label", label));
+  item.appendChild(createTextElement("strong", "", value || "-"));
+  return item;
+}
+
+function renderLocalWeather(data) {
+  const meta = document.getElementById("weatherMeta");
+  const content = document.getElementById("weatherContent");
+  if (!meta || !content) return;
+
+  const temperature = data.minTemperature || data.maxTemperature
+    ? `${data.minTemperature || "-"}-${data.maxTemperature || "-"}°${data.temperatureUnit || "C"}`
+    : "-";
+  const rain = data.rainProbability
+    ? `${data.rainProbability}${data.rainProbabilityUnit || "%"}`
+    : "-";
+
+  meta.textContent = `${data.locationName || "本地區"} · ${formatWeatherPeriod(data.startTime, data.endTime)}`;
+  content.replaceChildren(
+    createWeatherMetric("天氣", data.weather),
+    createWeatherMetric("溫度", temperature),
+    createWeatherMetric("降雨", rain),
+    createWeatherMetric("舒適度", data.comfort),
+  );
+}
+
+async function loadLocalWeather(forceRefresh = false) {
+  try {
+    const query = forceRefresh ? "?refresh=1" : "";
+    const res = await fetch(`/api/weather/local${query}`, {
+      cache: "no-store",
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (data && data.configured === false) {
+        setWeatherText("尚未設定氣象授權碼", `${data.locationName || "本地區"} · ${data.datasetId || "F-C0032-001"}`);
+        return;
+      }
+
+      throw new Error(data.error || "Load weather failed");
+    }
+
+    renderLocalWeather(data);
+  } catch (err) {
+    setWeatherText("氣象資料讀取失敗", err.message);
+  }
+}
+
 async function trackView() {
   try {
     clearError();
@@ -443,7 +508,7 @@ function startPhoneTestCall() {
   const dialUrl = `tel:${phone}`;
 
   setPhoneCallStatus(
-    `已開啟系統撥號 ${phone}；公司電話接通後請按 ${PHONE_TEST_POST_CONNECT_KEY}。`,
+    `撥號中：${phone}，接通後按 ${PHONE_TEST_POST_CONNECT_KEY}。`,
     dialUrl,
   );
 
@@ -991,6 +1056,8 @@ initIncidentPanel();
 initRunbookPanel();
 initLinksPanel();
 initTheme();
+loadLocalWeather();
 trackView();
 loadCount();
 setInterval(loadStats, 30000);
+setInterval(loadLocalWeather, 10 * 60 * 1000);
