@@ -61,7 +61,7 @@ Dockerfile
 
 .github/workflows/deploy.yml
   GitHub Actions CI/CD。
-  push 到 main 後 build image、push ECR、refresh ASG。
+  push 到 main 後 build image、push ECR，優先用 SSM 更新現有 EC2 container，失敗才 refresh ASG。
 
 infra/user-data.sh
   EC2 開機時執行。
@@ -225,13 +225,13 @@ Redis 不能用時，/ready 會回 500。
 3. GitHub Actions 用 OIDC 向 AWS STS 換短期憑證
 4. Docker build image
 5. Docker push image 到 ECR
-6. 呼叫 ASG `start-instance-refresh`
-7. ASG 建立新 EC2
-8. 新 EC2 跑 `infra/user-data.sh`
-9. user data 登入 ECR、拉 image、讀 SSM reset token
-10. `docker run` 啟動 `counter-app`
-11. ALB 檢查 `/ready`
-12. 新 target healthy 後，舊 EC2 進入 draining
+6. 找出 ASG 裡健康中的 EC2 instance
+7. 優先用 SSM Run Command 在現有 EC2 上執行部署腳本
+8. EC2 拉新的 SHA image、讀 SSM token/API key、重啟 `counter-app`
+9. 部署腳本檢查 `/health`、`/ready`、`/whoami`
+10. 如果 SSM 快速部署失敗，workflow 才呼叫 ASG `start-instance-refresh`
+11. ASG 建立新 EC2，新 EC2 跑 `infra/user-data.sh`
+12. ALB 檢查 `/ready`，新 target healthy 後舊 EC2 進入 draining
 
 ## 讀程式建議順序
 

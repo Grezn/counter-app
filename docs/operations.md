@@ -8,10 +8,10 @@
 git push origin main
 -> GitHub Actions build Docker image
 -> push image 到 ECR
--> start ASG instance refresh
--> ASG 建立新 EC2
--> EC2 user data 安裝 Docker、拉 ECR image、啟動 container
--> ALB target group 檢查 /ready
+-> 優先用 SSM Run Command 更新現有 EC2 container
+-> EC2 docker pull SHA image、重啟 counter-app container
+-> 本機檢查 /health、/ready、/whoami
+-> 如果 SSM 失敗，才 fallback 到 ASG instance refresh
 ```
 
 ## 哪些 key 可以移除
@@ -25,7 +25,8 @@ EC2 不應該靠 IAM User access key 操作 AWS。它應該靠 Launch Template /
 EC2 role 至少需要：
 
 - `AmazonEC2ContainerRegistryReadOnly`
-- `AmazonSSMReadOnlyAccess`
+- `AmazonSSMManagedInstanceCore`
+- 讀 Parameter Store 的權限，例如 `ssm:GetParameter`
 
 如果 SSM SecureString 使用自訂 KMS key，還需要 `kms:Decrypt`。
 
@@ -70,7 +71,8 @@ bash infra/setup-github-oidc.sh
 2. 建立 IAM Role：`counter-app-github-actions-deploy`
 3. 限制只有 `Grezn/counter-app` 的 `main` branch 可以 assume role
 4. 授權 GitHub Actions push/pull `docker-demo` ECR image
-5. 授權 GitHub Actions 啟動和查詢 ASG instance refresh
+5. 授權 GitHub Actions 用 SSM Run Command 快速更新現有 EC2
+6. 授權 GitHub Actions 啟動和查詢 ASG instance refresh 作為 fallback
 
 建立完成後，push 一次測試：
 
@@ -155,7 +157,7 @@ git commit -m "你的 commit 訊息"
 git push origin main
 ```
 
-GitHub Actions 會自動 build/push image，並啟動 ASG instance refresh。
+GitHub Actions 會自動 build/push image，並先嘗試 SSM 快速部署。成功時不用等新 EC2 開機；只有 SSM 不可用或部署命令失敗時，才會自動退回 ASG instance refresh。
 
 ## 限制網站來源 IP
 

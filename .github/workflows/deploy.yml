@@ -1,4 +1,4 @@
-name: Build, Push, and Refresh ASG
+name: Build, Push, and Deploy
 
 on:
   push:
@@ -55,9 +55,219 @@ jobs:
           docker push $IMAGE_URI:latest
           docker push $IMAGE_URI:$IMAGE_TAG
 
-      - name: Start ASG instance refresh
-        id: refresh
+      - name: Find current ASG instances
+        id: targets
+        continue-on-error: true
         run: |
+          INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ASG_NAME" \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService' && HealthStatus=='Healthy'].InstanceId" \
+            --output text)
+
+          echo "In-service ASG instances: ${INSTANCE_IDS:-none}"
+          echo "instance_ids=${INSTANCE_IDS}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to existing EC2 with SSM
+        id: ssm_deploy
+        continue-on-error: true
+        if: steps.targets.outputs.instance_ids != ''
+        run: |
+          set -euo pipefail
+
+          INSTANCE_IDS="${{ steps.targets.outputs.instance_ids }}"
+          IMAGE_URI_WITH_TAG="${IMAGE_URI}:${IMAGE_TAG}"
+
+          cat > deploy-on-instance.sh <<'SCRIPT'
+          #!/bin/sh
+          set -eu
+
+          AWS_REGION="__AWS_REGION__"
+          AWS_ACCOUNT_ID="__AWS_ACCOUNT_ID__"
+          ECR_REPO="__ECR_REPOSITORY__"
+          IMAGE_TAG="__IMAGE_TAG__"
+          APP_VERSION="$(printf "%s" "$IMAGE_TAG" | cut -c1-18)"
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}:${IMAGE_TAG}"
+
+          REDIS_ENDPOINT="demo-caches.nyynzy.ng.0001.use1.cache.amazonaws.com"
+          REDIS_PORT="6379"
+          REDIS_URL="redis://${REDIS_ENDPOINT}:${REDIS_PORT}"
+
+          CONTAINER_NAME="counter-app"
+          APP_PORT="3000"
+          HOST_PORT="80"
+
+          JIRA_BASE_URL="https://metaage-corp-p400.atlassian.net"
+          JIRA_REST_BASE_URL=""
+          JIRA_PROJECT_KEY="PMP"
+          JIRA_ISSUE_TYPE="交接事項"
+          JIRA_ISSUE_TYPE_ID=""
+          JIRA_LABELS="電話連絡,noc-oncall"
+          JIRA_DEFAULT_PRIORITY=""
+
+          CWA_LOCATION_NAME="臺北市"
+          CWA_DATASET_ID="F-C0032-001"
+          CWA_CACHE_TTL_MS="600000"
+
+          RESET_TOKEN_PARAM_NAME="/counter-app/prod/reset-token"
+          JIRA_EMAIL_PARAM_NAME="/counter-app/prod/jira-email"
+          JIRA_API_TOKEN_PARAM_NAME="/counter-app/prod/jira-api-token"
+          CWA_API_KEY_PARAM_NAME="/counter-app/prod/cwa-api-key"
+
+          read_required_parameter() {
+            aws ssm get-parameter \
+              --region "$AWS_REGION" \
+              --name "$1" \
+              --with-decryption \
+              --query "Parameter.Value" \
+              --output text
+          }
+
+          read_optional_parameter() {
+            aws ssm get-parameter \
+              --region "$AWS_REGION" \
+              --name "$1" \
+              --with-decryption \
+              --query "Parameter.Value" \
+              --output text 2>/dev/null || true
+          }
+
+          echo "[Deploy] Pulling ${IMAGE_URI}"
+
+          RESET_TOKEN="$(read_required_parameter "$RESET_TOKEN_PARAM_NAME")"
+          JIRA_EMAIL="$(read_optional_parameter "$JIRA_EMAIL_PARAM_NAME")"
+          JIRA_API_TOKEN="$(read_optional_parameter "$JIRA_API_TOKEN_PARAM_NAME")"
+          CWA_API_KEY="$(read_optional_parameter "$CWA_API_KEY_PARAM_NAME")"
+
+          if [ -z "$JIRA_EMAIL" ] || [ "$JIRA_EMAIL" = "None" ]; then
+            JIRA_EMAIL=""
+          fi
+
+          if [ -z "$JIRA_API_TOKEN" ] || [ "$JIRA_API_TOKEN" = "None" ]; then
+            JIRA_API_TOKEN=""
+          fi
+
+          if [ -z "$CWA_API_KEY" ] || [ "$CWA_API_KEY" = "None" ]; then
+            CWA_API_KEY=""
+          fi
+
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+          docker pull "$IMAGE_URI"
+
+          docker rm -f "$CONTAINER_NAME" || true
+
+          docker run -d \
+            --name "$CONTAINER_NAME" \
+            --restart unless-stopped \
+            --log-driver json-file \
+            --log-opt max-size=10m \
+            --log-opt max-file=3 \
+            --health-cmd "wget -qO- http://127.0.0.1:${APP_PORT}/ready || exit 1" \
+            --health-interval 30s \
+            --health-timeout 5s \
+            --health-retries 3 \
+            --health-start-period 20s \
+            -p "${HOST_PORT}:${APP_PORT}" \
+            -e "PORT=${APP_PORT}" \
+            -e "APP_VERSION=${APP_VERSION}" \
+            -e "REDIS_HOST=${REDIS_ENDPOINT}" \
+            -e "REDIS_PORT=${REDIS_PORT}" \
+            -e "REDIS_URL=${REDIS_URL}" \
+            -e "RESET_TOKEN=${RESET_TOKEN}" \
+            -e "JIRA_BASE_URL=${JIRA_BASE_URL}" \
+            -e "JIRA_REST_BASE_URL=${JIRA_REST_BASE_URL}" \
+            -e "JIRA_EMAIL=${JIRA_EMAIL}" \
+            -e "JIRA_API_TOKEN=${JIRA_API_TOKEN}" \
+            -e "JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}" \
+            -e "JIRA_ISSUE_TYPE=${JIRA_ISSUE_TYPE}" \
+            -e "JIRA_ISSUE_TYPE_ID=${JIRA_ISSUE_TYPE_ID}" \
+            -e "JIRA_LABELS=${JIRA_LABELS}" \
+            -e "JIRA_DEFAULT_PRIORITY=${JIRA_DEFAULT_PRIORITY}" \
+            -e "CWA_API_KEY=${CWA_API_KEY}" \
+            -e "CWA_LOCATION_NAME=${CWA_LOCATION_NAME}" \
+            -e "CWA_DATASET_ID=${CWA_DATASET_ID}" \
+            -e "CWA_CACHE_TTL_MS=${CWA_CACHE_TTL_MS}" \
+            "$IMAGE_URI"
+
+          sleep 8
+
+          curl -fsS "http://127.0.0.1/health"
+          curl -fsS "http://127.0.0.1/ready"
+          curl -fsS "http://127.0.0.1/whoami"
+
+          docker image prune -af --filter "until=24h" || true
+
+          echo "[Deploy] Done"
+          SCRIPT
+
+          sed -i \
+            -e "s|__AWS_REGION__|${AWS_REGION}|g" \
+            -e "s|__AWS_ACCOUNT_ID__|${AWS_ACCOUNT_ID}|g" \
+            -e "s|__ECR_REPOSITORY__|${ECR_REPOSITORY}|g" \
+            -e "s|__IMAGE_TAG__|${IMAGE_TAG}|g" \
+            deploy-on-instance.sh
+
+          jq -n --arg script "$(cat deploy-on-instance.sh)" \
+            '{commands: [$script], executionTimeout: ["900"]}' \
+            > ssm-parameters.json
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids $INSTANCE_IDS \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy counter-app ${IMAGE_URI_WITH_TAG}" \
+            --parameters file://ssm-parameters.json \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "SSM command id: $COMMAND_ID"
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+
+          for attempt in {1..90}; do
+            PENDING=0
+
+            for INSTANCE_ID in $INSTANCE_IDS; do
+              STATUS=$(aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "$INSTANCE_ID" \
+                --query "Status" \
+                --output text 2>/dev/null || echo "Pending")
+
+              echo "Attempt $attempt: ${INSTANCE_ID} SSM status is ${STATUS}"
+
+              case "$STATUS" in
+                Success)
+                  ;;
+                Pending|InProgress|Delayed)
+                  PENDING=1
+                  ;;
+                *)
+                  echo "SSM deployment failed on ${INSTANCE_ID}"
+                  aws ssm get-command-invocation \
+                    --command-id "$COMMAND_ID" \
+                    --instance-id "$INSTANCE_ID" \
+                    --query "{stdout:StandardOutputContent,stderr:StandardErrorContent}" \
+                    --output json || true
+                  exit 1
+                  ;;
+              esac
+            done
+
+            if [ "$PENDING" -eq 0 ]; then
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "SSM deployment did not finish in time"
+          exit 1
+
+      - name: Start ASG instance refresh fallback
+        id: refresh
+        if: steps.ssm_deploy.outcome != 'success'
+        run: |
+          echo "SSM in-place deployment was not successful. Falling back to ASG instance refresh."
           set +e
           START_OUTPUT=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name $ASG_NAME \
@@ -93,6 +303,7 @@ jobs:
           echo "refresh_id=$REFRESH_ID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for ASG instance refresh
+        if: steps.ssm_deploy.outcome != 'success'
         run: |
           REFRESH_ID="${{ steps.refresh.outputs.refresh_id }}"
 
@@ -126,3 +337,8 @@ jobs:
         run: |
           echo "Pushed: $IMAGE_URI:latest"
           echo "Pushed: $IMAGE_URI:$IMAGE_TAG"
+          if [ "${{ steps.ssm_deploy.outcome }}" = "success" ]; then
+            echo "Deployment mode: in-place SSM docker restart"
+          else
+            echo "Deployment mode: ASG instance refresh fallback"
+          fi

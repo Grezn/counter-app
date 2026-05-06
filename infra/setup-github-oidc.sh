@@ -92,8 +92,18 @@ cat > "$PERMISSION_POLICY_FILE" <<EOF
       "Sid": "RefreshCounterAppAsg",
       "Effect": "Allow",
       "Action": [
+        "autoscaling:DescribeAutoScalingGroups",
         "autoscaling:DescribeInstanceRefreshes",
         "autoscaling:StartInstanceRefresh"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DeployCounterAppWithSsm",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:SendCommand",
+        "ssm:GetCommandInvocation"
       ],
       "Resource": "*"
     }

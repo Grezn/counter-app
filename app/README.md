@@ -2,7 +2,7 @@
 
 這是一個練習用的 Docker + AWS 部署專案：
 
-GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 用 Docker 啟動服務
+GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 container；若 SSM 失敗才 fallback 到 ASG instance refresh
 
 ## 主要元件
 
@@ -56,9 +56,23 @@ aws ssm put-parameter --region us-east-1 --name /counter-app/prod/cwa-api-key --
 - Docker image 會透過 `.dockerignore` 排除 `.env`、Git 資料、Terraform state 和重複的 `app/` 目錄。
 - `/health` 只代表 Node.js 還活著。
 - `/ready` 會檢查 Redis，因此 ALB / Docker health check 使用 `/ready` 比較適合正式部署。
-- GitHub Actions 會等待 ASG instance refresh 結果，避免「CI 顯示成功，但 EC2 換機其實失敗」。
+- GitHub Actions 會先用 SSM 在現有 EC2 上 `docker pull` SHA image 並重啟 container；若 SSM 不可用，才會等待 ASG instance refresh 結果。
 - EC2 user data 範本放在根目錄的 `infra/user-data.sh`。正式環境建議讓 EC2 掛 IAM Role，不要在機器上放 IAM User access key。
 - Jira email / API token 的 SSM 參數名稱預設為 `/counter-app/prod/jira-email` 和 `/counter-app/prod/jira-api-token`。
+
+## 快速部署模式
+
+push 到 `main` 後，workflow 現在會先找 ASG 裡健康中的 EC2，透過 AWS Systems Manager Run Command 直接在原機器執行 `docker pull`、重啟 `counter-app` container，並檢查 `/health`、`/ready`、`/whoami`。
+
+這樣通常只需要等 image build/push 和 container 重啟，不需要等新 EC2 開機。若 SSM 權限、SSM Agent 或 instance 狀態不符合，workflow 會自動退回原本的 ASG instance refresh。
+
+第一次啟用快路徑前，請在 CloudShell 重新套一次 GitHub OIDC deploy role 權限：
+
+```bash
+bash infra/setup-github-oidc.sh
+```
+
+EC2 的 Instance Profile 也要能被 SSM 管理，通常需要 AWS managed policy `AmazonSSMManagedInstanceCore`，另外仍需要 ECR pull、SSM Parameter Store 讀取與必要時的 `kms:Decrypt`。
 
 ## Reset 按鈕
 
@@ -75,8 +89,10 @@ aws ssm put-parameter --region us-east-1 --name /counter-app/prod/cwa-api-key --
 EC2 開機執行 user data 時，`aws ecr get-login-password` 需要 AWS 權限。建議用 EC2 Instance Profile / IAM Role，最少需要：
 
 - ECR 讀取 image：`ecr:GetAuthorizationToken`、`ecr:BatchCheckLayerAvailability`、`ecr:GetDownloadUrlForLayer`、`ecr:BatchGetImage`
+- SSM 管理 EC2：建議掛 `AmazonSSMManagedInstanceCore`
 - 如果 Reset Token 放 SSM：`ssm:GetParameter`
 - 如果 Jira API token 放 SSM：`ssm:GetParameter`
+- 如果 CWA API key 放 SSM：`ssm:GetParameter`
 - 如果 SSM SecureString 用自訂 KMS key：`kms:Decrypt`
 
 GitHub Actions 目前用 IAM User access key 也能部署；之後要再加強時，可以改成 GitHub OIDC assume role，避免長期 access key 放在 GitHub secrets。
