@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const counterRoutes = require("./routes/counter");
 const healthRoutes = require("./routes/health");
 const jiraRoutes = require("./routes/jira");
+const oncallLinkRoutes = require("./routes/oncallLinks");
 const runbookRoutes = require("./routes/runbooks");
 const weatherRoutes = require("./routes/weather");
 const { connectRedis } = require("./services/redis");
@@ -119,6 +120,7 @@ app.get("/whoami", (req, res) => {
 app.use("/", counterRoutes);
 app.use("/", healthRoutes);
 app.use("/", jiraRoutes);
+app.use("/", oncallLinkRoutes);
 app.use("/", runbookRoutes);
 app.use("/", weatherRoutes);
 

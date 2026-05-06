@@ -25,6 +25,8 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - `REDIS_HOST` / `REDIS_PORT`：如果沒有設定 `REDIS_URL`，程式會用這兩個組成 Redis URL。
 - `REDIS_CONNECT_TIMEOUT_MS` / `REDIS_CONNECT_MAX_RETRIES`：Redis 開機連線逾時與重試上限；超過後網站仍會啟動，`/ready` 會回失敗。
 - `RESET_TOKEN`：Reset 按鈕需要的 token，正式環境請放在 SSM Parameter Store 或 Secrets Manager。
+- `ONCALL_LINKS_ADMIN_TOKEN`：可選；值班入口線上編輯 token。留空時會沿用 `RESET_TOKEN`。
+- `ONCALL_LINKS_REDIS_KEY`：可選；值班入口存在 Redis 的 key，預設 `config:oncall_links`。
 - `JIRA_BASE_URL`：Jira Cloud 網站，例如 `https://your-domain.atlassian.net`。
 - `JIRA_REST_BASE_URL`：可選；若使用 scoped API token，可填 `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3`。
 - `JIRA_EMAIL` / `JIRA_API_TOKEN`：建立小卡用的 Atlassian 帳號 email 與 API token。
@@ -32,6 +34,22 @@ GitHub push -> GitHub Actions build image -> ECR -> ASG instance refresh -> EC2 
 - `JIRA_ISSUE_TYPE` / `JIRA_ISSUE_TYPE_ID`：issue type，預設使用 `交接事項`；若你的 Jira create screen 需要固定 ID，可填 `JIRA_ISSUE_TYPE_ID`。
 - `JIRA_LABELS`：建立小卡時加上的 labels，逗號分隔，預設 `電話連絡,noc-oncall`。
 - `JIRA_DEFAULT_PRIORITY`：可選；若留空會依嚴重度帶入 High / Medium / Low。
+- `CWA_API_KEY`：中央氣象署氣象資料開放平台授權碼，只放後端環境變數或 SSM。
+- `CWA_LOCATION_NAME` / `CWA_DATASET_ID` / `CWA_CACHE_TTL_MS`：本地區氣象顯示設定。
+
+## 值班入口線上更新
+
+「值班入口」已改成資料驅動。預設資料在 `data/oncall-links.json`；正式環境若 Redis 可用，按右側「值班入口」裡的「編輯入口」即可用 JSON 更新連結，儲存後會寫到 Redis，不需要 push、不需要 ASG instance refresh。
+
+線上編輯使用 `ONCALL_LINKS_ADMIN_TOKEN`，未設定時沿用 `RESET_TOKEN`。這適合更新入口連結、群組和 checklist；如果是改程式碼、版面功能或後端邏輯，仍然要走 Docker image 部署。
+
+## 氣象 API 授權碼
+
+不要把中央氣象署授權碼 commit 到 repo。正式環境可放到既有 user data 會讀取的 SSM SecureString：
+
+```bash
+aws ssm put-parameter --region us-east-1 --name /counter-app/prod/cwa-api-key --type SecureString --value "你的授權碼" --overwrite
+```
 
 ## 部署注意事項
 
