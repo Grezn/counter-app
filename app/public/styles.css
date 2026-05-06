@@ -253,6 +253,12 @@ button:disabled {
   margin-bottom: 14px;
 }
 
+.links-header-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
 .links-title {
   font-size: 1rem;
   font-weight: 700;
@@ -274,6 +280,18 @@ button:disabled {
   border: 1px solid rgba(74, 222, 128, 0.4);
   background: #14532d;
   color: #dcfce7;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.phone-test {
+  width: 100%;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(216, 180, 254, 0.42);
+  background: #3b1d69;
+  color: #f3e8ff;
   font-weight: 700;
   cursor: pointer;
 }
@@ -696,19 +714,13 @@ button:disabled {
   color: #dcfce7;
 }
 
-.action-btn.webex {
-  background: #3b1d69;
-  border-color: #6d45a7;
-  color: #f3e8ff;
-}
-
 .action-btn.danger {
   background: #b42318;
   border-color: #dc2626;
   color: #fff7f7;
 }
 
-.webex-call-status,
+.phone-call-status,
 .jira-status {
   display: flex;
   align-items: center;
@@ -721,12 +733,13 @@ button:disabled {
   font-weight: 700;
 }
 
-.webex-call-status:empty,
+.phone-call-status:empty,
 .jira-status:empty {
   display: none;
 }
 
-.webex-call-status {
+.phone-call-status {
+  margin-top: -4px;
   background: rgba(168, 85, 247, 0.14);
   border: 1px solid rgba(216, 180, 254, 0.32);
   color: #e9d5ff;
@@ -750,7 +763,7 @@ button:disabled {
   color: #fecaca;
 }
 
-.webex-call-status a,
+.phone-call-status a,
 .jira-status a {
   color: inherit;
   text-decoration: underline;
@@ -1173,7 +1186,7 @@ body {
   color: #ecfeff;
 }
 
-.action-btn.webex {
+.phone-test {
   background: #6d28d9;
   border-color: #7c3aed;
   color: #faf5ff;
@@ -1203,7 +1216,7 @@ body {
   color: #7f1d1d;
 }
 
-.webex-call-status {
+.phone-call-status {
   background: #f3e8ff;
   border-color: #d8b4fe;
   color: #581c87;
@@ -1490,8 +1503,13 @@ html[data-theme="dark"] a {
   }
 
   .ops-chip,
-  .bulk-open {
+  .bulk-open,
+  .phone-test {
     width: 100%;
+  }
+
+  .links-header-actions {
+    grid-template-columns: 1fr;
   }
 
   .drawer-hint {
