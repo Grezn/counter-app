@@ -71,7 +71,7 @@ bash infra/setup-ec2-ssm-parameters.sh
 
 ## 快速部署模式
 
-push 到 `main` 後，workflow 現在會先找 ASG 裡健康且 SSM Online 的 EC2，透過 AWS Systems Manager Run Command 直接在原機器執行 `docker pull`。
+push 到 `main` 後，workflow 現在會先找 ASG 裡健康中的 EC2，透過 AWS Systems Manager Run Command 直接在原機器執行 `docker pull`。workflow 會額外印出 SSM Online 狀態做診斷，但不再因為預檢查不到 Online 就跳過部署。
 
 新版 image 會先用 candidate container 跑在 `127.0.0.1:18080`，確認 `/ready` 正常後才停止舊的 `counter-app` container，並用新版重開 port 80。這樣不用等新 EC2 開機；正式切換通常只剩 container stop/start 的短暫空窗。
 

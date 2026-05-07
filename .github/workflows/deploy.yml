@@ -67,7 +67,6 @@ jobs:
 
           echo "In-service ASG instances: ${INSTANCE_IDS:-none}"
 
-          SSM_INSTANCE_IDS=""
           for INSTANCE_ID in $INSTANCE_IDS; do
             set +e
             PING_STATUS_OUTPUT=$(aws ssm describe-instance-information \
@@ -85,15 +84,14 @@ jobs:
             PING_STATUS="$PING_STATUS_OUTPUT"
 
             if [ "$PING_STATUS" = "Online" ]; then
-              SSM_INSTANCE_IDS="${SSM_INSTANCE_IDS} ${INSTANCE_ID}"
+              echo "${INSTANCE_ID} is Online in Systems Manager"
             else
               echo "::warning::${INSTANCE_ID} is not Online in Systems Manager; PingStatus=${PING_STATUS}"
             fi
           done
 
-          SSM_INSTANCE_IDS="${SSM_INSTANCE_IDS# }"
-          echo "SSM online ASG instances: ${SSM_INSTANCE_IDS:-none}"
-          echo "instance_ids=${SSM_INSTANCE_IDS}" >> "$GITHUB_OUTPUT"
+          echo "Deploy targets: ${INSTANCE_IDS:-none}"
+          echo "instance_ids=${INSTANCE_IDS}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to existing EC2 with SSM
         id: ssm_deploy
@@ -450,7 +448,7 @@ jobs:
       - name: Fail when in-place deployment is unavailable
         if: env.ALLOW_ASG_REFRESH_FALLBACK != 'true' && steps.ssm_deploy.outcome != 'success'
         run: |
-          echo "::error::SSM in-place deployment failed or no SSM-online ASG instance was found."
+          echo "::error::SSM in-place deployment failed or no healthy ASG instance was found."
           echo "::error::ASG instance refresh fallback is disabled, so the old EC2/container was left untouched."
           echo "Fix SSM from AWS CloudShell, then re-run this workflow:"
           echo "  cd ~"
