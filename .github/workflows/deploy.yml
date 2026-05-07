@@ -60,12 +60,17 @@ jobs:
         id: targets
         continue-on-error: true
         run: |
+          aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ASG_NAME" \
+            --query "AutoScalingGroups[0].Instances[*].[InstanceId,LifecycleState,HealthStatus,AvailabilityZone]" \
+            --output table
+
           INSTANCE_IDS=$(aws autoscaling describe-auto-scaling-groups \
             --auto-scaling-group-names "$ASG_NAME" \
-            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService' && HealthStatus=='Healthy'].InstanceId" \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
             --output text)
 
-          echo "In-service ASG instances: ${INSTANCE_IDS:-none}"
+          echo "In-service ASG instances selected for SSM deploy: ${INSTANCE_IDS:-none}"
 
           for INSTANCE_ID in $INSTANCE_IDS; do
             set +e
