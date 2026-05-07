@@ -55,15 +55,18 @@ arn:aws:iam::131730003210:role/counter-app-github-actions-deploy
 第一次使用前，先在 CloudShell 建立 OIDC provider 和 IAM role：
 
 ```bash
+cd ~
+git clone https://github.com/Grezn/counter-app.git || true
 cd counter-app
-git pull
+git pull --ff-only
 bash infra/setup-github-oidc.sh
+bash infra/setup-ec2-ssm-parameters.sh
 ```
 
 如果你是第一次把 OIDC workflow push 上去，GitHub Actions 可能會先失敗一次，因為 IAM Role 還不存在。這是正常的 bootstrap 順序：
 
 1. 先 push 這次 OIDC 修改，讓 CloudShell 可以 `git pull` 到 `infra/setup-github-oidc.sh`。
-2. 到 CloudShell 跑 `bash infra/setup-github-oidc.sh`。
+2. 到 CloudShell 先 `cd ~/counter-app`，再跑 `bash infra/setup-github-oidc.sh` 和 `bash infra/setup-ec2-ssm-parameters.sh`。
 3. 回 GitHub Actions 按 `Re-run jobs`，或再 push 一個 commit。
 
 這個腳本會：

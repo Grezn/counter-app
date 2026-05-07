@@ -75,9 +75,18 @@ push 到 `main` 後，workflow 現在會先找 ASG 裡健康且 SSM Online 的 E
 
 新版 image 會先用 candidate container 跑在 `127.0.0.1:18080`，確認 `/ready` 正常後才停止舊的 `counter-app` container，並用新版重開 port 80。這樣不用等新 EC2 開機；正式切換通常只剩 container stop/start 的短暫空窗。
 
-若 SSM 權限、SSM Agent 或 instance 狀態不符合，workflow 會失敗並保留舊版線上服務，不會自動換 EC2。請先在 CloudShell 跑下面兩個腳本補權限，再 re-run workflow：
+若 SSM 權限、SSM Agent 或 instance 狀態不符合，workflow 會失敗並保留舊版線上服務，不會自動換 EC2。請先在 CloudShell 進入 repo 後補權限，再 re-run workflow：
 
-第一次啟用快路徑前，請在 CloudShell 重新套一次 GitHub OIDC deploy role 權限：
+```bash
+cd ~
+git clone https://github.com/Grezn/counter-app.git || true
+cd counter-app
+git pull --ff-only
+bash infra/setup-github-oidc.sh
+bash infra/setup-ec2-ssm-parameters.sh
+```
+
+第一次啟用快路徑前，重點是重新套 GitHub OIDC deploy role 權限，並補齊 EC2 Instance Profile 的 SSM 權限：
 
 ```bash
 bash infra/setup-github-oidc.sh

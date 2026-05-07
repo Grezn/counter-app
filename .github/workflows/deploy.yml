@@ -69,10 +69,20 @@ jobs:
 
           SSM_INSTANCE_IDS=""
           for INSTANCE_ID in $INSTANCE_IDS; do
-            PING_STATUS=$(aws ssm describe-instance-information \
+            set +e
+            PING_STATUS_OUTPUT=$(aws ssm describe-instance-information \
               --filters "Key=InstanceIds,Values=${INSTANCE_ID}" \
               --query "InstanceInformationList[0].PingStatus" \
-              --output text 2>/dev/null || echo "None")
+              --output text 2>&1)
+            PING_STATUS_EXIT=$?
+            set -e
+
+            if [ "$PING_STATUS_EXIT" -ne 0 ]; then
+              echo "::warning::Could not query Systems Manager for ${INSTANCE_ID}: ${PING_STATUS_OUTPUT}"
+              continue
+            fi
+
+            PING_STATUS="$PING_STATUS_OUTPUT"
 
             if [ "$PING_STATUS" = "Online" ]; then
               SSM_INSTANCE_IDS="${SSM_INSTANCE_IDS} ${INSTANCE_ID}"
@@ -442,9 +452,13 @@ jobs:
         run: |
           echo "::error::SSM in-place deployment failed or no SSM-online ASG instance was found."
           echo "::error::ASG instance refresh fallback is disabled, so the old EC2/container was left untouched."
-          echo "Fix SSM first, then re-run this workflow:"
-          echo "  bash infra/setup-ec2-ssm-parameters.sh"
+          echo "Fix SSM from AWS CloudShell, then re-run this workflow:"
+          echo "  cd ~"
+          echo "  git clone https://github.com/Grezn/counter-app.git || true"
+          echo "  cd counter-app"
+          echo "  git pull --ff-only"
           echo "  bash infra/setup-github-oidc.sh"
+          echo "  bash infra/setup-ec2-ssm-parameters.sh"
           exit 1
 
       - name: Show deployed image tags
