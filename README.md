@@ -60,6 +60,7 @@ bash infra/setup-ec2-ssm-parameters.sh
 - `/ready` 會檢查 Redis，因此 ALB / Docker health check 使用 `/ready` 比較適合正式部署。
 - GitHub Actions 會先用 SSM 在現有 EC2 上 `docker pull` SHA image 並重啟 container；若 SSM 不可用，才會等待 ASG instance refresh 結果。
 - EC2 user data 範本放在 `infra/user-data.sh`。正式環境建議讓 EC2 掛 IAM Role，不要在機器上放 IAM User access key。
+- 如果 ASG fallback 後沒有讀到新環境變數，請用 `infra/update-asg-user-data.sh` 把 repo 裡的 user data 更新到 Launch Template。
 - Jira email / API token 的 SSM 參數名稱預設為 `/counter-app/prod/jira-email` 和 `/counter-app/prod/jira-api-token`。
 - ALB 來源 IP 限制腳本放在 `infra/restrict-alb-source-ip.sh`。
 - GitHub Actions OIDC 建立腳本放在 `infra/setup-github-oidc.sh`。

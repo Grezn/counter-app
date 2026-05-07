@@ -196,7 +196,16 @@ ALLOWED_CIDRS="你的IP/32 另一個IP/32" bash infra/restrict-alb-source-ip.sh
 
 如果有修改 `infra/user-data.sh`，只 push GitHub 還不夠，因為 ASG 不會自動讀 repo 裡的 user data 檔案。
 
-需要另外做：
+可以在 CloudShell 執行：
+
+```bash
+git pull
+bash infra/update-asg-user-data.sh
+```
+
+這會建立新的 Launch Template version、把它設成 default，並啟動 ASG instance refresh。
+
+如果不用腳本，則需要手動做：
 
 1. 把 `infra/user-data.sh` 貼到 Launch Template 的 User data。
 2. 建立新的 Launch Template version。
