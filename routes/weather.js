@@ -399,6 +399,7 @@ router.get("/api/weather/local", async (req, res) => {
       missing: ["CWA_API_KEY"],
       locationName,
       datasetId: useCoordinates ? config.townshipDatasetId : config.cityDatasetId,
+      hint: "EC2 container 沒有讀到 CWA_API_KEY；請確認 /counter-app/prod/cwa-api-key 和 EC2 IAM Role 的 ssm:GetParameter 權限。",
     });
   }
 

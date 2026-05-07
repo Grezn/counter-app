@@ -328,6 +328,40 @@ button:disabled {
   background: #244a9f;
 }
 
+.back-to-top {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 65;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid #34578d;
+  background: #1e3a8a;
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.28);
+  font-size: 1.35rem;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.back-to-top:hover,
+.back-to-top:focus-visible {
+  background: #244a9f;
+}
+
 .links-panel-header {
   display: grid;
   grid-template-columns: 1fr;
@@ -1182,7 +1216,8 @@ body {
 
 .links-panel,
 .incident-panel,
-.runbook-panel {
+.runbook-panel,
+.back-to-top {
   background: #eef5f7;
   border-color: #b8c8d6;
 }
@@ -1223,6 +1258,12 @@ body {
 
 .quick-link {
   color: #1e3a8a;
+}
+
+.back-to-top {
+  background: #1e3a8a;
+  border-color: #1e3a8a;
+  color: #ffffff;
 }
 
 .weather-metric-label {
@@ -1427,9 +1468,15 @@ html[data-theme="dark"] .runbook-card {
 
 html[data-theme="dark"] .links-panel,
 html[data-theme="dark"] .incident-panel,
-html[data-theme="dark"] .runbook-panel {
+html[data-theme="dark"] .runbook-panel,
+html[data-theme="dark"] .back-to-top {
   background: #172033;
   border-color: #334155;
+}
+
+html[data-theme="dark"] .back-to-top {
+  background: #1e3a8a;
+  border-color: #34578d;
 }
 
 html[data-theme="dark"] .link-drawer {
@@ -1652,6 +1699,15 @@ html[data-theme="dark"] a {
     min-height: 104px;
     padding: 8px 6px;
     font-size: 0.78rem;
+  }
+
+  .back-to-top {
+    right: 12px;
+    bottom: 12px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    font-size: 1.2rem;
   }
 
   .drawer-hint {

@@ -235,7 +235,10 @@ async function loadLocalWeather(forceRefresh = false) {
 
     if (!res.ok) {
       if (data && data.configured === false) {
-        setWeatherText("尚未設定氣象授權碼", `${formatWeatherLocation(data)} · ${data.datasetId || "F-C0032-001"}`);
+        setWeatherText(
+          "部署環境未讀到氣象授權碼",
+          data.hint || `${formatWeatherLocation(data)} · ${data.datasetId || "F-C0032-001"}`,
+        );
         return;
       }
 
@@ -1063,6 +1066,25 @@ function initLinksPanel() {
   });
 }
 
+function updateBackToTopButton() {
+  const button = document.getElementById("backToTopButton");
+  if (!button) return;
+
+  button.classList.toggle("visible", window.scrollY > 420);
+}
+
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
+
+function initBackToTop() {
+  updateBackToTopButton();
+  window.addEventListener("scroll", updateBackToTopButton, { passive: true });
+}
+
 async function increment() {
   try {
     clearError();
@@ -1129,6 +1151,7 @@ async function resetCounter() {
 initIncidentPanel();
 initRunbookPanel();
 initLinksPanel();
+initBackToTop();
 initTheme();
 loadLocalWeather();
 trackView();

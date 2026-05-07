@@ -47,6 +47,12 @@ GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 contain
 aws ssm put-parameter --region us-east-1 --name /counter-app/prod/cwa-api-key --type SecureString --value "你的授權碼" --overwrite
 ```
 
+如果畫面顯示「部署環境未讀到氣象授權碼」，代表 container 裡的 `CWA_API_KEY` 是空的。請在 CloudShell 補一次 EC2 Instance Profile 權限：
+
+```bash
+bash infra/setup-ec2-ssm-parameters.sh
+```
+
 ## 部署注意事項
 
 - Docker image 會透過 `.dockerignore` 排除 `.env`、Git 資料、Terraform state 和重複的 `app/` 目錄。
@@ -57,6 +63,7 @@ aws ssm put-parameter --region us-east-1 --name /counter-app/prod/cwa-api-key --
 - Jira email / API token 的 SSM 參數名稱預設為 `/counter-app/prod/jira-email` 和 `/counter-app/prod/jira-api-token`。
 - ALB 來源 IP 限制腳本放在 `infra/restrict-alb-source-ip.sh`。
 - GitHub Actions OIDC 建立腳本放在 `infra/setup-github-oidc.sh`。
+- EC2 讀取 `/counter-app/prod/*` SSM 參數的權限腳本放在 `infra/setup-ec2-ssm-parameters.sh`。
 - 程式碼導讀請看 `docs/code-walkthrough.md`。
 - 詳細維運步驟和 key 移除說明請看 `docs/operations.md`。
 
