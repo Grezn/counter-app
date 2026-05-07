@@ -251,9 +251,9 @@ function getWeatherPosition(forceRefresh = false) {
   });
 }
 
-function createWeatherMetric(label, value) {
+function createWeatherMetric(label, value, className = "") {
   const item = document.createElement("div");
-  item.className = "weather-metric";
+  item.className = className ? `weather-metric ${className}` : "weather-metric";
   item.appendChild(createTextElement("span", "weather-metric-label", label));
   item.appendChild(createTextElement("strong", "", value || "-"));
   return item;
@@ -288,7 +288,7 @@ function renderLocalWeather(data) {
 
   meta.textContent = `${locationLabel} · ${formatWeatherPeriod(data.startTime, data.endTime)}`;
   content.replaceChildren(
-    createWeatherMetric("天氣", data.weather || data.weatherDescription),
+    createWeatherMetric("天氣", data.weather || data.weatherDescription, "weather-metric-wide"),
     createWeatherMetric("溫度", temperature),
     createWeatherMetric("降雨", rain),
     createWeatherMetric("舒適度", data.comfort),

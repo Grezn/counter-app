@@ -19,6 +19,7 @@ env:
   ECR_REPOSITORY: docker-demo
   ASG_NAME: counter-app-asg
   AWS_DEPLOY_ROLE_ARN: arn:aws:iam::131730003210:role/counter-app-github-actions-deploy
+  ALLOW_ASG_REFRESH_FALLBACK: "false"
 
 jobs:
   deploy:
@@ -65,7 +66,24 @@ jobs:
             --output text)
 
           echo "In-service ASG instances: ${INSTANCE_IDS:-none}"
-          echo "instance_ids=${INSTANCE_IDS}" >> "$GITHUB_OUTPUT"
+
+          SSM_INSTANCE_IDS=""
+          for INSTANCE_ID in $INSTANCE_IDS; do
+            PING_STATUS=$(aws ssm describe-instance-information \
+              --filters "Key=InstanceIds,Values=${INSTANCE_ID}" \
+              --query "InstanceInformationList[0].PingStatus" \
+              --output text 2>/dev/null || echo "None")
+
+            if [ "$PING_STATUS" = "Online" ]; then
+              SSM_INSTANCE_IDS="${SSM_INSTANCE_IDS} ${INSTANCE_ID}"
+            else
+              echo "::warning::${INSTANCE_ID} is not Online in Systems Manager; PingStatus=${PING_STATUS}"
+            fi
+          done
+
+          SSM_INSTANCE_IDS="${SSM_INSTANCE_IDS# }"
+          echo "SSM online ASG instances: ${SSM_INSTANCE_IDS:-none}"
+          echo "instance_ids=${SSM_INSTANCE_IDS}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to existing EC2 with SSM
         id: ssm_deploy
@@ -93,8 +111,10 @@ jobs:
           REDIS_URL="redis://${REDIS_ENDPOINT}:${REDIS_PORT}"
 
           CONTAINER_NAME="counter-app"
+          CANDIDATE_CONTAINER_NAME="${CONTAINER_NAME}-candidate"
           APP_PORT="3000"
           HOST_PORT="80"
+          CANDIDATE_HOST_PORT="18080"
 
           JIRA_BASE_URL="https://metaage-corp-p400.atlassian.net"
           JIRA_REST_BASE_URL=""
@@ -158,49 +178,127 @@ jobs:
 
           docker pull "$IMAGE_URI"
 
-          docker rm -f "$CONTAINER_NAME" || true
+          OLD_IMAGE="$(docker inspect --format='{{.Config.Image}}' "$CONTAINER_NAME" 2>/dev/null || true)"
+          OLD_APP_VERSION="$(docker inspect --format='{{range .Config.Env}}{{println .}}{{end}}' "$CONTAINER_NAME" 2>/dev/null \
+            | awk -F= '$1 == "APP_VERSION" {print $2; exit}' || true)"
 
-          docker run -d \
-            --name "$CONTAINER_NAME" \
-            --restart unless-stopped \
-            --log-driver json-file \
-            --log-opt max-size=10m \
-            --log-opt max-file=3 \
-            --health-cmd "wget -qO- http://127.0.0.1:${APP_PORT}/ready || exit 1" \
-            --health-interval 30s \
-            --health-timeout 5s \
-            --health-retries 3 \
-            --health-start-period 20s \
-            -p "${HOST_PORT}:${APP_PORT}" \
-            -e "PORT=${APP_PORT}" \
-            -e "APP_VERSION=${APP_VERSION}" \
-            -e "REDIS_HOST=${REDIS_ENDPOINT}" \
-            -e "REDIS_PORT=${REDIS_PORT}" \
-            -e "REDIS_URL=${REDIS_URL}" \
-            -e "RESET_TOKEN=${RESET_TOKEN}" \
-            -e "JIRA_BASE_URL=${JIRA_BASE_URL}" \
-            -e "JIRA_REST_BASE_URL=${JIRA_REST_BASE_URL}" \
-            -e "JIRA_EMAIL=${JIRA_EMAIL}" \
-            -e "JIRA_API_TOKEN=${JIRA_API_TOKEN}" \
-            -e "JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}" \
-            -e "JIRA_ISSUE_TYPE=${JIRA_ISSUE_TYPE}" \
-            -e "JIRA_ISSUE_TYPE_ID=${JIRA_ISSUE_TYPE_ID}" \
-            -e "JIRA_LABELS=${JIRA_LABELS}" \
-            -e "JIRA_DEFAULT_PRIORITY=${JIRA_DEFAULT_PRIORITY}" \
-            -e "CWA_API_KEY=${CWA_API_KEY}" \
-            -e "CWA_LOCATION_NAME=${CWA_LOCATION_NAME}" \
-            -e "CWA_DATASET_ID=${CWA_DATASET_ID}" \
-            -e "CWA_CITY_DATASET_ID=${CWA_CITY_DATASET_ID}" \
-            -e "CWA_TOWNSHIP_DATASET_ID=${CWA_TOWNSHIP_DATASET_ID}" \
-            -e "CWA_MAX_LOCATION_DISTANCE_KM=${CWA_MAX_LOCATION_DISTANCE_KM}" \
-            -e "CWA_CACHE_TTL_MS=${CWA_CACHE_TTL_MS}" \
-            "$IMAGE_URI"
+          run_app_container() {
+            container_name="$1"
+            publish_arg="$2"
+            restart_policy="$3"
+            image="$4"
+            app_version="$5"
 
-          sleep 8
+            docker run -d \
+              --name "$container_name" \
+              --restart "$restart_policy" \
+              --log-driver json-file \
+              --log-opt max-size=10m \
+              --log-opt max-file=3 \
+              --health-cmd "wget -qO- http://127.0.0.1:${APP_PORT}/ready || exit 1" \
+              --health-interval 30s \
+              --health-timeout 5s \
+              --health-retries 3 \
+              --health-start-period 20s \
+              -p "$publish_arg" \
+              -e "PORT=${APP_PORT}" \
+              -e "APP_VERSION=${app_version}" \
+              -e "REDIS_HOST=${REDIS_ENDPOINT}" \
+              -e "REDIS_PORT=${REDIS_PORT}" \
+              -e "REDIS_URL=${REDIS_URL}" \
+              -e "RESET_TOKEN=${RESET_TOKEN}" \
+              -e "JIRA_BASE_URL=${JIRA_BASE_URL}" \
+              -e "JIRA_REST_BASE_URL=${JIRA_REST_BASE_URL}" \
+              -e "JIRA_EMAIL=${JIRA_EMAIL}" \
+              -e "JIRA_API_TOKEN=${JIRA_API_TOKEN}" \
+              -e "JIRA_PROJECT_KEY=${JIRA_PROJECT_KEY}" \
+              -e "JIRA_ISSUE_TYPE=${JIRA_ISSUE_TYPE}" \
+              -e "JIRA_ISSUE_TYPE_ID=${JIRA_ISSUE_TYPE_ID}" \
+              -e "JIRA_LABELS=${JIRA_LABELS}" \
+              -e "JIRA_DEFAULT_PRIORITY=${JIRA_DEFAULT_PRIORITY}" \
+              -e "CWA_API_KEY=${CWA_API_KEY}" \
+              -e "CWA_LOCATION_NAME=${CWA_LOCATION_NAME}" \
+              -e "CWA_DATASET_ID=${CWA_DATASET_ID}" \
+              -e "CWA_CITY_DATASET_ID=${CWA_CITY_DATASET_ID}" \
+              -e "CWA_TOWNSHIP_DATASET_ID=${CWA_TOWNSHIP_DATASET_ID}" \
+              -e "CWA_MAX_LOCATION_DISTANCE_KM=${CWA_MAX_LOCATION_DISTANCE_KM}" \
+              -e "CWA_CACHE_TTL_MS=${CWA_CACHE_TTL_MS}" \
+              "$image"
+          }
 
-          curl -fsS "http://127.0.0.1/health"
-          curl -fsS "http://127.0.0.1/ready"
-          curl -fsS "http://127.0.0.1/whoami"
+          wait_for_app() {
+            host_port="$1"
+            label="$2"
+
+            for attempt in $(seq 1 35); do
+              if curl -fsS "http://127.0.0.1:${host_port}/ready" >/dev/null; then
+                curl -fsS "http://127.0.0.1:${host_port}/health" >/dev/null
+                curl -fsS "http://127.0.0.1:${host_port}/whoami"
+                echo "[Deploy] ${label} is ready"
+                return 0
+              fi
+
+              echo "[Deploy] waiting for ${label} (${attempt}/35)"
+              sleep 1
+            done
+
+            return 1
+          }
+
+          cleanup_candidate() {
+            docker rm -f "$CANDIDATE_CONTAINER_NAME" >/dev/null 2>&1 || true
+          }
+
+          rollback_old_container() {
+            if [ -z "$OLD_IMAGE" ]; then
+              echo "[Deploy] no old image to roll back to"
+              return 1
+            fi
+
+            echo "[Deploy] rolling back to ${OLD_IMAGE}"
+            docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            run_app_container \
+              "$CONTAINER_NAME" \
+              "${HOST_PORT}:${APP_PORT}" \
+              "unless-stopped" \
+              "$OLD_IMAGE" \
+              "${OLD_APP_VERSION:-rollback}"
+            wait_for_app "$HOST_PORT" "rollback container"
+          }
+
+          trap cleanup_candidate EXIT
+
+          echo "[Deploy] starting candidate container on localhost:${CANDIDATE_HOST_PORT}"
+          cleanup_candidate
+          run_app_container \
+            "$CANDIDATE_CONTAINER_NAME" \
+            "127.0.0.1:${CANDIDATE_HOST_PORT}:${APP_PORT}" \
+            "no" \
+            "$IMAGE_URI" \
+            "$APP_VERSION"
+
+          if ! wait_for_app "$CANDIDATE_HOST_PORT" "candidate container"; then
+            echo "[Deploy] candidate container failed health check"
+            docker logs --tail 120 "$CANDIDATE_CONTAINER_NAME" || true
+            exit 1
+          fi
+
+          echo "[Deploy] candidate passed; switching production container"
+          cleanup_candidate
+          docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+          run_app_container \
+            "$CONTAINER_NAME" \
+            "${HOST_PORT}:${APP_PORT}" \
+            "unless-stopped" \
+            "$IMAGE_URI" \
+            "$APP_VERSION"
+
+          if ! wait_for_app "$HOST_PORT" "production container"; then
+            echo "[Deploy] production container failed after switch"
+            docker logs --tail 120 "$CONTAINER_NAME" || true
+            rollback_old_container || true
+            exit 1
+          fi
 
           docker image prune -af --filter "until=24h" || true
 
@@ -271,7 +369,7 @@ jobs:
 
       - name: Start ASG instance refresh fallback
         id: refresh
-        if: steps.ssm_deploy.outcome != 'success'
+        if: env.ALLOW_ASG_REFRESH_FALLBACK == 'true' && steps.ssm_deploy.outcome != 'success'
         run: |
           echo "SSM in-place deployment was not successful. Falling back to ASG instance refresh."
           set +e
@@ -309,7 +407,7 @@ jobs:
           echo "refresh_id=$REFRESH_ID" >> "$GITHUB_OUTPUT"
 
       - name: Wait for ASG instance refresh
-        if: steps.ssm_deploy.outcome != 'success'
+        if: env.ALLOW_ASG_REFRESH_FALLBACK == 'true' && steps.ssm_deploy.outcome != 'success'
         run: |
           REFRESH_ID="${{ steps.refresh.outputs.refresh_id }}"
 
@@ -339,12 +437,25 @@ jobs:
           echo "Instance refresh did not finish in time"
           exit 1
 
+      - name: Fail when in-place deployment is unavailable
+        if: env.ALLOW_ASG_REFRESH_FALLBACK != 'true' && steps.ssm_deploy.outcome != 'success'
+        run: |
+          echo "::error::SSM in-place deployment failed or no SSM-online ASG instance was found."
+          echo "::error::ASG instance refresh fallback is disabled, so the old EC2/container was left untouched."
+          echo "Fix SSM first, then re-run this workflow:"
+          echo "  bash infra/setup-ec2-ssm-parameters.sh"
+          echo "  bash infra/setup-github-oidc.sh"
+          exit 1
+
       - name: Show deployed image tags
+        if: always()
         run: |
           echo "Pushed: $IMAGE_URI:latest"
           echo "Pushed: $IMAGE_URI:$IMAGE_TAG"
           if [ "${{ steps.ssm_deploy.outcome }}" = "success" ]; then
-            echo "Deployment mode: in-place SSM docker restart"
-          else
+            echo "Deployment mode: in-place SSM candidate + production switch"
+          elif [ "${ALLOW_ASG_REFRESH_FALLBACK}" = "true" ]; then
             echo "Deployment mode: ASG instance refresh fallback"
+          else
+            echo "Deployment mode: failed before ASG fallback; old version remained online"
           fi

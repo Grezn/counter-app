@@ -2,7 +2,7 @@
 
 這是一個練習用的 Docker + AWS 部署專案：
 
-GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 container；若 SSM 失敗才 fallback 到 ASG instance refresh
+GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 container；SSM 不可用時部署失敗並保留舊版，不自動替換 EC2
 
 ## 主要元件
 
@@ -14,7 +14,7 @@ GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 contain
 - `services/redis.js`：Redis/ElastiCache 連線設定。
 - `data/runbooks.json`：值班 SOP / Runbook 資料，只放可顯示在前端的處理骨架。
 - `public/index.html`：前端 Dashboard。
-- `.github/workflows/deploy.yml`：CI/CD，自動 build/push image 並刷新 ASG。
+- `.github/workflows/deploy.yml`：CI/CD，自動 build/push image，並用 SSM 在既有 EC2 就地更新 container。
 - `infra/envs/prod`：AWS ALB / Target Group / ASG 的 Terraform 設定。
 
 ## 環境變數
@@ -58,9 +58,10 @@ bash infra/setup-ec2-ssm-parameters.sh
 - Docker image 會透過 `.dockerignore` 排除 `.env`、Git 資料、Terraform state 和重複的 `app/` 目錄。
 - `/health` 只代表 Node.js 還活著。
 - `/ready` 會檢查 Redis，因此 ALB / Docker health check 使用 `/ready` 比較適合正式部署。
-- GitHub Actions 會先用 SSM 在現有 EC2 上 `docker pull` SHA image 並重啟 container；若 SSM 不可用，才會等待 ASG instance refresh 結果。
+- GitHub Actions 會先用 SSM 在現有 EC2 上 `docker pull` SHA image，啟動 candidate container 通過 `/ready` 後才切換正式 container。
+- ASG instance refresh fallback 預設關閉，避免一般 push 造成 EC2 替換。若臨時要允許換機，請在 workflow 把 `ALLOW_ASG_REFRESH_FALLBACK` 改成 `"true"`。
 - EC2 user data 範本放在 `infra/user-data.sh`。正式環境建議讓 EC2 掛 IAM Role，不要在機器上放 IAM User access key。
-- 如果 ASG fallback 後沒有讀到新環境變數，請用 `infra/update-asg-user-data.sh` 把 repo 裡的 user data 更新到 Launch Template。
+- 如果手動 ASG refresh 後沒有讀到新環境變數，請用 `infra/update-asg-user-data.sh` 把 repo 裡的 user data 更新到 Launch Template。
 - Jira email / API token 的 SSM 參數名稱預設為 `/counter-app/prod/jira-email` 和 `/counter-app/prod/jira-api-token`。
 - ALB 來源 IP 限制腳本放在 `infra/restrict-alb-source-ip.sh`。
 - GitHub Actions OIDC 建立腳本放在 `infra/setup-github-oidc.sh`。
@@ -70,14 +71,17 @@ bash infra/setup-ec2-ssm-parameters.sh
 
 ## 快速部署模式
 
-push 到 `main` 後，workflow 現在會先找 ASG 裡健康中的 EC2，透過 AWS Systems Manager Run Command 直接在原機器執行 `docker pull`、重啟 `counter-app` container，並檢查 `/health`、`/ready`、`/whoami`。
+push 到 `main` 後，workflow 現在會先找 ASG 裡健康且 SSM Online 的 EC2，透過 AWS Systems Manager Run Command 直接在原機器執行 `docker pull`。
 
-這樣通常只需要等 image build/push 和 container 重啟，不需要等新 EC2 開機。若 SSM 權限、SSM Agent 或 instance 狀態不符合，workflow 會自動退回原本的 ASG instance refresh。
+新版 image 會先用 candidate container 跑在 `127.0.0.1:18080`，確認 `/ready` 正常後才停止舊的 `counter-app` container，並用新版重開 port 80。這樣不用等新 EC2 開機；正式切換通常只剩 container stop/start 的短暫空窗。
+
+若 SSM 權限、SSM Agent 或 instance 狀態不符合，workflow 會失敗並保留舊版線上服務，不會自動換 EC2。請先在 CloudShell 跑下面兩個腳本補權限，再 re-run workflow：
 
 第一次啟用快路徑前，請在 CloudShell 重新套一次 GitHub OIDC deploy role 權限：
 
 ```bash
 bash infra/setup-github-oidc.sh
+bash infra/setup-ec2-ssm-parameters.sh
 ```
 
 EC2 的 Instance Profile 也要能被 SSM 管理，通常需要 AWS managed policy `AmazonSSMManagedInstanceCore`，另外仍需要 ECR pull、SSM Parameter Store 讀取與必要時的 `kms:Decrypt`。

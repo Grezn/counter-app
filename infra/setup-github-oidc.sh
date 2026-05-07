@@ -102,6 +102,7 @@ cat > "$PERMISSION_POLICY_FILE" <<EOF
       "Sid": "DeployCounterAppWithSsm",
       "Effect": "Allow",
       "Action": [
+        "ssm:DescribeInstanceInformation",
         "ssm:SendCommand",
         "ssm:GetCommandInvocation"
       ],

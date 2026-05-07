@@ -9,9 +9,10 @@ git push origin main
 -> GitHub Actions build Docker image
 -> push image 到 ECR
 -> 優先用 SSM Run Command 更新現有 EC2 container
--> EC2 docker pull SHA image、重啟 counter-app container
--> 本機檢查 /health、/ready、/whoami
--> 如果 SSM 失敗，才 fallback 到 ASG instance refresh
+-> EC2 docker pull SHA image
+-> 先用 candidate container 在 localhost:18080 檢查 /ready
+-> candidate 成功後才切換 port 80 的正式 counter-app container
+-> 如果 SSM 失敗，部署失敗並保留舊版，不自動啟動 ASG instance refresh
 ```
 
 ## 哪些 key 可以移除
@@ -71,8 +72,8 @@ bash infra/setup-github-oidc.sh
 2. 建立 IAM Role：`counter-app-github-actions-deploy`
 3. 限制只有 `Grezn/counter-app` 的 `main` branch 可以 assume role
 4. 授權 GitHub Actions push/pull `docker-demo` ECR image
-5. 授權 GitHub Actions 用 SSM Run Command 快速更新現有 EC2
-6. 授權 GitHub Actions 啟動和查詢 ASG instance refresh 作為 fallback
+5. 授權 GitHub Actions 查詢 SSM managed instance 狀態並送出 Run Command
+6. 保留 ASG instance refresh 權限，只有 workflow 明確把 `ALLOW_ASG_REFRESH_FALLBACK` 改成 `"true"` 時才會使用
 
 建立完成後，push 一次測試：
 
@@ -157,7 +158,9 @@ git commit -m "你的 commit 訊息"
 git push origin main
 ```
 
-GitHub Actions 會自動 build/push image，並先嘗試 SSM 快速部署。成功時不用等新 EC2 開機；只有 SSM 不可用或部署命令失敗時，才會自動退回 ASG instance refresh。
+GitHub Actions 會自動 build/push image，並先嘗試 SSM 快速部署。成功時不用等新 EC2 開機；SSM 不可用或部署命令失敗時，workflow 會失敗，舊版 container 會留在線上。
+
+這個設計是故意的：一般程式更新不要因為 SSM 權限問題偷偷變成 ASG 換機。若真的需要換機，請手動執行 `infra/update-asg-user-data.sh`，或暫時把 `.github/workflows/deploy.yml` 的 `ALLOW_ASG_REFRESH_FALLBACK` 改成 `"true"`。
 
 ## 限制網站來源 IP
 
