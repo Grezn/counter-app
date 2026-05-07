@@ -106,6 +106,9 @@ jobs:
 
           CWA_LOCATION_NAME="臺北市"
           CWA_DATASET_ID="F-C0032-001"
+          CWA_CITY_DATASET_ID="F-C0032-001"
+          CWA_TOWNSHIP_DATASET_ID="F-D0047-089"
+          CWA_MAX_LOCATION_DISTANCE_KM="80"
           CWA_CACHE_TTL_MS="600000"
 
           RESET_TOKEN_PARAM_NAME="/counter-app/prod/reset-token"
@@ -187,6 +190,9 @@ jobs:
             -e "CWA_API_KEY=${CWA_API_KEY}" \
             -e "CWA_LOCATION_NAME=${CWA_LOCATION_NAME}" \
             -e "CWA_DATASET_ID=${CWA_DATASET_ID}" \
+            -e "CWA_CITY_DATASET_ID=${CWA_CITY_DATASET_ID}" \
+            -e "CWA_TOWNSHIP_DATASET_ID=${CWA_TOWNSHIP_DATASET_ID}" \
+            -e "CWA_MAX_LOCATION_DISTANCE_KM=${CWA_MAX_LOCATION_DISTANCE_KM}" \
             -e "CWA_CACHE_TTL_MS=${CWA_CACHE_TTL_MS}" \
             "$IMAGE_URI"
 

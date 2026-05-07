@@ -33,11 +33,13 @@ GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 contain
 - `JIRA_LABELS`：建立小卡時加上的 labels，逗號分隔，預設 `電話連絡,noc-oncall`。
 - `JIRA_DEFAULT_PRIORITY`：可選；若留空會依嚴重度帶入 High / Medium / Low。
 - `CWA_API_KEY`：中央氣象署氣象資料開放平台授權碼，只放後端環境變數或 SSM。
-- `CWA_LOCATION_NAME` / `CWA_DATASET_ID` / `CWA_CACHE_TTL_MS`：本地區氣象顯示設定。
+- `CWA_LOCATION_NAME` / `CWA_CITY_DATASET_ID` / `CWA_TOWNSHIP_DATASET_ID` / `CWA_CACHE_TTL_MS`：本地區氣象顯示設定；使用者允許定位時會用鄉鎮預報，否則退回縣市預報。
 
 ## 氣象 API 授權碼
 
 不要把中央氣象署授權碼 commit 到 repo。正式環境可放到既有 user data 會讀取的 SSM SecureString：
+
+本地區氣象會先用瀏覽器 Geolocation 取得使用者位置，再由後端查中央氣象署鄉鎮預報；若使用者拒絕定位，或正式網站還不是 HTTPS，會退回 `CWA_LOCATION_NAME` 的縣市預報。
 
 ```bash
 aws ssm put-parameter --region us-east-1 --name /counter-app/prod/cwa-api-key --type SecureString --value "你的授權碼" --overwrite

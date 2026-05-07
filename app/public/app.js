@@ -109,6 +109,15 @@ function renderStats(data) {
   updateBadge(data.redis);
 }
 
+const WEATHER_POSITION_OPTIONS = {
+  enableHighAccuracy: false,
+  timeout: 5000,
+  maximumAge: 10 * 60 * 1000,
+};
+
+let weatherPositionCache = null;
+let weatherPositionUnavailable = false;
+
 function setWeatherText(message, detail) {
   const meta = document.getElementById("weatherMeta");
   const content = document.getElementById("weatherContent");
@@ -122,6 +131,46 @@ function formatWeatherPeriod(startTime, endTime) {
   return `${clean(startTime)} - ${clean(endTime)}`;
 }
 
+function getWeatherPosition(forceRefresh = false) {
+  if (!forceRefresh && weatherPositionCache) {
+    return Promise.resolve(weatherPositionCache);
+  }
+
+  if (!forceRefresh && weatherPositionUnavailable) {
+    return Promise.resolve(null);
+  }
+
+  if (!navigator.geolocation || window.isSecureContext === false) {
+    weatherPositionUnavailable = true;
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = Number(position.coords.latitude);
+        const lon = Number(position.coords.longitude);
+
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          weatherPositionCache = { lat, lon };
+          resolve(weatherPositionCache);
+          return;
+        }
+
+        resolve(null);
+      },
+      (error) => {
+        if (error && error.code === error.PERMISSION_DENIED) {
+          weatherPositionUnavailable = true;
+        }
+
+        resolve(null);
+      },
+      WEATHER_POSITION_OPTIONS,
+    );
+  });
+}
+
 function createWeatherMetric(label, value) {
   const item = document.createElement("div");
   item.className = "weather-metric";
@@ -130,21 +179,36 @@ function createWeatherMetric(label, value) {
   return item;
 }
 
+function formatWeatherLocation(data) {
+  const countyName = String(data.countyName || "").trim();
+  const locationName = String(data.locationName || "").trim();
+
+  if (countyName && locationName && countyName !== locationName) {
+    return `${countyName} ${locationName}`;
+  }
+
+  return locationName || countyName || "本地區";
+}
+
 function renderLocalWeather(data) {
   const meta = document.getElementById("weatherMeta");
   const content = document.getElementById("weatherContent");
   if (!meta || !content) return;
 
-  const temperature = data.minTemperature || data.maxTemperature
-    ? `${data.minTemperature || "-"}-${data.maxTemperature || "-"}°${data.temperatureUnit || "C"}`
-    : "-";
+  const temperatureUnit = data.temperatureUnit || "C";
+  const temperature = data.temperature
+    ? `${data.temperature}°${temperatureUnit}`
+    : data.minTemperature || data.maxTemperature
+      ? `${data.minTemperature || "-"}-${data.maxTemperature || "-"}°${temperatureUnit}`
+      : "-";
   const rain = data.rainProbability
     ? `${data.rainProbability}${data.rainProbabilityUnit || "%"}`
     : "-";
+  const locationLabel = formatWeatherLocation(data);
 
-  meta.textContent = `${data.locationName || "本地區"} · ${formatWeatherPeriod(data.startTime, data.endTime)}`;
+  meta.textContent = `${locationLabel} · ${formatWeatherPeriod(data.startTime, data.endTime)}`;
   content.replaceChildren(
-    createWeatherMetric("天氣", data.weather),
+    createWeatherMetric("天氣", data.weather || data.weatherDescription),
     createWeatherMetric("溫度", temperature),
     createWeatherMetric("降雨", rain),
     createWeatherMetric("舒適度", data.comfort),
@@ -153,7 +217,17 @@ function renderLocalWeather(data) {
 
 async function loadLocalWeather(forceRefresh = false) {
   try {
-    const query = forceRefresh ? "?refresh=1" : "";
+    setWeatherText("氣象定位中...", "正在取得所在地預報");
+    const position = await getWeatherPosition(forceRefresh);
+    const params = new URLSearchParams();
+
+    if (forceRefresh) params.set("refresh", "1");
+    if (position) {
+      params.set("lat", position.lat.toFixed(5));
+      params.set("lon", position.lon.toFixed(5));
+    }
+
+    const query = params.toString() ? `?${params.toString()}` : "";
     const res = await fetch(`/api/weather/local${query}`, {
       cache: "no-store",
     });
@@ -161,7 +235,7 @@ async function loadLocalWeather(forceRefresh = false) {
 
     if (!res.ok) {
       if (data && data.configured === false) {
-        setWeatherText("尚未設定氣象授權碼", `${data.locationName || "本地區"} · ${data.datasetId || "F-C0032-001"}`);
+        setWeatherText("尚未設定氣象授權碼", `${formatWeatherLocation(data)} · ${data.datasetId || "F-C0032-001"}`);
         return;
       }
 
