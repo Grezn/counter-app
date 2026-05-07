@@ -51,6 +51,86 @@ function initTheme() {
   setTheme(savedTheme || document.documentElement.dataset.theme || "light");
 }
 
+const VIEW_CONFIG = {
+  dashboard: {
+    hash: "",
+    tabId: "dashboardTab",
+    viewId: "dashboardView",
+  },
+  runbooks: {
+    hash: "sop",
+    tabId: "runbooksTab",
+    viewId: "runbooksView",
+  },
+};
+
+function getViewFromHash() {
+  const hash = window.location.hash.replace("#", "").toLowerCase();
+  return hash === "sop" || hash === "runbooks" || hash === "runbook"
+    ? "runbooks"
+    : "dashboard";
+}
+
+function setActiveView(viewName, options = {}) {
+  const activeViewName = VIEW_CONFIG[viewName] ? viewName : "dashboard";
+
+  Object.entries(VIEW_CONFIG).forEach(([name, config]) => {
+    const isActive = name === activeViewName;
+    const view = document.getElementById(config.viewId);
+    const tab = document.getElementById(config.tabId);
+
+    if (view) {
+      view.hidden = !isActive;
+      view.classList.toggle("active", isActive);
+    }
+
+    if (tab) {
+      tab.classList.toggle("active", isActive);
+      tab.setAttribute("aria-selected", String(isActive));
+    }
+  });
+
+  if (options.updateHash !== false) {
+    const hash = VIEW_CONFIG[activeViewName].hash;
+    const nextUrl = hash
+      ? `${window.location.pathname}${window.location.search}#${hash}`
+      : `${window.location.pathname}${window.location.search}`;
+
+    try {
+      window.history.pushState(null, "", nextUrl);
+    } catch {
+      if (hash) {
+        window.location.hash = hash;
+      }
+    }
+  }
+
+  if (options.scrollTop !== false) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+function initViewTabs() {
+  setActiveView(getViewFromHash(), {
+    updateHash: false,
+    scrollTop: false,
+  });
+
+  window.addEventListener("hashchange", () => {
+    setActiveView(getViewFromHash(), {
+      updateHash: false,
+      scrollTop: true,
+    });
+  });
+
+  window.addEventListener("popstate", () => {
+    setActiveView(getViewFromHash(), {
+      updateHash: false,
+      scrollTop: true,
+    });
+  });
+}
+
 function updateBadge(redisStatus) {
   // 更新畫面左上角的 Redis 狀態 badge。
   // redisStatus 來自後端回傳，例如 ready / connected / error。
@@ -871,8 +951,12 @@ function fillIncidentNextStepFromRunbook(runbook) {
     ...(runbook.steps || []).map((step, idx) => `${idx + 1}. ${step}`),
   ].join("\n");
 
+  markIncidentCheck("查閱對應 SOP");
   saveIncidentState();
   updateHandoverSummary();
+  setActiveView("dashboard");
+  nextStep.focus();
+  nextStep.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function createRunbookCard(runbook) {
@@ -1153,6 +1237,7 @@ initRunbookPanel();
 initLinksPanel();
 initBackToTop();
 initTheme();
+initViewTabs();
 loadLocalWeather();
 trackView();
 loadCount();

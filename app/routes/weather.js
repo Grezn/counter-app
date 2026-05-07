@@ -10,6 +10,24 @@ const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_MAX_LOCATION_DISTANCE_KM = 80;
 
 const weatherCache = new Map();
+const TOWNSHIP_ELEMENT_ALIASES = {
+  weather: ["Wx", "Weather", "天氣現象"],
+  description: ["WeatherDescription", "天氣預報綜合描述"],
+  temperature: ["T", "Temperature", "溫度"],
+  minTemperature: ["MinT", "MinTemperature", "最低溫度"],
+  maxTemperature: ["MaxT", "MaxTemperature", "最高溫度"],
+  rain: ["PoP12h", "PoP6h", "PoP", "ProbabilityOfPrecipitation", "3小時降雨機率", "6小時降雨機率", "12小時降雨機率"],
+  comfort: ["CI", "ComfortIndex", "ComfortIndexDescription", "舒適度指數"],
+};
+const TOWNSHIP_ELEMENT_QUERY = [
+  ...TOWNSHIP_ELEMENT_ALIASES.temperature,
+  ...TOWNSHIP_ELEMENT_ALIASES.minTemperature,
+  ...TOWNSHIP_ELEMENT_ALIASES.maxTemperature,
+  ...TOWNSHIP_ELEMENT_ALIASES.weather,
+  ...TOWNSHIP_ELEMENT_ALIASES.rain,
+  ...TOWNSHIP_ELEMENT_ALIASES.comfort,
+  ...TOWNSHIP_ELEMENT_ALIASES.description,
+].join(",");
 
 function normalizeText(value, fallback = "") {
   return String(value || "").trim() || fallback;
@@ -30,6 +48,10 @@ function normalizeCwaUnit(unit, fallback = "") {
   if (normalized === "攝氏度") return "C";
   if (normalized === "百分比") return "%";
   return normalized;
+}
+
+function normalizeWeatherElementName(value) {
+  return normalizeText(value).toLowerCase();
 }
 
 function normalizeCoordinate(value) {
@@ -154,9 +176,9 @@ function getWeatherElements(location) {
 }
 
 function findWeatherElement(location, names) {
-  const wanted = new Set(names);
+  const wanted = new Set(names.map(normalizeWeatherElementName));
   return getWeatherElements(location).find((element) => (
-    wanted.has(element.elementName || element.ElementName)
+    wanted.has(normalizeWeatherElementName(element.elementName || element.ElementName))
   ));
 }
 
@@ -262,23 +284,35 @@ function parseTownshipForecast(data, lat, lon, datasetId, maxDistanceKm) {
   if (!nearest || nearest.distanceKm > maxDistanceKm) return null;
 
   const location = nearest.location;
-  const weather = getTownshipForecastValue(location, ["Wx"], ["Weather", "weather"]);
+  const weather = getTownshipForecastValue(location, TOWNSHIP_ELEMENT_ALIASES.weather, ["Weather", "weather"]);
   const description = getTownshipForecastValue(
     location,
-    ["WeatherDescription"],
+    TOWNSHIP_ELEMENT_ALIASES.description,
     ["WeatherDescription", "weatherDescription"],
   );
-  const temperature = getTownshipForecastValue(location, ["T"], ["Temperature", "temperature"]);
-  const minTemperature = getTownshipForecastValue(location, ["MinT"], ["MinTemperature", "minTemperature"]);
-  const maxTemperature = getTownshipForecastValue(location, ["MaxT"], ["MaxTemperature", "maxTemperature"]);
+  const temperature = getTownshipForecastValue(
+    location,
+    TOWNSHIP_ELEMENT_ALIASES.temperature,
+    ["Temperature", "temperature"],
+  );
+  const minTemperature = getTownshipForecastValue(
+    location,
+    TOWNSHIP_ELEMENT_ALIASES.minTemperature,
+    ["MinTemperature", "minTemperature"],
+  );
+  const maxTemperature = getTownshipForecastValue(
+    location,
+    TOWNSHIP_ELEMENT_ALIASES.maxTemperature,
+    ["MaxTemperature", "maxTemperature"],
+  );
   const rain = getTownshipForecastValue(
     location,
-    ["PoP12h", "PoP6h", "PoP"],
+    TOWNSHIP_ELEMENT_ALIASES.rain,
     ["ProbabilityOfPrecipitation", "probabilityOfPrecipitation"],
   );
   const comfort = getTownshipForecastValue(
     location,
-    ["CI"],
+    TOWNSHIP_ELEMENT_ALIASES.comfort,
     ["ComfortIndexDescription", "comfortIndexDescription", "ComfortIndex", "comfortIndex"],
   );
   const firstPeriod = weather.startTime || temperature.startTime || rain.startTime
@@ -367,7 +401,7 @@ async function fetchCityWeather(config, locationName) {
 
 async function fetchTownshipWeather(config, lat, lon) {
   const data = await fetchCwaDataset(config.townshipDatasetId, config.apiKey, {
-    elementName: "T,MinT,MaxT,Wx,PoP12h,PoP6h,PoP,CI,WeatherDescription",
+    elementName: TOWNSHIP_ELEMENT_QUERY,
   });
   const forecast = parseTownshipForecast(
     data,

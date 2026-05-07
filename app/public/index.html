@@ -29,9 +29,15 @@
       </div>
     </div>
 
-    <div id="redisBadge" class="badge">Redis: checking...</div>
+    <nav class="view-tabs" role="tablist" aria-label="主要分頁">
+      <button id="dashboardTab" class="view-tab active" type="button" role="tab" aria-selected="true" aria-controls="dashboardView" onclick="setActiveView('dashboard')">中控台</button>
+      <button id="runbooksTab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="runbooksView" onclick="setActiveView('runbooks')">SOP 速查</button>
+    </nav>
 
-    <section class="weather-strip" aria-label="本地區氣象">
+    <main id="dashboardView" class="page-view active" role="tabpanel" aria-labelledby="dashboardTab">
+      <div id="redisBadge" class="badge">Redis: checking...</div>
+
+      <section class="weather-strip" aria-label="本地區氣象">
       <div class="weather-header">
         <div>
           <h2 class="weather-title">本地區氣象</h2>
@@ -288,23 +294,26 @@
         </div>
       </div>
     </section>
+    </main>
 
-    <section class="runbook-panel">
-      <div class="runbook-header">
-        <div>
-          <h2 class="runbook-title">SOP 速查</h2>
-          <p class="runbook-subtitle">依產品快速查處理步驟；信件收件人保留在原段落，可直接選取複製。</p>
+    <main id="runbooksView" class="page-view" role="tabpanel" aria-labelledby="runbooksTab" hidden>
+      <section class="runbook-panel">
+        <div class="runbook-header">
+          <div>
+            <h2 class="runbook-title">SOP 速查</h2>
+            <p class="runbook-subtitle">依產品快速查處理步驟；信件收件人保留在原段落，可直接選取複製。</p>
+          </div>
+          <div id="runbookMeta" class="runbook-meta">Loading...</div>
         </div>
-        <div id="runbookMeta" class="runbook-meta">Loading...</div>
-      </div>
 
-      <div class="runbook-controls">
-        <input id="runbookSearch" type="search" placeholder="搜尋：AWS、報修、交班..." />
-        <div id="runbookCategories" class="runbook-categories"></div>
-      </div>
+        <div class="runbook-controls">
+          <input id="runbookSearch" type="search" placeholder="搜尋：AWS、報修、交班..." />
+          <div id="runbookCategories" class="runbook-categories"></div>
+        </div>
 
-      <div id="runbookList" class="runbook-list">Runbook 載入中...</div>
-    </section>
+        <div id="runbookList" class="runbook-list">Runbook 載入中...</div>
+      </section>
+    </main>
 
     <section id="linksPanel" class="links-panel" aria-label="值班入口">
       <button id="linksPanelToggle" class="links-panel-tab" type="button" onclick="toggleLinksPanel()" aria-controls="linksPanel" aria-expanded="false">值班入口</button>
