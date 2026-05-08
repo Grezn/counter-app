@@ -100,7 +100,7 @@ jobs:
 
       - name: Deploy to existing EC2 with SSM
         id: ssm_deploy
-        continue-on-error: true
+        continue-on-error: ${{ env.ALLOW_ASG_REFRESH_FALLBACK == 'true' }}
         if: steps.targets.outputs.instance_ids != ''
         run: |
           set -euo pipefail
@@ -453,7 +453,9 @@ jobs:
       - name: Fail when in-place deployment is unavailable
         if: env.ALLOW_ASG_REFRESH_FALLBACK != 'true' && steps.ssm_deploy.outcome != 'success'
         run: |
-          echo "::error::SSM in-place deployment failed or no healthy ASG instance was found."
+          echo "::error::No in-place deployment was completed."
+          echo "::error::If the SSM deploy step ran, expand 'Deploy to existing EC2 with SSM' for the real error."
+          echo "::error::If the SSM deploy step was skipped, expand 'Find current ASG instances' to confirm instance_ids was written."
           echo "::error::ASG instance refresh fallback is disabled, so the old EC2/container was left untouched."
           echo "Fix SSM from AWS CloudShell, then re-run this workflow:"
           echo "  cd ~"
