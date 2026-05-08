@@ -107,6 +107,7 @@ jobs:
 
           INSTANCE_IDS="${{ steps.targets.outputs.instance_ids }}"
           IMAGE_URI_WITH_TAG="${IMAGE_URI}:${IMAGE_TAG}"
+          DEPLOY_COMMENT="Deploy counter-app ${IMAGE_TAG:0:12}"
 
           cat > deploy-on-instance.sh <<'SCRIPT'
           #!/bin/sh
@@ -332,7 +333,7 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids $INSTANCE_IDS \
             --document-name "AWS-RunShellScript" \
-            --comment "Deploy counter-app ${IMAGE_URI_WITH_TAG}" \
+            --comment "$DEPLOY_COMMENT" \
             --parameters file://ssm-parameters.json \
             --query "Command.CommandId" \
             --output text)
