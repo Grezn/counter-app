@@ -35,11 +35,7 @@
       <button id="runbooksTab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="runbooksView" onclick="setActiveView('runbooks')">SOP 速查</button>
     </nav>
 
-    <div id="errorBox" class="error-box"></div>
-
     <main id="dashboardView" class="page-view active" role="tabpanel" aria-labelledby="dashboardTab">
-      <div id="redisBadge" class="badge">Redis: checking...</div>
-
       <section class="weather-strip" aria-label="本地即時氣象">
       <div class="weather-header">
         <div>
@@ -298,7 +294,10 @@
             <h2 class="counter-title">計數器</h2>
             <p class="counter-subtitle">獨立放在這裡，避免首頁值班作業被打斷。</p>
           </div>
+          <div id="redisBadge" class="badge">Redis: checking...</div>
         </div>
+
+        <div id="errorBox" class="error-box" role="status" aria-live="polite"></div>
 
         <div class="counter-surface">
           <div class="label">目前計數</div>

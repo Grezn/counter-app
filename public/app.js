@@ -1,16 +1,29 @@
 // 這個檔案是前端互動邏輯。
 // 它會呼叫後端 API，例如 /track-view、/count、/increment、/reset。
 
+let errorHideTimer = null;
+
 function setError(message) {
-  // 把錯誤訊息顯示在畫面上的紅色 error box。
+  // 把錯誤訊息顯示在計數器分頁，並在短暫停留後收掉。
   const box = document.getElementById("errorBox");
+  if (!box) return;
+
+  window.clearTimeout(errorHideTimer);
   box.style.display = "block";
   box.textContent = message;
+
+  errorHideTimer = window.setTimeout(() => {
+    box.style.display = "none";
+    box.textContent = "";
+  }, 4500);
 }
 
 function clearError() {
   // 每次重新執行 API 前，先把舊錯誤清掉。
   const box = document.getElementById("errorBox");
+  if (!box) return;
+
+  window.clearTimeout(errorHideTimer);
   box.style.display = "none";
   box.textContent = "";
 }

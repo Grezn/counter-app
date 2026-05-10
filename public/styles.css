@@ -333,7 +333,16 @@ h1 {
 }
 
 .counter-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
+}
+
+.counter-panel-header .badge {
+  margin-bottom: 0;
 }
 
 .counter-title {
