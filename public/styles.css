@@ -153,11 +153,11 @@ h1 {
 
 .weather-strip {
   display: grid;
-  grid-template-columns: minmax(180px, 0.72fr) minmax(0, 1.8fr);
-  gap: 10px;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.35fr);
+  gap: 16px;
   align-items: center;
-  margin: 0 0 14px;
-  padding: 10px 12px;
+  margin: 0 0 16px;
+  padding: 14px 16px;
   border-radius: 8px;
   background: #11151b;
   border: 1px solid #2d3540;
@@ -173,13 +173,13 @@ h1 {
 .weather-title {
   margin: 0 0 4px;
   color: #e8eaed;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   line-height: 1.25;
 }
 
 .weather-meta {
   color: #8ea0b8;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.35;
 }
 
@@ -197,7 +197,8 @@ h1 {
 .weather-content {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 18px;
   min-width: 0;
   color: #d8dde6;
   font-size: 0.86rem;
@@ -207,14 +208,14 @@ h1 {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 12px;
   flex: 0 0 auto;
 }
 
 .weather-temp {
   display: block;
   color: #f8fafc;
-  font-size: 1.55rem;
+  font-size: 1.75rem;
   line-height: 1;
 }
 
@@ -242,14 +243,14 @@ h1 {
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
   flex: 1 1 auto;
 }
 
 .weather-chip {
-  min-width: 82px;
-  padding: 6px 8px;
+  min-width: 100px;
+  padding: 8px 10px;
   border-radius: 7px;
   background: #0f172a;
   border: 1px solid #334155;
@@ -259,16 +260,16 @@ h1 {
 .weather-chip-label {
   display: block;
   color: #93c5fd;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 800;
   line-height: 1.1;
 }
 
 .weather-chip-value {
   display: block;
-  margin-top: 2px;
+  margin-top: 4px;
   color: #f8fafc;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   line-height: 1.2;
   overflow-wrap: break-word;
 }
@@ -1768,6 +1769,7 @@ html[data-theme="dark"] a {
   .weather-content {
     align-items: flex-start;
     justify-content: space-between;
+    gap: 14px;
   }
 
   .weather-chip-row {
@@ -1802,7 +1804,7 @@ html[data-theme="dark"] a {
   }
 
   .weather-summary {
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .weather-chip {

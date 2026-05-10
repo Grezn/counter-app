@@ -335,13 +335,7 @@ function renderLocalWeather(data) {
     createWeatherChip("現在雨量", formatWeatherValue(current.rainMm, "mm")),
     createWeatherChip("濕度", formatWeatherValue(current.humidity, "%")),
     createWeatherChip("未來降雨", rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-"),
-    createWeatherChip("風速", formatWeatherValue(current.windSpeed, "m/s")),
-    createWeatherChip("舒適度", current.comfort || data.comfort || "-"),
   );
-
-  if (forecastRange) {
-    chips.appendChild(createWeatherChip("預報溫度", forecastRange));
-  }
 
   content.replaceChildren(summary, chips);
 }
