@@ -57,6 +57,11 @@ const VIEW_CONFIG = {
     tabId: "dashboardTab",
     viewId: "dashboardView",
   },
+  counter: {
+    hash: "counter",
+    tabId: "counterTab",
+    viewId: "counterView",
+  },
   runbooks: {
     hash: "sop",
     tabId: "runbooksTab",
@@ -66,9 +71,9 @@ const VIEW_CONFIG = {
 
 function getViewFromHash() {
   const hash = window.location.hash.replace("#", "").toLowerCase();
-  return hash === "sop" || hash === "runbooks" || hash === "runbook"
-    ? "runbooks"
-    : "dashboard";
+  if (hash === "sop" || hash === "runbooks" || hash === "runbook") return "runbooks";
+  if (hash === "counter" || hash === "count") return "counter";
+  return "dashboard";
 }
 
 function setActiveView(viewName, options = {}) {
@@ -185,8 +190,20 @@ function renderStats(data) {
   document.getElementById("totalVisitors").textContent = data.totalVisitors;
   document.getElementById("todayVisitors").textContent = data.todayVisitors;
   document.getElementById("activeVisitors").textContent = data.activeVisitors;
-  document.getElementById("today").textContent = data.today;
+  document.getElementById("today").textContent = formatDateWithWeekday(data.today);
   updateBadge(data.redis);
+}
+
+function formatDateWithWeekday(value) {
+  const text = String(value || "").trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  if (!match) return text || "-";
+
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(date.getTime())) return text;
+
+  const weekdays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+  return `${text}（${weekdays[date.getDay()]}）`;
 }
 
 const WEATHER_POSITION_OPTIONS = {
@@ -333,9 +350,15 @@ function renderLocalWeather(data) {
   chips.className = "weather-chip-row";
   chips.replaceChildren(
     createWeatherChip("現在雨量", formatWeatherValue(current.rainMm, "mm")),
-    createWeatherChip("濕度", formatWeatherValue(current.humidity, "%")),
     createWeatherChip("未來降雨", rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-"),
   );
+
+  const comfort = current.comfort || data.comfort;
+  if (comfort) {
+    chips.appendChild(createWeatherChip("舒適度", comfort));
+  } else if (hasWeatherValue(current.windSpeed)) {
+    chips.appendChild(createWeatherChip("風速", formatWeatherValue(current.windSpeed, "m/s")));
+  }
 
   content.replaceChildren(summary, chips);
 }

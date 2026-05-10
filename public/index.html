@@ -31,8 +31,11 @@
 
     <nav class="view-tabs" role="tablist" aria-label="主要分頁">
       <button id="dashboardTab" class="view-tab active" type="button" role="tab" aria-selected="true" aria-controls="dashboardView" onclick="setActiveView('dashboard')">中控台</button>
+      <button id="counterTab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="counterView" onclick="setActiveView('counter')">計數器</button>
       <button id="runbooksTab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="runbooksView" onclick="setActiveView('runbooks')">SOP 速查</button>
     </nav>
+
+    <div id="errorBox" class="error-box"></div>
 
     <main id="dashboardView" class="page-view active" role="tabpanel" aria-labelledby="dashboardTab">
       <div id="redisBadge" class="badge">Redis: checking...</div>
@@ -69,14 +72,6 @@
         <div class="stat-date" id="today">-</div>
       </div>
     </div>
-
-    <div class="label">目前計數</div>
-    <div class="count" id="count">-</div>
-
-    <button class="inc" onclick="increment()">+1</button>
-    <button class="reset" onclick="resetCounter()">重設</button>
-
-    <div id="errorBox" class="error-box"></div>
 
     <section class="incident-panel">
       <div class="incident-header">
@@ -294,6 +289,26 @@
         </div>
       </div>
     </section>
+    </main>
+
+    <main id="counterView" class="page-view" role="tabpanel" aria-labelledby="counterTab" hidden>
+      <section class="counter-panel">
+        <div class="counter-panel-header">
+          <div>
+            <h2 class="counter-title">計數器</h2>
+            <p class="counter-subtitle">獨立放在這裡，避免首頁值班作業被打斷。</p>
+          </div>
+        </div>
+
+        <div class="counter-surface">
+          <div class="label">目前計數</div>
+          <div class="count" id="count">-</div>
+          <div class="counter-actions">
+            <button class="inc" onclick="increment()">+1</button>
+            <button class="reset" onclick="resetCounter()">重設</button>
+          </div>
+        </div>
+      </section>
     </main>
 
     <main id="runbooksView" class="page-view" role="tabpanel" aria-labelledby="runbooksTab" hidden>

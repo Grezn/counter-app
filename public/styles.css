@@ -313,6 +313,7 @@ h1 {
   font-size: 1.32rem;
   font-weight: 800;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .count {
@@ -321,6 +322,51 @@ h1 {
   font-weight: 800;
   margin: 14px 0 20px;
   line-height: 1;
+}
+
+.counter-panel {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 10px;
+  background: #151922;
+  border: 1px solid #303846;
+}
+
+.counter-panel-header {
+  margin-bottom: 16px;
+}
+
+.counter-title {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: #e8eaed;
+}
+
+.counter-subtitle {
+  margin: 0;
+  color: #a4adba;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.counter-surface {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 22px;
+  border-radius: 10px;
+  background: #101418;
+  border: 1px solid #2d3540;
+}
+
+.counter-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.counter-actions button {
+  margin-bottom: 0;
 }
 
 button {
@@ -1298,6 +1344,7 @@ body {
 .link-drawer,
 .checklist-box,
 .summary-box,
+.counter-surface,
 .runbook-card {
   background: #ffffff;
   border-color: #cbd5e1;
@@ -1306,6 +1353,7 @@ body {
 
 .links-panel,
 .incident-panel,
+.counter-panel,
 .runbook-panel,
 .back-to-top {
   background: #eef5f7;
@@ -1326,6 +1374,7 @@ body {
 .links-title,
 .weather-title,
 .incident-title,
+.counter-title,
 .incident-core-title,
 .workflow-title,
 .field label,
@@ -1367,7 +1416,8 @@ body {
 }
 
 .weather-forecast-note,
-.weather-placeholder {
+.weather-placeholder,
+.counter-subtitle {
   color: #64748b;
 }
 
@@ -1573,6 +1623,7 @@ html[data-theme="dark"] .weather-strip,
 html[data-theme="dark"] .core-links-block,
 html[data-theme="dark"] .checklist-box,
 html[data-theme="dark"] .summary-box,
+html[data-theme="dark"] .counter-surface,
 html[data-theme="dark"] .runbook-card {
   background: #111827;
   border-color: #334155;
@@ -1581,6 +1632,7 @@ html[data-theme="dark"] .runbook-card {
 
 html[data-theme="dark"] .links-panel,
 html[data-theme="dark"] .incident-panel,
+html[data-theme="dark"] .counter-panel,
 html[data-theme="dark"] .runbook-panel,
 html[data-theme="dark"] .back-to-top {
   background: #172033;
@@ -1608,6 +1660,7 @@ html[data-theme="dark"] .label,
 html[data-theme="dark"] .weather-meta,
 html[data-theme="dark"] .links-note,
 html[data-theme="dark"] .incident-subtitle,
+html[data-theme="dark"] .counter-subtitle,
 html[data-theme="dark"] .drawer-hint,
 html[data-theme="dark"] .link-count,
 html[data-theme="dark"] .runbook-subtitle,
@@ -1618,6 +1671,7 @@ html[data-theme="dark"] .runbook-card-summary {
 html[data-theme="dark"] .links-title,
 html[data-theme="dark"] .weather-title,
 html[data-theme="dark"] .incident-title,
+html[data-theme="dark"] .counter-title,
 html[data-theme="dark"] .incident-core-title,
 html[data-theme="dark"] .workflow-title,
 html[data-theme="dark"] .field label,
@@ -1810,6 +1864,10 @@ html[data-theme="dark"] a {
   .weather-chip {
     flex: 1 1 calc(50% - 6px);
     min-width: 0;
+  }
+
+  .counter-actions {
+    grid-template-columns: 1fr;
   }
 
   h1 {
