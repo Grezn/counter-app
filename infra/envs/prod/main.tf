@@ -67,7 +67,7 @@ resource "aws_lb_target_group" "counter_app" {
   target_type = "instance"
 
   health_check {
-    enabled             = true
+    enabled = true
     # /ready 會檢查 Redis；/health 只代表 Node.js process 還活著。
     path                = "/ready"
     port                = "traffic-port"

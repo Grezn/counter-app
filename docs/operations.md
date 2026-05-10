@@ -95,6 +95,39 @@ AWS_SECRET_ACCESS_KEY
 
 `AWS_ACCOUNT_ID` 也可以刪，因為它不是 secret，而且 workflow 已經不需要從 GitHub secret 讀它。
 
+## CloudWatch 監控 Terraform 化
+
+正式監控資源放在 `infra/envs/prod/monitoring.tf`：
+
+- CloudWatch Logs log group：`/counter-app/prod/app`
+- Dashboard：`counter-app-ops`
+- ALB / Target Group 告警：healthy hosts、unhealthy hosts、target 5xx、ALB 5xx
+- EC2 告警：ASG CPU、EC2 status check
+- Redis / Valkey 告警：填入 `elasticache_cache_cluster_id` 後才會建立
+
+套用前先檢查：
+
+```bash
+cd infra/envs/prod
+terraform fmt
+terraform validate
+terraform plan
+```
+
+確認 plan 沒問題後再：
+
+```bash
+terraform apply
+```
+
+部署腳本已改成 Docker `awslogs` driver。EC2 IAM role 需要能寫入 CloudWatch Logs；若是用 CloudShell 補權限，可以重新執行：
+
+```bash
+bash infra/setup-ec2-ssm-parameters.sh
+```
+
+注意：p95 latency 目前只放在 dashboard 看趨勢，不做 email 告警，避免小流量時一個慢請求就寄信。
+
 ### Reset Token
 
 舊的 reset token 可以不用了。

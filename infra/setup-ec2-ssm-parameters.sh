@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # 用途：
-#   補齊 counter-app EC2 Instance Profile 讀取 Parameter Store 的權限。
+#   補齊 counter-app EC2 Instance Profile 讀取 Parameter Store 和寫入
+#   CloudWatch Logs 的權限。
 #   SSM 快速部署時，docker run 是在 EC2 上執行；因此 CWA_API_KEY
 #   需要由 EC2 的 IAM Role 讀 /counter-app/prod/cwa-api-key。
 #
@@ -14,16 +15,19 @@ AWS_REGION="${AWS_REGION:-us-east-1}"
 ASG_NAME="${ASG_NAME:-counter-app-asg}"
 PARAMETER_PATH="${PARAMETER_PATH:-/counter-app/prod}"
 POLICY_NAME="${POLICY_NAME:-counter-app-ssm-parameters}"
+APP_LOG_GROUP_NAME="${APP_LOG_GROUP_NAME:-/counter-app/prod/app}"
 
 AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 PARAMETER_PATH="${PARAMETER_PATH%/}"
 NORMALIZED_PARAMETER_PATH="${PARAMETER_PATH#/}"
 PARAMETER_RESOURCE_ARN="arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/${NORMALIZED_PARAMETER_PATH}/*"
+APP_LOG_GROUP_RESOURCE_ARN="arn:aws:logs:${AWS_REGION}:${AWS_ACCOUNT_ID}:log-group:${APP_LOG_GROUP_NAME}:*"
 
 echo "[EC2 SSM] account: ${AWS_ACCOUNT_ID}"
 echo "[EC2 SSM] region: ${AWS_REGION}"
 echo "[EC2 SSM] asg: ${ASG_NAME}"
 echo "[EC2 SSM] parameter path: ${PARAMETER_PATH}"
+echo "[EC2 SSM] app log group: ${APP_LOG_GROUP_NAME}"
 
 get_asg_query() {
   aws autoscaling describe-auto-scaling-groups \
@@ -158,6 +162,16 @@ cat > "$POLICY_FILE" <<EOF
           "kms:ViaService": "ssm.${AWS_REGION}.amazonaws.com"
         }
       }
+    },
+    {
+      "Sid": "WriteCounterAppCloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "${APP_LOG_GROUP_RESOURCE_ARN}"
     }
   ]
 }
@@ -178,3 +192,4 @@ aws iam put-role-policy \
 
 echo "[EC2 SSM] done"
 echo "[EC2 SSM] EC2 can now read ${PARAMETER_RESOURCE_ARN}"
+echo "[EC2 SSM] EC2 can now write ${APP_LOG_GROUP_RESOURCE_ARN}"
