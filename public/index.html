@@ -42,12 +42,12 @@
           <h2 class="weather-title">本地即時氣象</h2>
           <div id="weatherMeta" class="weather-meta">氣象載入中...</div>
         </div>
-        <div class="weather-actions">
-          <button class="weather-refresh" type="button" onclick="configureWeatherLocation()">地區</button>
-          <button class="weather-refresh" type="button" onclick="loadLocalWeather(true)">更新</button>
-        </div>
       </div>
       <div id="weatherContent" class="weather-content" aria-live="polite">氣象載入中...</div>
+      <div class="weather-actions">
+        <button class="weather-refresh" type="button" onclick="configureWeatherLocation()">地區</button>
+        <button class="weather-refresh" type="button" onclick="loadLocalWeather(true)">更新</button>
+      </div>
     </section>
 
     <div class="stats-grid">
@@ -411,9 +411,6 @@
 
     <button id="backToTopButton" class="back-to-top" type="button" onclick="scrollToTop()" aria-label="回到頂端" title="回到頂端">↑</button>
 
-    <div class="footer">
-      <div><strong>Security:</strong> 固定入口只保存登入頁連結；帳密、token、客戶資料與內部 SOP 不放在前端。</div>
-    </div>
   </div>
   <script src="/app.js"></script>
 </body>

@@ -375,13 +375,9 @@ function renderLocalWeather(data) {
     current.forecastStartTime || data.startTime,
     current.forecastEndTime || data.endTime,
   );
-  const stationDetail = current.stationName
-    ? `最近測站 ${current.stationName}${hasWeatherValue(current.matchedDistanceKm) ? ` ${current.matchedDistanceKm}km` : ""}`
-    : current.sourceLabel || "預報";
-
   meta.textContent = observedTime
-    ? `${locationLabel} · ${stationDetail} · 觀測 ${observedTime}`
-    : `${locationLabel} · ${forecastTime}`;
+    ? `${locationLabel} · 觀測 ${observedTime}`
+    : locationLabel;
 
   const summary = document.createElement("div");
   summary.className = "weather-summary";
@@ -399,13 +395,6 @@ function renderLocalWeather(data) {
     createWeatherChip("現在雨量", formatWeatherValue(current.rainMm, "mm")),
     createWeatherChip("未來降雨", rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-"),
   );
-
-  const comfort = current.comfort || data.comfort;
-  if (comfort) {
-    chips.appendChild(createWeatherChip("舒適度", comfort));
-  } else if (hasWeatherValue(current.windSpeed)) {
-    chips.appendChild(createWeatherChip("風速", formatWeatherValue(current.windSpeed, "m/s")));
-  }
 
   content.replaceChildren(summary, chips);
 }
