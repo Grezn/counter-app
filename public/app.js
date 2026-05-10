@@ -190,9 +190,9 @@ function renderStats(data) {
 }
 
 const WEATHER_POSITION_OPTIONS = {
-  enableHighAccuracy: false,
-  timeout: 5000,
-  maximumAge: 10 * 60 * 1000,
+  enableHighAccuracy: true,
+  timeout: 8000,
+  maximumAge: 5 * 60 * 1000,
 };
 
 let weatherPositionCache = null;
@@ -202,13 +202,20 @@ function setWeatherText(message, detail) {
   const meta = document.getElementById("weatherMeta");
   const content = document.getElementById("weatherContent");
   if (meta) meta.textContent = detail || "";
-  if (content) content.textContent = message;
+  if (content) {
+    content.replaceChildren(createTextElement("div", "weather-placeholder", message));
+  }
 }
 
 function formatWeatherPeriod(startTime, endTime) {
   if (!startTime && !endTime) return "最近一段預報";
   const clean = (value) => String(value || "").replace("T", " ").slice(5, 16);
   return `${clean(startTime)} - ${clean(endTime)}`;
+}
+
+function formatWeatherTimestamp(value) {
+  if (!value) return "";
+  return String(value).replace("T", " ").slice(5, 16);
 }
 
 function getWeatherPosition(forceRefresh = false) {
@@ -251,11 +258,19 @@ function getWeatherPosition(forceRefresh = false) {
   });
 }
 
-function createWeatherMetric(label, value, className = "") {
+function hasWeatherValue(value) {
+  return value !== undefined && value !== null && value !== "";
+}
+
+function formatWeatherValue(value, unit = "") {
+  return hasWeatherValue(value) ? `${value}${unit}` : "-";
+}
+
+function createWeatherChip(label, value) {
   const item = document.createElement("div");
-  item.className = className ? `weather-metric ${className}` : "weather-metric";
-  item.appendChild(createTextElement("span", "weather-metric-label", label));
-  item.appendChild(createTextElement("strong", "", value || "-"));
+  item.className = "weather-chip";
+  item.appendChild(createTextElement("span", "weather-chip-label", label));
+  item.appendChild(createTextElement("strong", "weather-chip-value", value || "-"));
   return item;
 }
 
@@ -275,30 +290,87 @@ function renderLocalWeather(data) {
   const content = document.getElementById("weatherContent");
   if (!meta || !content) return;
 
-  const temperatureUnit = data.temperatureUnit || "C";
-  const temperature = data.temperature
-    ? `${data.temperature}°${temperatureUnit}`
-    : data.minTemperature || data.maxTemperature
-      ? `${data.minTemperature || "-"}-${data.maxTemperature || "-"}°${temperatureUnit}`
-      : "-";
-  const rain = data.rainProbability
-    ? `${data.rainProbability}${data.rainProbabilityUnit || "%"}`
-    : "-";
-  const locationLabel = formatWeatherLocation(data);
-
-  meta.textContent = `${locationLabel} · ${formatWeatherPeriod(data.startTime, data.endTime)}`;
-  content.replaceChildren(
-    createWeatherMetric("天氣", data.weather || data.weatherDescription, "weather-metric-wide"),
-    createWeatherMetric("溫度", temperature),
-    createWeatherMetric("降雨", rain),
-    createWeatherMetric("舒適度", data.comfort),
+  const current = data.current || {};
+  const temperatureUnit = current.forecastTemperatureUnit || data.temperatureUnit || "C";
+  const forecastRange = current.forecastMinTemperature || current.forecastMaxTemperature
+    ? `${current.forecastMinTemperature || "-"}-${current.forecastMaxTemperature || "-"}°${temperatureUnit}`
+    : "";
+  const temperature = hasWeatherValue(current.temperature)
+    ? `${current.temperature}°${temperatureUnit}`
+    : data.temperature
+      ? `${data.temperature}°${temperatureUnit}`
+      : forecastRange || "-";
+  const rainProbability = current.forecastRainProbability || data.rainProbability;
+  const rainProbabilityUnit = current.forecastRainProbabilityUnit || data.rainProbabilityUnit || "%";
+  const locationLabel = formatWeatherLocation({
+    countyName: current.countyName || data.countyName,
+    locationName: current.locationName || data.locationName,
+  });
+  const observedTime = formatWeatherTimestamp(current.observedAt);
+  const forecastTime = formatWeatherPeriod(
+    current.forecastStartTime || data.startTime,
+    current.forecastEndTime || data.endTime,
   );
+  const stationDetail = current.stationName
+    ? `最近測站 ${current.stationName}${hasWeatherValue(current.matchedDistanceKm) ? ` ${current.matchedDistanceKm}km` : ""}`
+    : current.sourceLabel || "預報";
+
+  meta.textContent = observedTime
+    ? `${locationLabel} · ${stationDetail} · 觀測 ${observedTime}`
+    : `${locationLabel} · ${forecastTime}`;
+
+  const summary = document.createElement("div");
+  summary.className = "weather-summary";
+  summary.appendChild(createTextElement("strong", "weather-temp", temperature));
+
+  const summaryText = document.createElement("div");
+  summaryText.className = "weather-summary-text";
+  summaryText.appendChild(createTextElement("span", "weather-now", current.weather || data.weather || data.weatherDescription || "天氣資料"));
+  summaryText.appendChild(createTextElement("span", "weather-forecast-note", `預報 ${forecastTime}`));
+  summary.appendChild(summaryText);
+
+  const chips = document.createElement("div");
+  chips.className = "weather-chip-row";
+  chips.replaceChildren(
+    createWeatherChip("現在雨量", formatWeatherValue(current.rainMm, "mm")),
+    createWeatherChip("濕度", formatWeatherValue(current.humidity, "%")),
+    createWeatherChip("未來降雨", rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-"),
+    createWeatherChip("風速", formatWeatherValue(current.windSpeed, "m/s")),
+    createWeatherChip("舒適度", current.comfort || data.comfort || "-"),
+  );
+
+  if (forecastRange) {
+    chips.appendChild(createWeatherChip("預報溫度", forecastRange));
+  }
+
+  content.replaceChildren(summary, chips);
+}
+
+function getWeatherRequestDetail(position) {
+  if (position) {
+    return "使用瀏覽器定位尋找最近測站";
+  }
+
+  return "沒有定位權限時使用預設地區";
+}
+
+function getWeatherLoadingLabel(position) {
+  return position ? "更新最近測站氣象..." : "更新預設地區氣象...";
+}
+
+function getWeatherUnavailableMessage(data) {
+  if (data && data.configured === false) {
+    return data.hint || `${formatWeatherLocation(data)} · ${data.datasetId || "F-C0032-001"}`;
+  }
+
+  return "";
 }
 
 async function loadLocalWeather(forceRefresh = false) {
   try {
-    setWeatherText("氣象定位中...", "正在取得所在地預報");
+    setWeatherText("氣象定位中...", "準備更新最近測站與預報");
     const position = await getWeatherPosition(forceRefresh);
+    setWeatherText(getWeatherLoadingLabel(position), getWeatherRequestDetail(position));
     const params = new URLSearchParams();
 
     if (forceRefresh) params.set("refresh", "1");
@@ -317,7 +389,7 @@ async function loadLocalWeather(forceRefresh = false) {
       if (data && data.configured === false) {
         setWeatherText(
           "部署環境未讀到氣象授權碼",
-          data.hint || `${formatWeatherLocation(data)} · ${data.datasetId || "F-C0032-001"}`,
+          getWeatherUnavailableMessage(data),
         );
         return;
       }
@@ -1242,4 +1314,4 @@ loadLocalWeather();
 trackView();
 loadCount();
 setInterval(loadStats, 30000);
-setInterval(loadLocalWeather, 10 * 60 * 1000);
+setInterval(loadLocalWeather, 3 * 60 * 1000);

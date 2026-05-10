@@ -37,15 +37,15 @@
     <main id="dashboardView" class="page-view active" role="tabpanel" aria-labelledby="dashboardTab">
       <div id="redisBadge" class="badge">Redis: checking...</div>
 
-      <section class="weather-strip" aria-label="本地區氣象">
+      <section class="weather-strip" aria-label="本地即時氣象">
       <div class="weather-header">
         <div>
-          <h2 class="weather-title">本地區氣象</h2>
+          <h2 class="weather-title">本地即時氣象</h2>
           <div id="weatherMeta" class="weather-meta">氣象載入中...</div>
         </div>
         <button class="weather-refresh" type="button" onclick="loadLocalWeather(true)">更新</button>
       </div>
-      <div id="weatherContent" class="weather-content">氣象載入中...</div>
+      <div id="weatherContent" class="weather-content" aria-live="polite">氣象載入中...</div>
     </section>
 
     <div class="stats-grid">

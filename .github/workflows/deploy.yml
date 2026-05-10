@@ -142,8 +142,10 @@ jobs:
           CWA_DATASET_ID="F-C0032-001"
           CWA_CITY_DATASET_ID="F-C0032-001"
           CWA_TOWNSHIP_DATASET_ID="F-D0047-089"
+          CWA_OBSERVATION_DATASET_ID="O-A0001-001"
           CWA_MAX_LOCATION_DISTANCE_KM="80"
-          CWA_CACHE_TTL_MS="600000"
+          CWA_MAX_OBSERVATION_DISTANCE_KM="80"
+          CWA_CACHE_TTL_MS="180000"
 
           RESET_TOKEN_PARAM_NAME="/counter-app/prod/reset-token"
           JIRA_EMAIL_PARAM_NAME="/counter-app/prod/jira-email"
@@ -235,7 +237,9 @@ jobs:
               -e "CWA_DATASET_ID=${CWA_DATASET_ID}" \
               -e "CWA_CITY_DATASET_ID=${CWA_CITY_DATASET_ID}" \
               -e "CWA_TOWNSHIP_DATASET_ID=${CWA_TOWNSHIP_DATASET_ID}" \
+              -e "CWA_OBSERVATION_DATASET_ID=${CWA_OBSERVATION_DATASET_ID}" \
               -e "CWA_MAX_LOCATION_DISTANCE_KM=${CWA_MAX_LOCATION_DISTANCE_KM}" \
+              -e "CWA_MAX_OBSERVATION_DISTANCE_KM=${CWA_MAX_OBSERVATION_DISTANCE_KM}" \
               -e "CWA_CACHE_TTL_MS=${CWA_CACHE_TTL_MS}" \
               "$image"
           }

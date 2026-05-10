@@ -44,8 +44,10 @@ CWA_LOCATION_NAME="臺北市"
 CWA_DATASET_ID="F-C0032-001"
 CWA_CITY_DATASET_ID="F-C0032-001"
 CWA_TOWNSHIP_DATASET_ID="F-D0047-089"
+CWA_OBSERVATION_DATASET_ID="O-A0001-001"
 CWA_MAX_LOCATION_DISTANCE_KM="80"
-CWA_CACHE_TTL_MS="600000"
+CWA_MAX_OBSERVATION_DISTANCE_KM="80"
+CWA_CACHE_TTL_MS="180000"
 
 # ===== Secret =====
 # 建議先在 SSM 建立 SecureString：
@@ -136,7 +138,7 @@ if [ -z "$JIRA_EMAIL" ] || [ "$JIRA_EMAIL" = "None" ] || [ -z "$JIRA_API_TOKEN" 
 fi
 
 # ===== 讀取氣象署開放平台授權碼 =====
-# 沒設定時 app 仍會啟動，本地區氣象會顯示未設定。
+# 沒設定時 app 仍會啟動，本地即時氣象會顯示未設定。
 CWA_API_KEY="$(read_optional_parameter "$CWA_API_KEY_PARAM_NAME")"
 if [ -z "$CWA_API_KEY" ] || [ "$CWA_API_KEY" = "None" ]; then
   echo "[UserData] WARN: CWA API key SSM parameter is not configured"
@@ -191,7 +193,9 @@ docker run -d \
   -e "CWA_DATASET_ID=${CWA_DATASET_ID}" \
   -e "CWA_CITY_DATASET_ID=${CWA_CITY_DATASET_ID}" \
   -e "CWA_TOWNSHIP_DATASET_ID=${CWA_TOWNSHIP_DATASET_ID}" \
+  -e "CWA_OBSERVATION_DATASET_ID=${CWA_OBSERVATION_DATASET_ID}" \
   -e "CWA_MAX_LOCATION_DISTANCE_KM=${CWA_MAX_LOCATION_DISTANCE_KM}" \
+  -e "CWA_MAX_OBSERVATION_DISTANCE_KM=${CWA_MAX_OBSERVATION_DISTANCE_KM}" \
   -e "CWA_CACHE_TTL_MS=${CWA_CACHE_TTL_MS}" \
   "$IMAGE_URI"
 

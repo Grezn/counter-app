@@ -13,7 +13,3 @@
 
 # Node.js 本機安裝輸出
 node_modules/
-
-# local temp files
-app/200
-app/403

@@ -5,9 +5,11 @@ const router = express.Router();
 const CWA_BASE_URL = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
 const DEFAULT_CITY_DATASET_ID = "F-C0032-001";
 const DEFAULT_TOWNSHIP_DATASET_ID = "F-D0047-089";
+const DEFAULT_OBSERVATION_DATASET_ID = "O-A0001-001";
 const DEFAULT_LOCATION_NAME = "臺北市";
-const DEFAULT_CACHE_TTL_MS = 10 * 60 * 1000;
+const DEFAULT_CACHE_TTL_MS = 3 * 60 * 1000;
 const DEFAULT_MAX_LOCATION_DISTANCE_KM = 80;
+const DEFAULT_MAX_OBSERVATION_DISTANCE_KM = 80;
 
 const weatherCache = new Map();
 const TOWNSHIP_ELEMENT_ALIASES = {
@@ -59,6 +61,29 @@ function normalizeCoordinate(value) {
   return Number.isFinite(coordinate) ? coordinate : null;
 }
 
+function normalizeObservationText(value) {
+  const text = normalizeText(value);
+  const invalidValues = new Set(["-99", "-99.0", "-999", "-999.0", "NA", "N/A", "null", "None", "X", "/"]);
+  return invalidValues.has(text) ? "" : text;
+}
+
+function normalizeObservationNumber(value) {
+  const text = normalizeObservationText(value);
+  if (!text) return "";
+
+  const number = Number(text);
+  if (!Number.isFinite(number)) return "";
+
+  return Math.round(number * 10) / 10;
+}
+
+function normalizeHumidity(value) {
+  const humidity = normalizeObservationNumber(value);
+  if (humidity === "") return "";
+
+  return humidity <= 1 ? Math.round(humidity * 100) : Math.round(humidity);
+}
+
 function hasValidCoordinates(lat, lon) {
   return lat !== null && lon !== null && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }
@@ -71,10 +96,218 @@ function getWeatherConfig() {
       DEFAULT_CITY_DATASET_ID,
     ),
     townshipDatasetId: normalizeText(process.env.CWA_TOWNSHIP_DATASET_ID, DEFAULT_TOWNSHIP_DATASET_ID),
+    observationDatasetId: normalizeText(process.env.CWA_OBSERVATION_DATASET_ID, DEFAULT_OBSERVATION_DATASET_ID),
     locationName: normalizeText(process.env.CWA_LOCATION_NAME, DEFAULT_LOCATION_NAME),
     cacheTtlMs: normalizeCacheTtl(process.env.CWA_CACHE_TTL_MS),
     maxLocationDistanceKm: normalizeDistance(process.env.CWA_MAX_LOCATION_DISTANCE_KM),
+    maxObservationDistanceKm: normalizeDistance(
+      process.env.CWA_MAX_OBSERVATION_DISTANCE_KM || DEFAULT_MAX_OBSERVATION_DISTANCE_KM,
+    ),
   };
+}
+
+function readPathValue(source, path) {
+  return path.split(".").reduce((value, key) => {
+    if (value === undefined || value === null) return undefined;
+    return value[key];
+  }, source);
+}
+
+function readFirstPathValue(source, paths) {
+  for (const path of paths) {
+    const value = readPathValue(source, path);
+    if (value !== undefined && value !== null && value !== "") {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function readObservationArrayValue(station, names) {
+  const rawElements = station.WeatherElement || station.weatherElement || station.weatherElements || [];
+  const elements = Array.isArray(rawElements) ? rawElements : [];
+  const wanted = new Set(names.map(normalizeWeatherElementName));
+  const matched = elements.find((element) => (
+    wanted.has(normalizeWeatherElementName(element.elementName || element.ElementName || element.name))
+  ));
+
+  if (!matched) return "";
+
+  const time = Array.isArray(matched.time)
+    ? matched.time[0]
+    : Array.isArray(matched.Time)
+      ? matched.Time[0]
+      : null;
+  if (time) {
+    const value = readElementValue(time, [
+      "value",
+      "Value",
+      "parameterName",
+      "ParameterName",
+      "Temperature",
+      "AirTemperature",
+      "Precipitation",
+    ]);
+    if (value.value) return value.value;
+  }
+
+  const parameter = matched.parameter || matched.Parameter || {};
+  return matched.value
+    || matched.Value
+    || matched.valueName
+    || parameter.parameterName
+    || parameter.ParameterName
+    || "";
+}
+
+function readObservationValue(station, names, paths = []) {
+  const directValue = readFirstPathValue(station, paths);
+  if (directValue !== "") return directValue;
+
+  const weatherElement = station.WeatherElement || station.weatherElement || {};
+  if (!Array.isArray(weatherElement) && weatherElement && typeof weatherElement === "object") {
+    for (const name of names) {
+      const value = weatherElement[name];
+      if (value !== undefined && value !== null && value !== "") return value;
+    }
+  }
+
+  return readObservationArrayValue(station, names);
+}
+
+function getObservationCoordinates(station) {
+  const geo = station.GeoInfo || station.geoInfo || {};
+  const coordinates = geo.Coordinates || geo.coordinates || geo.Coordinate || [];
+  const coordinateList = Array.isArray(coordinates)
+    ? coordinates
+    : coordinates && typeof coordinates === "object"
+      ? [coordinates]
+      : [];
+  const preferred = coordinateList.find((item) => (
+    /wgs84/i.test(String(item.CoordinateName || item.coordinateName || item.name || ""))
+  )) || coordinateList[0] || geo;
+
+  const lat = normalizeCoordinate(readFirstPathValue(preferred, [
+    "StationLatitude",
+    "stationLatitude",
+    "Latitude",
+    "latitude",
+    "lat",
+    "Lat",
+  ]) || station.lat_wgs84 || station.lat);
+  const lon = normalizeCoordinate(readFirstPathValue(preferred, [
+    "StationLongitude",
+    "stationLongitude",
+    "Longitude",
+    "longitude",
+    "lon",
+    "Lon",
+  ]) || station.lon_wgs84 || station.lon);
+
+  return { lat, lon };
+}
+
+function getObservationRecords(data) {
+  const records = data && data.records ? data.records : {};
+  if (Array.isArray(records.Station)) return records.Station;
+  if (Array.isArray(records.station)) return records.station;
+  if (Array.isArray(records.location)) return records.location;
+  if (Array.isArray(records.locations)) return records.locations;
+  return [];
+}
+
+function parseObservationStation(station) {
+  const geo = station.GeoInfo || station.geoInfo || {};
+  const obsTime = station.ObsTime || station.obsTime || {};
+  const { lat, lon } = getObservationCoordinates(station);
+  const stationName = normalizeObservationText(station.StationName || station.stationName || station.locationName);
+
+  return {
+    stationName,
+    stationId: normalizeObservationText(station.StationId || station.stationId || station.stationID || station.locationId),
+    observedAt: normalizeObservationText(obsTime.DateTime || obsTime.dateTime || station.obsTime || station.DateTime),
+    countyName: normalizeObservationText(geo.CountyName || geo.countyName || station.countyName || station.CountyName),
+    townName: normalizeObservationText(geo.TownName || geo.townName || station.townName || station.TownName),
+    latitude: lat,
+    longitude: lon,
+    weather: normalizeObservationText(readObservationValue(station, ["Weather", "Wx"], [
+      "WeatherElement.Weather",
+      "weatherElement.Weather",
+      "Weather",
+    ])),
+    temperature: normalizeObservationNumber(readObservationValue(station, ["AirTemperature", "TEMP", "T"], [
+      "WeatherElement.AirTemperature",
+      "WeatherElement.TEMP",
+      "weatherElement.AirTemperature",
+      "AirTemperature",
+      "TEMP",
+    ])),
+    humidity: normalizeHumidity(readObservationValue(station, ["RelativeHumidity", "HUMD"], [
+      "WeatherElement.RelativeHumidity",
+      "WeatherElement.HUMD",
+      "weatherElement.RelativeHumidity",
+      "RelativeHumidity",
+      "HUMD",
+    ])),
+    rainMm: normalizeObservationNumber(readObservationValue(station, ["Precipitation", "H_24R", "Rainfall"], [
+      "WeatherElement.Now.Precipitation",
+      "WeatherElement.Precipitation",
+      "WeatherElement.H_24R",
+      "weatherElement.Now.Precipitation",
+      "Precipitation",
+      "H_24R",
+    ])),
+    windSpeed: normalizeObservationNumber(readObservationValue(station, ["WindSpeed", "WDSD"], [
+      "WeatherElement.WindSpeed",
+      "WeatherElement.WDSD",
+      "WindSpeed",
+      "WDSD",
+    ])),
+    windDirection: normalizeObservationText(readObservationValue(station, ["WindDirection", "WDIR"], [
+      "WeatherElement.WindDirection",
+      "WeatherElement.WDIR",
+      "WindDirection",
+      "WDIR",
+    ])),
+    airPressure: normalizeObservationNumber(readObservationValue(station, ["AirPressure", "PRES"], [
+      "WeatherElement.AirPressure",
+      "WeatherElement.PRES",
+      "AirPressure",
+      "PRES",
+    ])),
+  };
+}
+
+function findBestObservation(data, options) {
+  const stations = getObservationRecords(data)
+    .map(parseObservationStation)
+    .filter((station) => station.stationName);
+
+  if (!stations.length) return null;
+
+  if (hasValidCoordinates(options.lat, options.lon)) {
+    const nearest = stations.reduce((best, station) => {
+      if (!hasValidCoordinates(station.latitude, station.longitude)) return best;
+
+      const distanceKm = getDistanceKm(options.lat, options.lon, station.latitude, station.longitude);
+      if (!best || distanceKm < best.distanceKm) {
+        return { ...station, distanceKm: Math.round(distanceKm * 10) / 10 };
+      }
+
+      return best;
+    }, null);
+
+    if (nearest && nearest.distanceKm <= options.maxDistanceKm) return nearest;
+  }
+
+  const locationName = normalizeText(options.locationName);
+  const matched = locationName
+    ? stations.find((station) => station.countyName === locationName || station.townName === locationName)
+      || stations.find((station) => station.countyName.includes(locationName) || station.townName.includes(locationName))
+    : null;
+
+  return matched || stations[0];
 }
 
 function getFirstForecastTime(weatherElement) {
@@ -420,6 +653,77 @@ async function fetchTownshipWeather(config, lat, lon) {
   return forecast;
 }
 
+async function fetchObservationWeather(config, options) {
+  const data = await fetchCwaDataset(config.observationDatasetId, config.apiKey);
+  const observation = findBestObservation(data, {
+    lat: options.lat,
+    lon: options.lon,
+    locationName: options.locationName,
+    maxDistanceKm: config.maxObservationDistanceKm,
+  });
+
+  if (!observation) return null;
+
+  return {
+    ...observation,
+    source: "中央氣象署氣象觀測站",
+    datasetId: config.observationDatasetId,
+  };
+}
+
+function buildCurrentWeather(forecast, observation) {
+  const current = observation
+    ? {
+        source: "observation",
+        sourceLabel: "最近測站觀測",
+        locationName: observation.townName || observation.countyName || forecast.locationName,
+        countyName: observation.countyName || forecast.countyName || "",
+        stationName: observation.stationName || "",
+        stationId: observation.stationId || "",
+        observedAt: observation.observedAt || "",
+        matchedDistanceKm: observation.distanceKm,
+        weather: observation.weather || forecast.weather || forecast.weatherDescription || "",
+        temperature: observation.temperature !== "" ? observation.temperature : forecast.temperature,
+        humidity: observation.humidity,
+        rainMm: observation.rainMm,
+        windSpeed: observation.windSpeed,
+        windDirection: observation.windDirection,
+        airPressure: observation.airPressure,
+      }
+    : {
+        source: "forecast",
+        sourceLabel: "預報",
+        locationName: forecast.locationName || "",
+        countyName: forecast.countyName || "",
+        stationName: "",
+        stationId: "",
+        observedAt: "",
+        matchedDistanceKm: "",
+        weather: forecast.weather || forecast.weatherDescription || "",
+        temperature: forecast.temperature || "",
+        humidity: "",
+        rainMm: "",
+        windSpeed: "",
+        windDirection: "",
+        airPressure: "",
+      };
+
+  return {
+    ...current,
+    forecastLevel: forecast.forecastLevel || "",
+    forecastLocationName: forecast.locationName || "",
+    forecastCountyName: forecast.countyName || "",
+    forecastStartTime: forecast.startTime || "",
+    forecastEndTime: forecast.endTime || "",
+    forecastRainProbability: forecast.rainProbability || "",
+    forecastRainProbabilityUnit: forecast.rainProbabilityUnit || "%",
+    forecastMinTemperature: forecast.minTemperature || "",
+    forecastMaxTemperature: forecast.maxTemperature || "",
+    forecastTemperatureUnit: forecast.temperatureUnit || "C",
+    comfort: forecast.comfort || "",
+  };
+}
+
 router.get("/api/weather/local", async (req, res) => {
   const config = getWeatherConfig();
   const locationName = normalizeText(req.query.locationName, config.locationName);
@@ -467,10 +771,27 @@ router.get("/api/weather/local", async (req, res) => {
       forecast = await fetchCityWeather(config, locationName);
     }
 
-    setCachedWeather(cacheKey, forecast, config.cacheTtlMs);
+    let observation = null;
+    try {
+      observation = await fetchObservationWeather(config, {
+        lat,
+        lon,
+        locationName,
+      });
+    } catch (err) {
+      console.error("[Weather] observation fetch failed:", err.message);
+    }
+
+    const payload = {
+      ...forecast,
+      observation,
+      current: buildCurrentWeather(forecast, observation),
+    };
+
+    setCachedWeather(cacheKey, payload, config.cacheTtlMs);
 
     res.json({
-      ...forecast,
+      ...payload,
       cached: false,
     });
   } catch (err) {
