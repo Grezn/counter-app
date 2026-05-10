@@ -153,17 +153,25 @@ h1 {
 
 .weather-strip {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
-  gap: 14px;
+  grid-template-columns: minmax(280px, 0.95fr) minmax(0, 1.55fr);
+  gap: 12px;
   align-items: center;
   margin: 0 0 16px;
-  padding: 12px 14px;
+  padding: 12px;
   border-radius: 8px;
   background: #11151b;
   border: 1px solid #2d3540;
 }
 
 .weather-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.weather-header > div:first-child {
   min-width: 0;
 }
 
@@ -191,7 +199,8 @@ h1 {
 .weather-refresh {
   width: auto;
   margin: 0;
-  padding: 7px 8px;
+  min-width: 42px;
+  padding: 7px 9px;
   border-radius: 7px;
   background: #1d2530;
   border: 1px solid #3a4b63;
@@ -200,9 +209,10 @@ h1 {
 }
 
 .weather-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) repeat(2, minmax(92px, 0.5fr));
+  align-items: stretch;
+  gap: 8px;
   min-width: 0;
   color: #d8dde6;
   font-size: 0.86rem;
@@ -212,15 +222,20 @@ h1 {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 0 0 auto;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  box-sizing: border-box;
 }
 
 .weather-temp {
   display: block;
   color: #f8fafc;
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .weather-summary-text {
@@ -243,17 +258,9 @@ h1 {
   line-height: 1.25;
 }
 
-.weather-chip-row {
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
-}
-
 .weather-chip {
-  min-width: 92px;
-  padding: 7px 9px;
+  min-width: 0;
+  padding: 8px 9px;
   border-radius: 7px;
   background: #0f172a;
   border: 1px solid #334155;
@@ -1393,6 +1400,7 @@ body {
 
 .quick-link,
 .weather-refresh,
+.weather-summary,
 .weather-chip,
 .field input:not([type="radio"]):not([type="checkbox"]),
 .field select,
@@ -1699,6 +1707,7 @@ html[data-theme="dark"] .view-tab.active {
 
 html[data-theme="dark"] .quick-link,
 html[data-theme="dark"] .weather-refresh,
+html[data-theme="dark"] .weather-summary,
 html[data-theme="dark"] .weather-chip,
 html[data-theme="dark"] .field input:not([type="radio"]):not([type="checkbox"]),
 html[data-theme="dark"] .field select,
@@ -1820,12 +1829,10 @@ html[data-theme="dark"] a {
   }
 
   .weather-content {
-    align-items: center;
-    gap: 14px;
+    grid-template-columns: minmax(0, 1fr) repeat(2, minmax(92px, 0.5fr));
   }
 
-  .weather-actions,
-  .weather-chip-row {
+  .weather-actions {
     justify-content: flex-start;
   }
 
@@ -1852,8 +1859,12 @@ html[data-theme="dark"] a {
   }
 
   .weather-content {
-    flex-direction: row;
-    align-items: center;
+    grid-template-columns: 1fr;
+  }
+
+  .weather-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .weather-summary {
@@ -1861,7 +1872,6 @@ html[data-theme="dark"] a {
   }
 
   .weather-chip {
-    flex: 1 1 calc(50% - 6px);
     min-width: 0;
   }
 

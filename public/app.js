@@ -389,14 +389,11 @@ function renderLocalWeather(data) {
   summaryText.appendChild(createTextElement("span", "weather-forecast-note", `預報 ${forecastTime}`));
   summary.appendChild(summaryText);
 
-  const chips = document.createElement("div");
-  chips.className = "weather-chip-row";
-  chips.replaceChildren(
+  content.replaceChildren(
+    summary,
     createWeatherChip("現在雨量", formatWeatherValue(current.rainMm, "mm")),
     createWeatherChip("未來降雨", rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-"),
   );
-
-  content.replaceChildren(summary, chips);
 }
 
 function getWeatherRequestDetail(position) {
