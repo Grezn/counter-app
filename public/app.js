@@ -224,6 +224,7 @@ const WEATHER_POSITION_OPTIONS = {
   timeout: 8000,
   maximumAge: 5 * 60 * 1000,
 };
+const WEATHER_LOCATION_STORAGE_KEY = "msp_weather_location";
 
 let weatherPositionCache = null;
 let weatherPositionUnavailable = false;
@@ -286,6 +287,39 @@ function getWeatherPosition(forceRefresh = false) {
       WEATHER_POSITION_OPTIONS,
     );
   });
+}
+
+function getWeatherLocationOverride() {
+  try {
+    return (localStorage.getItem(WEATHER_LOCATION_STORAGE_KEY) || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+function setWeatherLocationOverride(value) {
+  try {
+    const normalized = String(value || "").trim();
+    if (normalized) {
+      localStorage.setItem(WEATHER_LOCATION_STORAGE_KEY, normalized);
+    } else {
+      localStorage.removeItem(WEATHER_LOCATION_STORAGE_KEY);
+    }
+  } catch {
+    // localStorage 不可用時，維持本次頁面可操作。
+  }
+}
+
+function configureWeatherLocation() {
+  const current = getWeatherLocationOverride();
+  const value = prompt("輸入氣象地區，例如：新北市 蘆洲區。留空可改回瀏覽器定位。", current);
+
+  if (value === null) return;
+
+  setWeatherLocationOverride(value);
+  weatherPositionCache = null;
+  weatherPositionUnavailable = false;
+  loadLocalWeather(true);
 }
 
 function hasWeatherValue(value) {
@@ -377,6 +411,11 @@ function renderLocalWeather(data) {
 }
 
 function getWeatherRequestDetail(position) {
+  const locationOverride = getWeatherLocationOverride();
+  if (locationOverride) {
+    return `手動地區：${locationOverride}`;
+  }
+
   if (position) {
     return "使用瀏覽器定位尋找最近測站";
   }
@@ -385,6 +424,7 @@ function getWeatherRequestDetail(position) {
 }
 
 function getWeatherLoadingLabel(position) {
+  if (getWeatherLocationOverride()) return "更新手動地區氣象...";
   return position ? "更新最近測站氣象..." : "更新預設地區氣象...";
 }
 
@@ -399,11 +439,16 @@ function getWeatherUnavailableMessage(data) {
 async function loadLocalWeather(forceRefresh = false) {
   try {
     setWeatherText("氣象定位中...", "準備更新最近測站與預報");
-    const position = await getWeatherPosition(forceRefresh);
+    const locationOverride = getWeatherLocationOverride();
+    const position = locationOverride ? null : await getWeatherPosition(forceRefresh);
     setWeatherText(getWeatherLoadingLabel(position), getWeatherRequestDetail(position));
     const params = new URLSearchParams();
 
     if (forceRefresh) params.set("refresh", "1");
+    if (locationOverride) {
+      params.set("locationName", locationOverride);
+      params.set("manual", "1");
+    }
     if (position) {
       params.set("lat", position.lat.toFixed(5));
       params.set("lon", position.lon.toFixed(5));

@@ -170,6 +170,13 @@ h1 {
   gap: 10px;
 }
 
+.weather-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .weather-title {
   margin: 0 0 4px;
   color: #e8eaed;
@@ -376,6 +383,12 @@ h1 {
 
 .counter-actions button {
   margin-bottom: 0;
+}
+
+.counter-error {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
 }
 
 button {

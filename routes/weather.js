@@ -56,6 +56,13 @@ function normalizeWeatherElementName(value) {
   return normalizeText(value).toLowerCase();
 }
 
+function normalizePlaceName(value) {
+  return normalizeText(value)
+    .replace(/\s+/g, "")
+    .replace(/台/g, "臺")
+    .toLowerCase();
+}
+
 function normalizeCoordinate(value) {
   const coordinate = Number(value);
   return Number.isFinite(coordinate) ? coordinate : null;
@@ -301,13 +308,31 @@ function findBestObservation(data, options) {
     if (nearest && nearest.distanceKm <= options.maxDistanceKm) return nearest;
   }
 
-  const locationName = normalizeText(options.locationName);
+  const locationName = normalizePlaceName(options.locationName);
   const matched = locationName
-    ? stations.find((station) => station.countyName === locationName || station.townName === locationName)
-      || stations.find((station) => station.countyName.includes(locationName) || station.townName.includes(locationName))
+    ? stations.find((station) => {
+        const townName = normalizePlaceName(station.townName);
+        const stationName = normalizePlaceName(station.stationName);
+        const fullName = normalizePlaceName(`${station.countyName}${station.townName}`);
+
+        return [townName, stationName, fullName].some((part) => (
+          part && (part === locationName || locationName.includes(part))
+        ));
+      })
+      || stations.find((station) => {
+        const countyName = normalizePlaceName(station.countyName);
+        return countyName && countyName === locationName;
+      })
+      || stations.find((station) => {
+        const townName = normalizePlaceName(station.townName);
+        const stationName = normalizePlaceName(station.stationName);
+        const fullName = normalizePlaceName(`${station.countyName}${station.townName}`);
+
+        return [townName, stationName, fullName].some((part) => part && part.includes(locationName));
+      })
     : null;
 
-  return matched || stations[0];
+  return matched || null;
 }
 
 function getFirstForecastTime(weatherElement) {
@@ -516,7 +541,18 @@ function parseTownshipForecast(data, lat, lon, datasetId, maxDistanceKm) {
   const nearest = findNearestTownship(data, lat, lon);
   if (!nearest || nearest.distanceKm > maxDistanceKm) return null;
 
-  const location = nearest.location;
+  return buildTownshipForecast(
+    nearest.location,
+    datasetId,
+    {
+      distanceKm: Math.round(nearest.distanceKm * 10) / 10,
+      latitude: nearest.latitude,
+      longitude: nearest.longitude,
+    },
+  );
+}
+
+function buildTownshipForecast(location, datasetId, matched = {}) {
   const weather = getTownshipForecastValue(location, TOWNSHIP_ELEMENT_ALIASES.weather, ["Weather", "weather"]);
   const description = getTownshipForecastValue(
     location,
@@ -570,9 +606,9 @@ function parseTownshipForecast(data, lat, lon, datasetId, maxDistanceKm) {
     maxTemperature: maxTemperature.value || "",
     temperatureUnit: normalizeCwaUnit(temperature.unit || minTemperature.unit || maxTemperature.unit, "C"),
     comfort: comfort.value || "",
-    matchedDistanceKm: Math.round(nearest.distanceKm * 10) / 10,
-    matchedLatitude: nearest.latitude,
-    matchedLongitude: nearest.longitude,
+    matchedDistanceKm: matched.distanceKm,
+    matchedLatitude: matched.latitude,
+    matchedLongitude: matched.longitude,
     fetchedAt: new Date().toISOString(),
   };
 }
@@ -653,6 +689,43 @@ async function fetchTownshipWeather(config, lat, lon) {
   return forecast;
 }
 
+function findTownshipByName(data, locationName) {
+  const target = normalizePlaceName(locationName);
+  if (!target) return null;
+
+  const locations = flattenTownshipLocations(data);
+  return locations.find((location) => {
+    const countyName = normalizePlaceName(location.countyName);
+    const townName = normalizePlaceName(location.locationName || location.LocationName);
+    const fullName = `${countyName}${townName}`;
+
+    return fullName === target || target.includes(fullName);
+  }) || locations.find((location) => {
+    const countyName = normalizePlaceName(location.countyName);
+    const townName = normalizePlaceName(location.locationName || location.LocationName);
+    const fullName = `${countyName}${townName}`;
+
+    return (townName && target.includes(townName))
+      || (fullName && fullName.includes(target))
+      || (townName && townName.includes(target));
+  });
+}
+
+async function fetchTownshipWeatherByName(config, locationName) {
+  const data = await fetchCwaDataset(config.townshipDatasetId, config.apiKey, {
+    elementName: TOWNSHIP_ELEMENT_QUERY,
+  });
+  const location = findTownshipByName(data, locationName);
+
+  if (!location) {
+    const error = new Error("township weather forecast not found");
+    error.status = 404;
+    throw error;
+  }
+
+  return buildTownshipForecast(location, config.townshipDatasetId);
+}
+
 async function fetchObservationWeather(config, options) {
   const data = await fetchCwaDataset(config.observationDatasetId, config.apiKey);
   const observation = findBestObservation(data, {
@@ -729,7 +802,8 @@ router.get("/api/weather/local", async (req, res) => {
   const locationName = normalizeText(req.query.locationName, config.locationName);
   const lat = normalizeCoordinate(req.query.lat);
   const lon = normalizeCoordinate(req.query.lon);
-  const useCoordinates = hasValidCoordinates(lat, lon);
+  const useManualLocation = req.query.manual === "1";
+  const useCoordinates = !useManualLocation && hasValidCoordinates(lat, lon);
 
   if (!config.apiKey) {
     return res.status(503).json({
@@ -757,7 +831,19 @@ router.get("/api/weather/local", async (req, res) => {
   try {
     let forecast;
 
-    if (useCoordinates) {
+    if (useManualLocation) {
+      try {
+        forecast = await fetchTownshipWeatherByName(config, locationName);
+      } catch (err) {
+        const countyName = locationName.split(/\s+/)[0] || locationName;
+        forecast = await fetchCityWeather(config, countyName);
+        forecast = {
+          ...forecast,
+          locationName,
+          fallbackReason: "manual township forecast not found",
+        };
+      }
+    } else if (useCoordinates) {
       try {
         forecast = await fetchTownshipWeather(config, lat, lon);
       } catch (err) {
