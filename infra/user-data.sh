@@ -29,7 +29,6 @@ REDIS_URL="redis://${REDIS_ENDPOINT}:${REDIS_PORT}"
 CONTAINER_NAME="counter-app"
 APP_PORT="3000"
 HOST_PORT="80"
-APP_LOG_GROUP="/counter-app/prod/app"
 
 # ===== Jira =====
 JIRA_BASE_URL="https://metaage-corp-p400.atlassian.net"
@@ -165,10 +164,9 @@ docker rm -f "$CONTAINER_NAME" || true
 docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
-  --log-driver awslogs \
-  --log-opt "awslogs-region=${AWS_REGION}" \
-  --log-opt "awslogs-group=${APP_LOG_GROUP}" \
-  --log-opt "awslogs-stream=${CONTAINER_NAME}/$(hostname)" \
+  --log-driver json-file \
+  --log-opt max-size=10m \
+  --log-opt max-file=3 \
   --health-cmd "wget -qO- http://127.0.0.1:${APP_PORT}/ready || exit 1" \
   --health-interval 30s \
   --health-timeout 5s \
