@@ -8,9 +8,11 @@ const redisSvc = require("../services/redis");
 // 你可以把這個檔案想成「計數器和統計 API 的清單」。
 const router = express.Router();
 
-// 最近 30 秒內有出現過的訪客，會被算成 Active Now。
-const ACTIVE_WINDOW_SECONDS = 30;
+// 最近 60 秒內有出現過的訪客，會被算成 Active Now。
+// 前端會用 heartbeat 維持在線狀態，不會因此增加瀏覽次數。
+const ACTIVE_WINDOW_SECONDS = 60;
 const DAILY_STATS_TTL_SECONDS = 60 * 60 * 24 * 30;
+const ACTIVE_VISITORS_KEY = "stats:active_visitors_zset";
 
 function getRedis() {
   // 透過 services/redis.js 拿到共用 Redis client。
@@ -83,6 +85,13 @@ function getVisitorId(req) {
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
 
+async function markVisitorActive(redis, visitorId, now = Math.floor(Date.now() / 1000)) {
+  await redis.zAdd(ACTIVE_VISITORS_KEY, [{ score: now, value: visitorId }]);
+  await redis.zRemRangeByScore(ACTIVE_VISITORS_KEY, 0, now - ACTIVE_WINDOW_SECONDS);
+  await redis.expire(ACTIVE_VISITORS_KEY, ACTIVE_WINDOW_SECONDS * 2);
+  return redis.zCard(ACTIVE_VISITORS_KEY);
+}
+
 router.get("/", (req, res) => {
   // 使用者打開首頁時，回傳 public/index.html。
   res.sendFile(path.join(__dirname, "../public/index.html"));
@@ -110,7 +119,6 @@ router.post("/track-view", async (req, res) => {
     const todayPageViewsKey = `stats:daily_page_views:${today}`;
     const totalUniqueKey = "stats:total_unique_visitors";
     const todayUniqueKey = `stats:daily_unique_visitors:${today}`;
-    const activeKey = "stats:active_visitors_zset";
 
     // incr 是 Redis 的原子遞增。多人同時打開網頁也不會互相蓋掉。
     const totalPageViews = await redis.incr(totalPageViewsKey);
@@ -125,14 +133,11 @@ router.post("/track-view", async (req, res) => {
     await redis.expire(todayUniqueKey, DAILY_STATS_TTL_SECONDS);
 
     // sorted set 的 score 放 timestamp。
-    // 每次 track view 都更新 visitorId 的最後活躍時間，再刪掉超過 30 秒的人。
-    await redis.zAdd(activeKey, [{ score: now, value: visitorId }]);
-    await redis.zRemRangeByScore(activeKey, 0, now - ACTIVE_WINDOW_SECONDS);
-    await redis.expire(activeKey, ACTIVE_WINDOW_SECONDS * 2);
+    // 每次 track view 都更新 visitorId 的最後活躍時間，再刪掉超過 active window 的人。
+    const activeVisitors = await markVisitorActive(redis, visitorId, now);
 
     const totalVisitors = await redis.pfCount(totalUniqueKey);
     const todayVisitors = await redis.pfCount(todayUniqueKey);
-    const activeVisitors = await redis.zCard(activeKey);
 
     logCounter("track_view", {
       today,
@@ -163,6 +168,32 @@ router.post("/track-view", async (req, res) => {
   }
 });
 
+router.post("/heartbeat", async (req, res) => {
+  try {
+    const redis = getRedis();
+    if (!redis) {
+      return res.status(500).json({
+        error: "redis client not available",
+        redis: getRedisStatus(),
+      });
+    }
+
+    const visitorId = getVisitorId(req);
+    const activeVisitors = await markVisitorActive(redis, visitorId);
+
+    res.json({
+      activeVisitors,
+      redis: getRedisStatus(),
+    });
+  } catch (err) {
+    console.error("[Redis] heartbeat failed:", err.message);
+    res.status(500).json({
+      error: err.message,
+      redis: getRedisStatus(),
+    });
+  }
+});
+
 router.get("/stats", async (req, res) => {
   try {
     const redis = getRedis();
@@ -178,17 +209,16 @@ router.get("/stats", async (req, res) => {
 
     const todayPageViewsKey = `stats:daily_page_views:${today}`;
     const todayUniqueKey = `stats:daily_unique_visitors:${today}`;
-    const activeKey = "stats:active_visitors_zset";
 
     // 每次讀統計時順便清掉超過 active window 的舊資料。
-    await redis.zRemRangeByScore(activeKey, 0, now - ACTIVE_WINDOW_SECONDS);
+    await redis.zRemRangeByScore(ACTIVE_VISITORS_KEY, 0, now - ACTIVE_WINDOW_SECONDS);
 
     // Redis get 回來是字串，所以用 Number() 轉成數字。
     const totalPageViews = Number((await redis.get("stats:total_page_views")) || 0);
     const todayPageViews = Number((await redis.get(todayPageViewsKey)) || 0);
     const totalVisitors = await redis.pfCount("stats:total_unique_visitors");
     const todayVisitors = await redis.pfCount(todayUniqueKey);
-    const activeVisitors = await redis.zCard(activeKey);
+    const activeVisitors = await redis.zCard(ACTIVE_VISITORS_KEY);
     const count = Number((await redis.get("counter")) || 0);
 
     res.json({

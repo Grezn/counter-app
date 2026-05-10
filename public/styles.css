@@ -245,6 +245,20 @@ h1 {
   gap: 2px;
 }
 
+.weather-sticker {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
 .weather-now {
   color: #f8fafc;
   font-weight: 800;

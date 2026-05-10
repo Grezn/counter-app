@@ -207,6 +207,16 @@ function renderStats(data) {
   updateBadge(data.redis);
 }
 
+function renderActiveVisitors(data) {
+  if (data && data.activeVisitors !== undefined) {
+    document.getElementById("activeVisitors").textContent = data.activeVisitors;
+  }
+
+  if (data && data.redis) {
+    updateBadge(data.redis);
+  }
+}
+
 function formatDateWithWeekday(value) {
   const text = String(value || "").trim();
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
@@ -338,6 +348,31 @@ function createWeatherChip(label, value) {
   return item;
 }
 
+function getWeatherSticker(weatherText) {
+  const text = String(weatherText || "");
+
+  if (text.includes("雷")) return { icon: "⛈️", label: "雷雨" };
+  if (text.includes("雨")) return { icon: "🌧️", label: "雨天" };
+  if (text.includes("雪")) return { icon: "❄️", label: "雪" };
+  if (text.includes("霧") || text.includes("靄")) return { icon: "🌫️", label: "霧" };
+  if (text.includes("晴") && (text.includes("雲") || text.includes("陰"))) {
+    return { icon: "🌤️", label: "晴時多雲" };
+  }
+  if (text.includes("晴")) return { icon: "☀️", label: "晴天" };
+  if (text.includes("陰")) return { icon: "☁️", label: "陰天" };
+  if (text.includes("雲")) return { icon: "⛅", label: "多雲" };
+
+  return { icon: "🌡️", label: "天氣" };
+}
+
+function createWeatherSticker(weatherText) {
+  const sticker = getWeatherSticker(weatherText);
+  const element = createTextElement("span", "weather-sticker", sticker.icon);
+  element.setAttribute("role", "img");
+  element.setAttribute("aria-label", sticker.label);
+  return element;
+}
+
 function formatWeatherLocation(data) {
   const countyName = String(data.countyName || "").trim();
   const locationName = String(data.locationName || "").trim();
@@ -385,9 +420,11 @@ function renderLocalWeather(data) {
 
   const summaryText = document.createElement("div");
   summaryText.className = "weather-summary-text";
-  summaryText.appendChild(createTextElement("span", "weather-now", current.weather || data.weather || data.weatherDescription || "天氣資料"));
+  const weatherLabel = current.weather || data.weather || data.weatherDescription || "天氣資料";
+  summaryText.appendChild(createTextElement("span", "weather-now", weatherLabel));
   summaryText.appendChild(createTextElement("span", "weather-forecast-note", `預報 ${forecastTime}`));
   summary.appendChild(summaryText);
+  summary.appendChild(createWeatherSticker(weatherLabel));
 
   content.replaceChildren(
     summary,
@@ -512,6 +549,32 @@ async function loadStats() {
   } catch (err) {
     updateBadge("error");
     setError("無法讀取統計資料：" + err.message);
+  }
+}
+
+async function heartbeatActiveVisitor() {
+  try {
+    // 這個 API 只維持「目前在線」，不增加累計/今日訪客。
+    const res = await fetch("/heartbeat", {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        visitorId: getVisitorId(),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Heartbeat failed");
+    }
+
+    renderActiveVisitors(data);
+  } catch (err) {
+    updateBadge("error");
   }
 }
 
@@ -1375,4 +1438,11 @@ loadLocalWeather();
 trackView();
 loadCount();
 setInterval(loadStats, 30000);
+setInterval(heartbeatActiveVisitor, 15000);
 setInterval(loadLocalWeather, 3 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    heartbeatActiveVisitor();
+    loadStats();
+  }
+});
