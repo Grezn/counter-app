@@ -252,5 +252,4 @@ curl -i http://127.0.0.1/whoami
 2. 限制網站存取來源，例如 ALB Security Group 限定你的 IP，或加登入。
 3. 把 GitHub Actions 從 IAM User key 改成 OIDC assume role。
 4. 把 image 部署從 `latest` 改成固定 SHA tag，方便 rollback。
-5. 移除 `app/` 重複專案，只保留一份程式碼。
-6. 把 `public/index.html` 拆成 HTML/CSS/JS，讓前端比較好維護。
+5. 把 `public/index.html` 拆成 HTML/CSS/JS，讓前端比較好維護。

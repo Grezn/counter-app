@@ -55,7 +55,7 @@ bash infra/setup-ec2-ssm-parameters.sh
 
 ## 部署注意事項
 
-- Docker image 會透過 `.dockerignore` 排除 `.env`、Git 資料、Terraform state 和重複的 `app/` 目錄。
+- Docker image 會透過 `.dockerignore` 排除 `.env`、Git 資料和 Terraform state。
 - `/health` 只代表 Node.js 還活著。
 - `/ready` 會檢查 Redis，因此 ALB / Docker health check 使用 `/ready` 比較適合正式部署。
 - GitHub Actions 會先用 SSM 在現有 EC2 上 `docker pull` SHA image，啟動 candidate container 通過 `/ready` 後才切換正式 container。

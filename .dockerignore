@@ -19,6 +19,3 @@ infra/
 **/.terraform
 **/*.tfstate
 **/*.tfstate.*
-
-# app/ 是根目錄 app 的重複副本，root build 不需要把它打進 image。
-app/
