@@ -290,6 +290,18 @@
         </div>
       </div>
 
+      <section class="handover-report" aria-label="交班報告">
+        <div class="handover-report-header">
+          <h3 class="workflow-title">交班報告</h3>
+          <div class="handover-report-actions">
+            <button class="action-btn primary" type="button" onclick="generateHandoverReport()">產生報告</button>
+            <button class="action-btn" type="button" onclick="copyHandoverReport()">複製報告</button>
+          </div>
+        </div>
+        <div id="handoverReportStatus" class="handover-report-status" role="status" aria-live="polite"></div>
+        <textarea id="handoverReportOutput" class="handover-report-output" readonly></textarea>
+      </section>
+
       <section class="incident-history" aria-label="最近事件紀錄">
         <div class="incident-history-header">
           <div>

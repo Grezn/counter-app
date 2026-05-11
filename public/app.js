@@ -238,6 +238,7 @@ const WEATHER_LOCATION_STORAGE_KEY = "msp_weather_location";
 
 let weatherPositionCache = null;
 let weatherPositionUnavailable = false;
+let latestWeatherReportText = "";
 
 function setWeatherText(message, detail) {
   const meta = document.getElementById("weatherMeta");
@@ -246,6 +247,7 @@ function setWeatherText(message, detail) {
   if (content) {
     content.replaceChildren(createTextElement("div", "weather-placeholder", message));
   }
+  latestWeatherReportText = [detail, message].filter(Boolean).join(" / ");
 }
 
 function formatWeatherPeriod(startTime, endTime) {
@@ -401,6 +403,8 @@ function renderLocalWeather(data) {
       : forecastRange || "-";
   const rainProbability = current.forecastRainProbability || data.rainProbability;
   const rainProbabilityUnit = current.forecastRainProbabilityUnit || data.rainProbabilityUnit || "%";
+  const rainText = formatWeatherValue(current.rainMm, "mm");
+  const rainProbabilityText = rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-";
   const locationLabel = formatWeatherLocation({
     countyName: current.countyName || data.countyName,
     locationName: current.locationName || data.locationName,
@@ -428,9 +432,18 @@ function renderLocalWeather(data) {
 
   content.replaceChildren(
     summary,
-    createWeatherChip("現在雨量", formatWeatherValue(current.rainMm, "mm")),
-    createWeatherChip("未來降雨", rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-"),
+    createWeatherChip("現在雨量", rainText),
+    createWeatherChip("未來降雨", rainProbabilityText),
   );
+
+  latestWeatherReportText = [
+    locationLabel,
+    weatherLabel,
+    temperature,
+    `現在雨量 ${rainText}`,
+    `未來降雨 ${rainProbabilityText}`,
+    `預報 ${forecastTime}`,
+  ].filter(Boolean).join(" / ");
 }
 
 function getWeatherRequestDetail(position) {
@@ -603,6 +616,7 @@ async function loadCount() {
 const INCIDENT_STORAGE_KEY = "noc_incident_state";
 const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
+let incidentRecordsCache = [];
 
 function getIncidentFields() {
   // 用 data-incident-field 找到事件表單欄位。
@@ -906,6 +920,14 @@ function setIncidentHistoryStatus(message, type) {
   status.textContent = message || "";
 }
 
+function setHandoverReportStatus(message, type) {
+  const status = document.getElementById("handoverReportStatus");
+  if (!status) return;
+
+  status.className = type ? `handover-report-status ${type}` : "handover-report-status";
+  status.textContent = message || "";
+}
+
 function setCreateJiraButtonLoading(isLoading) {
   const button = document.getElementById("createJiraIssueButton");
   if (!button) return;
@@ -1096,6 +1118,8 @@ function renderIncidentRecords(records) {
   const list = document.getElementById("incidentHistoryList");
   if (!list) return;
 
+  incidentRecordsCache = Array.isArray(records) ? records : [];
+
   if (!records || records.length === 0) {
     list.replaceChildren(createTextElement("div", "incident-history-empty", "目前還沒有儲存的事件紀錄"));
     return;
@@ -1104,11 +1128,12 @@ function renderIncidentRecords(records) {
   list.replaceChildren(...records.map(createIncidentRecordCard));
 }
 
-async function loadIncidentRecords() {
+async function loadIncidentRecords(options = {}) {
   const list = document.getElementById("incidentHistoryList");
+  const showLoading = options.showLoading !== false;
 
   try {
-    if (list) {
+    if (list && showLoading) {
       list.replaceChildren(createTextElement("div", "incident-history-empty", "事件紀錄載入中..."));
     }
 
@@ -1121,12 +1146,17 @@ async function loadIncidentRecords() {
       throw new Error(data.error || "Load incidents failed");
     }
 
-    renderIncidentRecords(data.incidents || []);
+    incidentRecordsCache = data.incidents || [];
+    renderIncidentRecords(incidentRecordsCache);
+    return incidentRecordsCache;
   } catch (err) {
-    if (list) {
+    if (list && showLoading) {
       list.replaceChildren(createTextElement("div", "incident-history-empty", "事件紀錄讀取失敗：" + err.message));
     }
-    setIncidentHistoryStatus("事件紀錄讀取失敗：" + err.message, "error");
+    if (showLoading) {
+      setIncidentHistoryStatus("事件紀錄讀取失敗：" + err.message, "error");
+    }
+    return incidentRecordsCache;
   }
 }
 
@@ -1170,6 +1200,131 @@ async function saveIncidentRecord() {
   }
 }
 
+function formatReportDateTime(date = new Date()) {
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+function getWeatherReportText() {
+  if (latestWeatherReportText) return latestWeatherReportText;
+
+  const meta = document.getElementById("weatherMeta");
+  const content = document.getElementById("weatherContent");
+  return [meta && meta.textContent, content && content.textContent]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(" / ");
+}
+
+function getCoreLinkReportLines() {
+  const links = Array.from(document.querySelectorAll("#coreLinksGrid a.quick-link"));
+
+  if (!links.length) {
+    return ["- 無每日值班入口"];
+  }
+
+  return links.map((link) => {
+    const label = String(link.textContent || "").trim() || "入口";
+    return `- ${label}：${link.href}`;
+  });
+}
+
+function isIncidentRecordResolved(record) {
+  const status = String(record && record.status ? record.status : "").toLowerCase();
+  return status.includes("resolved") || status.includes("已解決");
+}
+
+function formatIncidentRecordForReport(record, index) {
+  const fields = record && record.incident && record.incident.fields ? record.incident.fields : {};
+  const title = record.title || fields.title || "未命名事件";
+  const meta = getIncidentRecordMeta(record);
+  const startedAt = fields.startedAt || record.startedAt
+    ? formatDisplayDateTime(fields.startedAt || record.startedAt)
+    : formatIncidentRecordTime(record.createdAt);
+  const nextStep = fields.nextStep || record.summary || "-";
+  const notified = fields.notified || "-";
+
+  return [
+    `${index + 1}. ${title}`,
+    `   狀態：${meta}`,
+    `   時間：${startedAt}`,
+    `   下一步：${nextStep}`,
+    `   已通知：${notified}`,
+  ].join("\n");
+}
+
+function buildHandoverReport() {
+  updateHandoverSummary();
+
+  const currentState = readIncidentStateFromPage();
+  const hasCurrentIncident = hasIncidentContent(currentState);
+  const currentSummary = document.getElementById("handoverSummary").value.trim();
+  const openRecords = incidentRecordsCache
+    .filter((record) => !isIncidentRecordResolved(record))
+    .slice(0, 5);
+  const weatherText = getWeatherReportText() || "-";
+  const linkLines = getCoreLinkReportLines();
+
+  return [
+    "【值班交班報告】",
+    `產生時間：${formatReportDateTime()}`,
+    `本地氣象：${weatherText}`,
+    "",
+    "【目前表單事件】",
+    hasCurrentIncident ? currentSummary : "-",
+    "",
+    "【最近未結案事件】",
+    openRecords.length
+      ? openRecords.map(formatIncidentRecordForReport).join("\n\n")
+      : "-",
+    "",
+    "【每日值班入口】",
+    linkLines.join("\n"),
+  ].join("\n");
+}
+
+async function generateHandoverReport() {
+  const output = document.getElementById("handoverReportOutput");
+  if (!output) return "";
+
+  try {
+    setHandoverReportStatus("正在產生交班報告...", "pending");
+    await loadIncidentRecords({ showLoading: false });
+    const report = buildHandoverReport();
+    output.value = report;
+    setHandoverReportStatus("交班報告已產生。", "success");
+    return report;
+  } catch (err) {
+    setHandoverReportStatus("交班報告產生失敗：" + err.message, "error");
+    return "";
+  }
+}
+
+async function copyHandoverReport() {
+  const output = document.getElementById("handoverReportOutput");
+  if (!output) return;
+
+  try {
+    const report = output.value.trim() || await generateHandoverReport();
+    if (!report) {
+      throw new Error("沒有可複製的交班報告");
+    }
+
+    await navigator.clipboard.writeText(report);
+    setHandoverReportStatus("已複製交班報告。", "success");
+  } catch (err) {
+    setHandoverReportStatus("交班報告複製失敗：" + err.message, "error");
+  }
+}
+
 function clearIncidentState() {
   if (!confirm("確定要清空目前事件紀錄嗎？")) {
     return;
@@ -1194,6 +1349,9 @@ function clearIncidentState() {
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
   setJiraStatus("");
   setIncidentHistoryStatus("");
+  setHandoverReportStatus("");
+  const reportOutput = document.getElementById("handoverReportOutput");
+  if (reportOutput) reportOutput.value = "";
   updateHandoverSummary();
 }
 
