@@ -321,7 +321,14 @@
         <div class="summary-box">
           <div class="summary-header">
             <h3 class="workflow-title">交班摘要</h3>
-            <div id="handoverSummaryBadge" class="summary-badge" aria-live="polite"></div>
+            <div class="summary-header-tools">
+              <div id="handoverSummaryBadge" class="summary-badge" aria-live="polite"></div>
+              <div class="summary-mode-control" role="group" aria-label="交班摘要格式">
+                <button id="handoverSummaryModeFull" class="summary-mode-button active" type="button" onclick="setHandoverSummaryMode('full')" aria-pressed="true">完整</button>
+                <button id="handoverSummaryModeCompact" class="summary-mode-button" type="button" onclick="setHandoverSummaryMode('compact')" aria-pressed="false">精簡</button>
+                <button id="handoverSummaryModeUpdate" class="summary-mode-button" type="button" onclick="setHandoverSummaryMode('update')" aria-pressed="false">更新</button>
+              </div>
+            </div>
           </div>
           <textarea id="handoverSummary" class="summary-output" readonly></textarea>
         </div>

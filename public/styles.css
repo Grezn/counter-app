@@ -1314,6 +1314,14 @@ button:disabled {
   margin: 0;
 }
 
+.summary-header-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .summary-badge {
   flex: 0 0 auto;
   padding: 3px 8px;
@@ -1336,6 +1344,35 @@ button:disabled {
   background: rgba(180, 83, 9, 0.18);
   border-color: rgba(251, 191, 36, 0.42);
   color: #fed7aa;
+}
+
+.summary-mode-control {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid #3a4b63;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.summary-mode-button {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #a4adba;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.summary-mode-button.active {
+  background: #1e3a8a;
+  color: #eff6ff;
 }
 
 .missing-field-link {
@@ -2129,6 +2166,19 @@ html[data-theme="light"] .summary-badge.missing {
   color: #92400e;
 }
 
+html[data-theme="light"] .summary-mode-control {
+  border-color: #aebaca;
+}
+
+html[data-theme="light"] .summary-mode-button {
+  color: #64748b;
+}
+
+html[data-theme="light"] .summary-mode-button.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
 html[data-theme="light"] .handover-readiness-bar {
   border-color: #cbd5e1;
 }
@@ -2758,9 +2808,15 @@ html[data-theme="dark"] a {
 
   .readiness-action,
   .duplicate-incident-link,
-  .missing-field-link {
+  .missing-field-link,
+  .summary-mode-button {
     padding: 0;
     border-radius: 0;
+  }
+
+  .summary-mode-button {
+    padding: 4px 8px;
+    border-radius: 6px;
   }
 
   .stat-date {

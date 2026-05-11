@@ -657,10 +657,16 @@ const SERVICE_TYPE_HINTS = {
 };
 const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
+const HANDOVER_SUMMARY_MODES = {
+  full: "完整",
+  compact: "精簡",
+  update: "更新",
+};
 let incidentRecordsCache = [];
 let activeIncidentRecordId = "";
 let activeIncidentSavedSnapshot = null;
 let incidentHistoryView = "open";
+let handoverSummaryMode = "full";
 let incidentHistoryFilters = {
   keyword: "",
   customer: "",
@@ -963,7 +969,55 @@ function updateIncidentNextCheckAvailability() {
   nextCheckAt.title = shouldDisable ? "目前追蹤狀態不需要下次確認" : "";
 }
 
-function buildHandoverSummary() {
+function getLatestIncidentNoteText(notes) {
+  const entries = parseIncidentNotesTimeline(notes);
+  const latestEntry = entries.length ? entries[entries.length - 1] : null;
+  if (!latestEntry) return "";
+
+  return latestEntry.hasTime
+    ? `${latestEntry.time} ${latestEntry.text}`.trim()
+    : latestEntry.text;
+}
+
+function formatSummaryFieldValue(fieldName, value) {
+  if (fieldName === "nextCheckAt") return formatDisplayDateTime(value);
+  return value;
+}
+
+function getHandoverSummaryChangeLines(fields, previousFields, line) {
+  if (!previousFields) return [];
+
+  return [
+    ["status", "目前狀態"],
+    ["impact", "影響範圍"],
+    ["nextStep", "下一步"],
+    ["trackingStatus", "追蹤狀態"],
+    ["nextCheckAt", "下次確認"],
+    ["notified", "已通知"],
+    ["notes", "處理紀錄"],
+  ]
+    .filter(([fieldName]) => {
+      const currentValue = String(fields[fieldName] || "").trim();
+      const previousValue = String(previousFields[fieldName] || "").trim();
+      return currentValue !== previousValue;
+    })
+    .map(([fieldName, label]) => {
+      if (fieldName === "notes") {
+        return line(label, getLatestIncidentNoteText(fields.notes) || fields.notes);
+      }
+      if (fieldName === "nextCheckAt" && canTrackingStatusSkipNextCheck(fields.trackingStatus)) {
+        return line(label, "不需設定");
+      }
+      return line(label, formatSummaryFieldValue(fieldName, fields[fieldName]));
+    });
+}
+
+function getActiveIncidentRecordFields() {
+  const record = getActiveIncidentRecord();
+  return record ? getIncidentRecordFields(record) : null;
+}
+
+function buildHandoverSummary(mode = handoverSummaryMode) {
   const state = readIncidentStateFromPage();
   const fields = state.fields;
   const radios = state.radios;
@@ -1026,10 +1080,42 @@ function buildHandoverSummary() {
   ]
     .filter(([, value]) => hasValue(value))
     .map(([label, value]) => line(label, value));
+  const headline = `[${valueOrDash(fields.severity)} / ${valueOrDash(fields.status)}] ${valueOrDash(fields.title)}`;
+
+  if (mode === "compact") {
+    return [
+      "【交班摘要】",
+      line("主旨", fields.title),
+      line("狀態", fields.status),
+      line("影響", fields.impact),
+      line("下一步", fields.nextStep),
+      line("追蹤狀態", fields.trackingStatus),
+      line("下次確認", nextCheckText),
+    ].join("\n");
+  }
+
+  if (mode === "update") {
+    const previousFields = getActiveIncidentRecordFields();
+    const changeLines = getHandoverSummaryChangeLines(fields, previousFields, line);
+    const updateLines = changeLines.length
+      ? changeLines
+      : [
+        line("最新處理", getLatestIncidentNoteText(fields.notes) || fields.notes),
+        line("下一步", fields.nextStep),
+        line("追蹤狀態", fields.trackingStatus),
+        line("下次確認", nextCheckText),
+      ];
+
+    return [
+      "【事件更新】",
+      headline,
+      ...updateLines,
+    ].join("\n");
+  }
 
   return [
     "【接手重點】",
-    `[${valueOrDash(fields.severity)} / ${valueOrDash(fields.status)}] ${valueOrDash(fields.title)}`,
+    headline,
     line("事件時間", formatDisplayDateTime(fields.startedAt)),
     line("客戶 / 單位", fields.customer),
     line("系統 / 設備", fields.system),
@@ -1068,6 +1154,26 @@ function updateHandoverSummary() {
   renderIncidentNotesTimeline();
   renderDuplicateIncidentStatus();
   renderHandoverReadiness();
+}
+
+function updateHandoverSummaryModeButtons() {
+  Object.keys(HANDOVER_SUMMARY_MODES).forEach((mode) => {
+    const button = document.getElementById(`handoverSummaryMode${mode[0].toUpperCase()}${mode.slice(1)}`);
+    if (!button) return;
+
+    const isActive = handoverSummaryMode === mode;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
+function setHandoverSummaryMode(mode) {
+  handoverSummaryMode = Object.prototype.hasOwnProperty.call(HANDOVER_SUMMARY_MODES, mode)
+    ? mode
+    : "full";
+  updateHandoverSummaryModeButtons();
+  setHandoverSummaryStatus("");
+  updateHandoverSummary();
 }
 
 function closeIncidentPhraseMenus() {
@@ -1412,7 +1518,7 @@ async function copyHandoverSummary() {
     markIncidentCheck("整理交班資訊");
     saveIncidentState();
     updateHandoverSummary();
-    setHandoverSummaryStatus("已複製交班摘要。", "success");
+    setHandoverSummaryStatus(`已複製${HANDOVER_SUMMARY_MODES[handoverSummaryMode]}交班摘要。`, "success");
   } catch (err) {
     setHandoverSummaryStatus("交班摘要複製失敗：" + err.message, "error");
   }
@@ -1569,7 +1675,7 @@ async function createJiraIssue() {
       },
       body: JSON.stringify({
         incident: state,
-        handoverSummary: document.getElementById("handoverSummary").value,
+        handoverSummary: buildHandoverSummary("full"),
       }),
     });
     const data = await res.json();
@@ -2188,7 +2294,7 @@ async function saveIncidentRecord() {
       },
       body: JSON.stringify({
         incident: state,
-        handoverSummary: document.getElementById("handoverSummary").value,
+        handoverSummary: buildHandoverSummary("full"),
       }),
     });
     const data = await res.json();
@@ -2245,6 +2351,7 @@ function clearIncidentState() {
 function initIncidentPanel() {
   initIncidentPhraseMenus();
   initIncidentHistoryFilters();
+  updateHandoverSummaryModeButtons();
   loadIncidentState();
   updateServiceTypeFieldVisibility();
   loadActiveIncidentRecordId();
