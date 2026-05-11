@@ -184,28 +184,30 @@ h1 {
 }
 
 .weather-title {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   color: #e8eaed;
-  font-size: 0.9rem;
+  font-size: 1.06rem;
   line-height: 1.25;
+  font-weight: 800;
 }
 
 .weather-meta {
   color: #8ea0b8;
-  font-size: 0.78rem;
+  font-size: 0.94rem;
   line-height: 1.35;
+  font-weight: 700;
 }
 
 .weather-refresh {
   width: auto;
   margin: 0;
   min-width: 42px;
-  padding: 7px 9px;
+  padding: 9px 11px;
   border-radius: 7px;
   background: #1d2530;
   border: 1px solid #3a4b63;
   color: #d8dde6;
-  font-size: 0.78rem;
+  font-size: 0.9rem;
 }
 
 .weather-content {
@@ -215,7 +217,7 @@ h1 {
   gap: 8px;
   min-width: 0;
   color: #d8dde6;
-  font-size: 0.86rem;
+  font-size: 0.96rem;
 }
 
 .weather-summary {
@@ -233,7 +235,7 @@ h1 {
 .weather-temp {
   display: block;
   color: #f8fafc;
-  font-size: 1.45rem;
+  font-size: 1.68rem;
   line-height: 1;
   white-space: nowrap;
 }
@@ -262,13 +264,14 @@ h1 {
 .weather-now {
   color: #f8fafc;
   font-weight: 800;
+  font-size: 0.98rem;
   line-height: 1.25;
   word-break: keep-all;
 }
 
 .weather-forecast-note {
   color: #8ea0b8;
-  font-size: 0.76rem;
+  font-size: 0.86rem;
   line-height: 1.25;
 }
 
@@ -284,16 +287,17 @@ h1 {
 .weather-chip-label {
   display: block;
   color: #93c5fd;
-  font-size: 0.7rem;
+  font-size: 0.84rem;
   font-weight: 800;
   line-height: 1.1;
 }
 
 .weather-chip-value {
   display: block;
-  margin-top: 3px;
+  margin-top: 5px;
   color: #f8fafc;
-  font-size: 0.86rem;
+  font-size: 1.05rem;
+  font-weight: 800;
   line-height: 1.2;
   overflow-wrap: break-word;
 }
