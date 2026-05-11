@@ -1047,25 +1047,6 @@ function createIncidentRecordCard(record) {
   const card = document.createElement("article");
   card.className = "incident-record";
 
-  const top = document.createElement("div");
-  top.className = "incident-record-top";
-
-  const titleBlock = document.createElement("div");
-  titleBlock.className = "incident-record-title-block";
-  titleBlock.appendChild(createTextElement("h4", "incident-record-title", record.title || "未命名事件"));
-  titleBlock.appendChild(createTextElement("div", "incident-record-meta", getIncidentRecordMeta(record)));
-
-  if (record.summary) {
-    titleBlock.appendChild(createTextElement("p", "incident-record-summary", record.summary));
-  }
-
-  const time = createTextElement("time", "incident-record-time", formatIncidentRecordTime(record.createdAt));
-  if (record.createdAt) time.dateTime = record.createdAt;
-
-  top.appendChild(titleBlock);
-  top.appendChild(time);
-  card.appendChild(top);
-
   const actions = document.createElement("div");
   actions.className = "incident-record-actions";
 
@@ -1083,7 +1064,30 @@ function createIncidentRecordCard(record) {
 
   actions.appendChild(restoreButton);
   actions.appendChild(copyButton);
-  titleBlock.appendChild(actions);
+
+  const body = document.createElement("div");
+  body.className = "incident-record-body";
+
+  const top = document.createElement("div");
+  top.className = "incident-record-top";
+
+  const titleBlock = document.createElement("div");
+  titleBlock.className = "incident-record-title-block";
+  titleBlock.appendChild(createTextElement("h4", "incident-record-title", record.title || "未命名事件"));
+  titleBlock.appendChild(createTextElement("div", "incident-record-meta", getIncidentRecordMeta(record)));
+
+  if (record.summary) {
+    titleBlock.appendChild(createTextElement("p", "incident-record-summary", record.summary));
+  }
+
+  const time = createTextElement("time", "incident-record-time", formatIncidentRecordTime(record.createdAt));
+  if (record.createdAt) time.dateTime = record.createdAt;
+
+  top.appendChild(titleBlock);
+  top.appendChild(time);
+  body.appendChild(top);
+  card.appendChild(actions);
+  card.appendChild(body);
 
   return card;
 }
