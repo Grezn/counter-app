@@ -647,6 +647,13 @@ const INCIDENT_PHRASE_GROUPS = {
     ],
   },
 };
+const SERVICE_TYPE_HINTS = {
+  general: "一般諮詢只保留後續處理與其他補充，避免不必要的報修欄位干擾。",
+  repair: "產品報修會顯示產品、合約、序號與對接窗口欄位。",
+  aws: "AWS 邀請組織先保留產品與窗口資訊；帳號、組織或特殊需求可寫在其他補充。",
+  other: "其他類型只保留窗口與補充欄位，需要的背景請寫在其他補充。",
+  empty: "選擇服務類型後，下方只會顯示相關補充欄位。",
+};
 const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
 let incidentRecordsCache = [];
@@ -671,6 +678,45 @@ function getIncidentRadios() {
 function getIncidentFollowups() {
   // 後續處理方式是複選題，所以每一個 checkbox 都要各自記錄。
   return Array.from(document.querySelectorAll("[data-incident-followup]"));
+}
+
+function getSelectedIncidentRadioValue(name) {
+  const radio = document.querySelector(`[data-incident-radio="${name}"]:checked`);
+  return radio ? radio.value : "";
+}
+
+function getServiceTypeDisplayMode(serviceType = getSelectedIncidentRadioValue("serviceType")) {
+  if (serviceType === "產品報修" || serviceType === "協助客戶報修") return "repair";
+  if (serviceType === "AWS - 邀請組織") return "aws";
+  if (serviceType === "其他") return "other";
+  if (serviceType === "一般諮詢") return "general";
+  return "empty";
+}
+
+function updateServiceTypeFieldVisibility() {
+  const mode = getServiceTypeDisplayMode();
+  const sections = document.querySelectorAll(".field[data-service-section]");
+
+  sections.forEach((section) => {
+    const sectionModes = String(section.dataset.serviceSection || "").split(/\s+/);
+    section.hidden = !(sectionModes.includes("base") || sectionModes.includes(mode));
+  });
+
+  const serviceTypeOther = document.getElementById("incidentServiceTypeOther");
+  if (serviceTypeOther) {
+    serviceTypeOther.hidden = mode !== "other";
+  }
+
+  const followupOther = document.getElementById("incidentFollowupOther");
+  const otherFollowup = document.querySelector('[data-incident-followup="其他"]');
+  if (followupOther && otherFollowup) {
+    followupOther.hidden = !otherFollowup.checked;
+  }
+
+  const hint = document.getElementById("serviceTypeHint");
+  if (hint) {
+    hint.textContent = SERVICE_TYPE_HINTS[mode] || SERVICE_TYPE_HINTS.empty;
+  }
 }
 
 function readIncidentStateFromPage() {
@@ -781,6 +827,7 @@ function loadIncidentState() {
     if (!raw) return;
 
     applyIncidentStateToPage(JSON.parse(raw));
+    updateServiceTypeFieldVisibility();
   } catch (err) {
     setError("事件暫存讀取失敗：" + err.message);
   }
@@ -807,6 +854,8 @@ function applyIncidentStateToPage(state) {
   getIncidentFollowups().forEach((followup) => {
     followup.checked = Boolean(state && state.followups && state.followups[followup.dataset.incidentFollowup]);
   });
+
+  updateServiceTypeFieldVisibility();
 }
 
 function formatLocalDateTime(date) {
@@ -861,16 +910,35 @@ function buildHandoverSummary() {
   const doneChecks = getIncidentChecks()
     .filter((check) => check.checked)
     .map((check) => check.dataset.incidentCheck);
+  const serviceMode = getServiceTypeDisplayMode(radios.serviceType);
+  const supplementByServiceMode = {
+    repair: [
+      ["產品名稱", fields.productName],
+      ["合約編號", fields.contractId],
+      ["產品型號", fields.model],
+      ["產品序號", fields.serial],
+      ["經銷商名稱", fields.dealer],
+      ["報修對象", fields.repairTarget],
+      ["負責業務 / 工程師", fields.owner],
+      ["聯繫方式 / 稱呼", fields.contactMethod],
+      ["是否為客戶", radios.isCustomer],
+    ],
+    aws: [
+      ["產品名稱", fields.productName],
+      ["負責業務 / 工程師", fields.owner],
+      ["聯繫方式 / 稱呼", fields.contactMethod],
+      ["是否為客戶", radios.isCustomer],
+    ],
+    other: [
+      ["負責業務 / 工程師", fields.owner],
+      ["聯繫方式 / 稱呼", fields.contactMethod],
+      ["是否為客戶", radios.isCustomer],
+    ],
+    general: [],
+    empty: [],
+  };
   const reportLines = [
-    ["產品名稱", fields.productName],
-    ["合約編號", fields.contractId],
-    ["產品型號", fields.model],
-    ["產品序號", fields.serial],
-    ["經銷商名稱", fields.dealer],
-    ["報修對象", fields.repairTarget],
-    ["負責業務 / 工程師", fields.owner],
-    ["聯繫方式 / 稱呼", fields.contactMethod],
-    ["是否為客戶", radios.isCustomer],
+    ...(supplementByServiceMode[serviceMode] || []),
     ["後續處理方式", followupText],
     ["其他補充", fields.extraInfo],
   ]
@@ -1518,6 +1586,7 @@ function clearIncidentState() {
     followup.checked = false;
   });
 
+  updateServiceTypeFieldVisibility();
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
   setActiveIncidentRecordId("");
   setJiraStatus("");
@@ -1529,6 +1598,7 @@ function clearIncidentState() {
 function initIncidentPanel() {
   initIncidentPhraseMenus();
   loadIncidentState();
+  updateServiceTypeFieldVisibility();
   loadActiveIncidentRecordId();
   if (!hasIncidentContent(readIncidentStateFromPage())) {
     setActiveIncidentRecordId("");
@@ -1537,6 +1607,7 @@ function initIncidentPanel() {
   const syncIncidentState = () => {
     saveIncidentState();
     setHandoverSummaryStatus("");
+    updateServiceTypeFieldVisibility();
     updateHandoverSummary();
   };
 

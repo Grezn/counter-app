@@ -191,7 +191,20 @@
         <details class="incident-details">
           <summary>報修表單補充資訊</summary>
           <div class="details-grid">
-            <div class="field">
+            <div class="field full" data-service-section="base">
+              <label>服務類型</label>
+              <div class="choice-group">
+                <label class="choice-item"><input type="radio" name="serviceType" value="一般諮詢" data-incident-radio="serviceType" />一般諮詢</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="產品報修" data-incident-radio="serviceType" />產品報修</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="協助客戶報修" data-incident-radio="serviceType" />協助客戶報修</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="AWS - 邀請組織" data-incident-radio="serviceType" />AWS - 邀請組織</label>
+                <label class="choice-item"><input type="radio" name="serviceType" value="其他" data-incident-radio="serviceType" />其他</label>
+              </div>
+              <input id="incidentServiceTypeOther" type="text" data-incident-field="serviceTypeOther" data-service-section="other" placeholder="服務類型為其他時填寫" />
+              <div id="serviceTypeHint" class="service-type-hint"></div>
+            </div>
+
+            <div class="field" data-service-section="repair aws">
               <label for="incidentProductName">產品名稱</label>
               <select id="incidentProductName" data-incident-field="productName">
                 <option value="">選取產品</option>
@@ -204,42 +217,42 @@
               </select>
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair">
               <label for="incidentContractId">合約編號</label>
               <input id="incidentContractId" type="text" data-incident-field="contractId" placeholder="無則填無" />
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair">
               <label for="incidentSerial">產品序號</label>
               <input id="incidentSerial" type="text" data-incident-field="serial" placeholder="無則填無" />
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair">
               <label for="incidentModel">產品型號</label>
               <input id="incidentModel" type="text" data-incident-field="model" placeholder="無則填無" />
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair">
               <label for="incidentDealer">經銷商名稱</label>
               <input id="incidentDealer" type="text" data-incident-field="dealer" placeholder="輸入經銷商名稱" />
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair">
               <label for="incidentRepairTarget">報修對象</label>
               <input id="incidentRepairTarget" type="text" data-incident-field="repairTarget" placeholder="客戶 / 經銷商 / 內部單位" />
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair aws other">
               <label for="incidentOwner">負責業務 / 工程師</label>
               <input id="incidentOwner" type="text" data-incident-field="owner" placeholder="對接窗口" />
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair aws other">
               <label for="incidentContactMethod">聯繫方式 / 稱呼</label>
               <input id="incidentContactMethod" type="text" data-incident-field="contactMethod" />
             </div>
 
-            <div class="field">
+            <div class="field" data-service-section="repair aws other">
               <label>是否為客戶</label>
               <div class="choice-group">
                 <label class="choice-item"><input type="radio" name="isCustomer" value="是" data-incident-radio="isCustomer" />是</label>
@@ -247,19 +260,7 @@
               </div>
             </div>
 
-            <div class="field full">
-              <label>服務類型</label>
-              <div class="choice-group">
-                <label class="choice-item"><input type="radio" name="serviceType" value="一般諮詢" data-incident-radio="serviceType" />一般諮詢</label>
-                <label class="choice-item"><input type="radio" name="serviceType" value="產品報修" data-incident-radio="serviceType" />產品報修</label>
-                <label class="choice-item"><input type="radio" name="serviceType" value="協助客戶報修" data-incident-radio="serviceType" />協助客戶報修</label>
-                <label class="choice-item"><input type="radio" name="serviceType" value="AWS - 邀請組織" data-incident-radio="serviceType" />AWS - 邀請組織</label>
-                <label class="choice-item"><input type="radio" name="serviceType" value="其他" data-incident-radio="serviceType" />其他</label>
-              </div>
-              <input id="incidentServiceTypeOther" type="text" data-incident-field="serviceTypeOther" placeholder="服務類型為其他時填寫" />
-            </div>
-
-            <div class="field full">
+            <div class="field full" data-service-section="base">
               <label>後續處理方式</label>
               <div class="choice-group">
                 <label class="choice-item"><input type="checkbox" data-incident-followup="發Mail" />發Mail</label>
@@ -273,7 +274,7 @@
               <input id="incidentFollowupOther" type="text" data-incident-field="followupOther" placeholder="後續處理方式為其他時填寫" />
             </div>
 
-            <div class="field full">
+            <div class="field full" data-service-section="base">
               <label for="incidentExtraInfo">其他補充</label>
               <textarea id="incidentExtraInfo" data-incident-field="extraInfo"></textarea>
             </div>

@@ -886,6 +886,11 @@ button:disabled {
   position: relative;
 }
 
+.field[hidden],
+.field input[hidden] {
+  display: none !important;
+}
+
 .field.full {
   grid-column: 1 / -1;
 }
@@ -999,6 +1004,12 @@ button:disabled {
   min-height: 78px;
   resize: vertical;
   line-height: 1.5;
+}
+
+.service-type-hint {
+  color: #a4adba;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .incident-details {
@@ -1691,6 +1702,7 @@ body {
 .links-note,
 .incident-subtitle,
 .incident-history-note,
+.service-type-hint,
 .drawer-hint,
 .link-count,
 .runbook-card-summary {
@@ -2067,6 +2079,7 @@ html[data-theme="dark"] .weather-meta,
 html[data-theme="dark"] .links-note,
 html[data-theme="dark"] .incident-subtitle,
 html[data-theme="dark"] .incident-history-note,
+html[data-theme="dark"] .service-type-hint,
 html[data-theme="dark"] .incident-record-meta,
 html[data-theme="dark"] .incident-record-time,
 html[data-theme="dark"] .incident-record-summary,
