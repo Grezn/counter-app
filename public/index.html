@@ -295,9 +295,15 @@
         <div class="incident-history-header">
           <div>
             <h3 class="workflow-title">事件暫存紀錄</h3>
-            <p class="incident-history-note">用來載入或複製曾儲存的事件；正式交接以交班摘要為準。</p>
+            <p class="incident-history-note">預設只顯示未結案；載入後再次儲存會更新同一筆紀錄。</p>
           </div>
-          <button class="action-btn" type="button" onclick="loadIncidentRecords()">更新紀錄</button>
+          <div class="incident-history-actions">
+            <div class="incident-history-filter" role="group" aria-label="事件紀錄篩選">
+              <button id="incidentOpenFilterButton" class="incident-filter-button active" type="button" onclick="setIncidentHistoryView('open')" aria-pressed="true">未結案</button>
+              <button id="incidentAllFilterButton" class="incident-filter-button" type="button" onclick="setIncidentHistoryView('all')" aria-pressed="false">全部</button>
+            </div>
+            <button class="action-btn" type="button" onclick="loadIncidentRecords()">更新紀錄</button>
+          </div>
         </div>
         <div id="incidentHistoryList" class="incident-history-list">事件紀錄載入中...</div>
       </section>

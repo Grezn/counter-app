@@ -614,6 +614,7 @@ async function loadCount() {
 }
 
 const INCIDENT_STORAGE_KEY = "noc_incident_state";
+const INCIDENT_ACTIVE_RECORD_STORAGE_KEY = "noc_incident_active_record_id";
 const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
   { field: "title", label: "一句話主旨", elementId: "incidentTitle" },
   { field: "status", label: "目前狀態", elementId: "incidentStatus" },
@@ -624,6 +625,8 @@ const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
 const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
 let incidentRecordsCache = [];
+let activeIncidentRecordId = "";
+let incidentHistoryView = "open";
 
 function getIncidentFields() {
   // 用 data-incident-field 找到事件表單欄位。
@@ -680,6 +683,39 @@ function saveIncidentState() {
   } catch (err) {
     setError("事件暫存失敗：" + err.message);
   }
+}
+
+function updateSaveIncidentButtonLabel() {
+  const button = document.getElementById("saveIncidentButton");
+  if (!button || button.disabled) return;
+
+  button.textContent = activeIncidentRecordId ? "更新事件" : "儲存事件";
+}
+
+function setActiveIncidentRecordId(id) {
+  activeIncidentRecordId = String(id || "");
+
+  try {
+    if (activeIncidentRecordId) {
+      localStorage.setItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY, activeIncidentRecordId);
+    } else {
+      localStorage.removeItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY);
+    }
+  } catch {
+    // 無法寫入 localStorage 時仍允許本次編輯使用記憶體狀態。
+  }
+
+  updateSaveIncidentButtonLabel();
+}
+
+function loadActiveIncidentRecordId() {
+  try {
+    activeIncidentRecordId = localStorage.getItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY) || "";
+  } catch {
+    activeIncidentRecordId = "";
+  }
+
+  updateSaveIncidentButtonLabel();
 }
 
 function normalizeIncidentFieldValue(fieldName, value) {
@@ -975,7 +1011,9 @@ function setSaveIncidentButtonLoading(isLoading) {
   if (!button) return;
 
   button.disabled = isLoading;
-  button.textContent = isLoading ? "儲存中..." : "儲存事件";
+  button.textContent = isLoading
+    ? (activeIncidentRecordId ? "更新中..." : "儲存中...")
+    : (activeIncidentRecordId ? "更新事件" : "儲存事件");
 }
 
 function markIncidentCheck(label) {
@@ -1068,6 +1106,11 @@ function formatIncidentRecordTime(value) {
   }).format(date);
 }
 
+function isIncidentRecordResolved(record) {
+  const status = String(record && record.status ? record.status : "").toLowerCase();
+  return Boolean(record && (record.resolvedAt || status.includes("resolved") || status.includes("已解決")));
+}
+
 function getIncidentRecordMeta(record) {
   return [
     record.severity,
@@ -1082,9 +1125,11 @@ function restoreIncidentRecord(record) {
   if (!record || !record.incident) return;
 
   applyIncidentStateToPage(record.incident);
+  setActiveIncidentRecordId(record.id);
   saveIncidentState();
   updateHandoverSummary();
-  setIncidentHistoryStatus(`已載入事件：${record.title || record.id}`, "success");
+  setHandoverSummaryStatus("");
+  setIncidentHistoryStatus(`已載入事件：${record.title || record.id}。後續儲存會更新這筆紀錄。`, "success");
   setActiveView("dashboard");
   const title = document.getElementById("incidentTitle");
   if (title) title.focus();
@@ -1099,9 +1144,66 @@ async function copyIncidentRecordSummary(record) {
   }
 }
 
+async function resolveIncidentRecord(record) {
+  if (!record || !record.id) return;
+  if (!confirm(`確定要將「${record.title || "未命名事件"}」標記為已解決？`)) return;
+
+  try {
+    setIncidentHistoryStatus("正在標記已解決...", "pending");
+    const res = await fetch(`/api/incidents/${encodeURIComponent(record.id)}/resolve`, {
+      method: "PATCH",
+      cache: "no-store",
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Resolve incident failed");
+    }
+
+    if (activeIncidentRecordId === record.id && data.incident && data.incident.incident) {
+      applyIncidentStateToPage(data.incident.incident);
+      saveIncidentState();
+      updateHandoverSummary();
+    }
+
+    setIncidentHistoryStatus(`已結案：${data.incident.title}`, "success");
+    await loadIncidentRecords({ showLoading: false });
+  } catch (err) {
+    setIncidentHistoryStatus("標記已解決失敗：" + err.message, "error");
+  }
+}
+
+async function deleteIncidentRecord(record) {
+  if (!record || !record.id) return;
+  if (!confirm(`確定要刪除「${record.title || "未命名事件"}」？`)) return;
+
+  try {
+    setIncidentHistoryStatus("正在刪除事件紀錄...", "pending");
+    const res = await fetch(`/api/incidents/${encodeURIComponent(record.id)}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Delete incident failed");
+    }
+
+    if (activeIncidentRecordId === record.id) {
+      setActiveIncidentRecordId("");
+    }
+
+    setIncidentHistoryStatus("已刪除事件紀錄。", "success");
+    await loadIncidentRecords({ showLoading: false });
+  } catch (err) {
+    setIncidentHistoryStatus("刪除事件紀錄失敗：" + err.message, "error");
+  }
+}
+
 function createIncidentRecordCard(record) {
   const card = document.createElement("article");
   card.className = "incident-record";
+  card.classList.toggle("resolved", isIncidentRecordResolved(record));
 
   const actions = document.createElement("div");
   actions.className = "incident-record-actions";
@@ -1118,8 +1220,24 @@ function createIncidentRecordCard(record) {
   copyButton.textContent = "複製摘要";
   copyButton.addEventListener("click", () => copyIncidentRecordSummary(record));
 
+  const resolveButton = document.createElement("button");
+  resolveButton.type = "button";
+  resolveButton.className = "action-btn";
+  resolveButton.textContent = "結案";
+  resolveButton.addEventListener("click", () => resolveIncidentRecord(record));
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "action-btn danger";
+  deleteButton.textContent = "刪除";
+  deleteButton.addEventListener("click", () => deleteIncidentRecord(record));
+
   actions.appendChild(restoreButton);
   actions.appendChild(copyButton);
+  if (!isIncidentRecordResolved(record)) {
+    actions.appendChild(resolveButton);
+  }
+  actions.appendChild(deleteButton);
 
   const body = document.createElement("div");
   body.className = "incident-record-body";
@@ -1131,6 +1249,10 @@ function createIncidentRecordCard(record) {
   titleBlock.className = "incident-record-title-block";
   titleBlock.appendChild(createTextElement("h4", "incident-record-title", record.title || "未命名事件"));
   titleBlock.appendChild(createTextElement("div", "incident-record-meta", getIncidentRecordMeta(record)));
+
+  if (isIncidentRecordResolved(record)) {
+    titleBlock.appendChild(createTextElement("div", "incident-record-state", "已解決"));
+  }
 
   if (record.summary) {
     titleBlock.appendChild(createTextElement("p", "incident-record-summary", record.summary));
@@ -1155,11 +1277,35 @@ function renderIncidentRecords(records) {
   incidentRecordsCache = Array.isArray(records) ? records : [];
 
   if (!records || records.length === 0) {
-    list.replaceChildren(createTextElement("div", "incident-history-empty", "目前還沒有儲存的事件紀錄"));
+    const emptyText = incidentHistoryView === "all"
+      ? "目前還沒有儲存的事件紀錄"
+      : "目前沒有未結案事件紀錄";
+    list.replaceChildren(createTextElement("div", "incident-history-empty", emptyText));
     return;
   }
 
   list.replaceChildren(...records.map(createIncidentRecordCard));
+}
+
+function updateIncidentHistoryViewButtons() {
+  const openButton = document.getElementById("incidentOpenFilterButton");
+  const allButton = document.getElementById("incidentAllFilterButton");
+
+  if (openButton) {
+    openButton.classList.toggle("active", incidentHistoryView === "open");
+    openButton.setAttribute("aria-pressed", String(incidentHistoryView === "open"));
+  }
+
+  if (allButton) {
+    allButton.classList.toggle("active", incidentHistoryView === "all");
+    allButton.setAttribute("aria-pressed", String(incidentHistoryView === "all"));
+  }
+}
+
+function setIncidentHistoryView(view) {
+  incidentHistoryView = view === "all" ? "all" : "open";
+  updateIncidentHistoryViewButtons();
+  loadIncidentRecords();
 }
 
 async function loadIncidentRecords(options = {}) {
@@ -1167,11 +1313,17 @@ async function loadIncidentRecords(options = {}) {
   const showLoading = options.showLoading !== false;
 
   try {
+    updateIncidentHistoryViewButtons();
+
     if (list && showLoading) {
       list.replaceChildren(createTextElement("div", "incident-history-empty", "事件紀錄載入中..."));
     }
 
-    const res = await fetch("/api/incidents?limit=20", {
+    const params = new URLSearchParams({
+      limit: "20",
+      view: incidentHistoryView,
+    });
+    const res = await fetch(`/api/incidents?${params.toString()}`, {
       cache: "no-store",
     });
     const data = await res.json();
@@ -1204,12 +1356,13 @@ async function saveIncidentRecord() {
 
   try {
     clearError();
-    setIncidentHistoryStatus("正在儲存事件紀錄...", "pending");
+    setIncidentHistoryStatus(activeIncidentRecordId ? "正在更新事件紀錄..." : "正在儲存事件紀錄...", "pending");
     setSaveIncidentButtonLoading(true);
     updateHandoverSummary();
 
-    const res = await fetch("/api/incidents", {
-      method: "POST",
+    const recordId = activeIncidentRecordId;
+    const res = await fetch(recordId ? `/api/incidents/${encodeURIComponent(recordId)}` : "/api/incidents", {
+      method: recordId ? "PUT" : "POST",
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
@@ -1225,9 +1378,13 @@ async function saveIncidentRecord() {
       throw new Error(data.error || "Save incident failed");
     }
 
-    setIncidentHistoryStatus(`已儲存事件：${data.incident.title}`, "success");
-    await loadIncidentRecords();
+    setActiveIncidentRecordId(data.incident.id);
+    setIncidentHistoryStatus(`${recordId ? "已更新事件" : "已儲存事件"}：${data.incident.title}`, "success");
+    await loadIncidentRecords({ showLoading: false });
   } catch (err) {
+    if (activeIncidentRecordId && err.message === "incident not found") {
+      setActiveIncidentRecordId("");
+    }
     setIncidentHistoryStatus("儲存事件失敗：" + err.message, "error");
   } finally {
     setSaveIncidentButtonLoading(false);
@@ -1256,6 +1413,7 @@ function clearIncidentState() {
   });
 
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
+  setActiveIncidentRecordId("");
   setJiraStatus("");
   setHandoverSummaryStatus("");
   setIncidentHistoryStatus("");
@@ -1264,6 +1422,10 @@ function clearIncidentState() {
 
 function initIncidentPanel() {
   loadIncidentState();
+  loadActiveIncidentRecordId();
+  if (!hasIncidentContent(readIncidentStateFromPage())) {
+    setActiveIncidentRecordId("");
+  }
   updateHandoverSummary();
   const syncIncidentState = () => {
     saveIncidentState();

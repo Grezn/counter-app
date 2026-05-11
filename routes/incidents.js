@@ -79,6 +79,38 @@ function getIncidentSummary(fields) {
     || normalizeText(fields.notes, 180);
 }
 
+function isResolvedStatus(status) {
+  const normalized = normalizeText(status, 200).toLowerCase();
+  return normalized.includes("resolved") || normalized.includes("已解決");
+}
+
+function isIncidentRecordResolved(record) {
+  return Boolean(record && (record.resolvedAt || isResolvedStatus(record.status)));
+}
+
+function buildIncidentItem(incident, handoverSummary, existing = {}) {
+  const now = new Date().toISOString();
+  const fields = incident.fields;
+  const status = fields.status || "";
+
+  return {
+    id: existing.id || crypto.randomUUID(),
+    createdAt: existing.createdAt || now,
+    updatedAt: now,
+    resolvedAt: isResolvedStatus(status) ? (existing.resolvedAt || now) : "",
+    title: getIncidentTitle(fields),
+    summary: getIncidentSummary(fields),
+    severity: fields.severity || "",
+    status,
+    customer: fields.customer || "",
+    system: fields.system || "",
+    startedAt: fields.startedAt || "",
+    source: fields.source || "",
+    incident,
+    handoverSummary,
+  };
+}
+
 function parseLimit(value) {
   const limit = Number.parseInt(value, 10);
   if (!Number.isFinite(limit) || limit <= 0) return DEFAULT_LIST_LIMIT;
@@ -93,6 +125,28 @@ function safeParseIncident(raw) {
   }
 }
 
+async function readIncidentRecords(redis) {
+  return (await redis.lRange(INCIDENT_LIST_KEY, 0, MAX_STORED_INCIDENTS - 1))
+    .map(safeParseIncident)
+    .filter(Boolean);
+}
+
+async function writeIncidentRecords(redis, records) {
+  await redis.del(INCIDENT_LIST_KEY);
+
+  for (let index = Math.min(records.length, MAX_STORED_INCIDENTS) - 1; index >= 0; index -= 1) {
+    await redis.lPush(INCIDENT_LIST_KEY, JSON.stringify(records[index]));
+  }
+}
+
+function getIncidentRecordView(value) {
+  return normalizeText(value, 20).toLowerCase() === "all" ? "all" : "open";
+}
+
+function getIncidentId(req) {
+  return normalizeText(req.params && req.params.id, 80);
+}
+
 router.get("/api/incidents", async (req, res) => {
   try {
     const redis = getRedis();
@@ -104,12 +158,14 @@ router.get("/api/incidents", async (req, res) => {
     }
 
     const limit = parseLimit(req.query.limit);
-    const items = (await redis.lRange(INCIDENT_LIST_KEY, 0, limit - 1))
-      .map(safeParseIncident)
-      .filter(Boolean);
+    const view = getIncidentRecordView(req.query.view);
+    const items = (await readIncidentRecords(redis))
+      .filter((item) => view === "all" || !isIncidentRecordResolved(item))
+      .slice(0, limit);
 
     res.json({
       incidents: items,
+      view,
       redis: getRedisStatus(),
     });
   } catch (err) {
@@ -141,22 +197,7 @@ router.post("/api/incidents", async (req, res) => {
     }
 
     const now = new Date().toISOString();
-    const fields = incident.fields;
-    const item = {
-      id: crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-      title: getIncidentTitle(fields),
-      summary: getIncidentSummary(fields),
-      severity: fields.severity || "",
-      status: fields.status || "",
-      customer: fields.customer || "",
-      system: fields.system || "",
-      startedAt: fields.startedAt || "",
-      source: fields.source || "",
-      incident,
-      handoverSummary,
-    };
+    const item = buildIncidentItem(incident, handoverSummary);
 
     await redis.lPush(INCIDENT_LIST_KEY, JSON.stringify(item));
     await redis.lTrim(INCIDENT_LIST_KEY, 0, MAX_STORED_INCIDENTS - 1);
@@ -175,6 +216,175 @@ router.post("/api/incidents", async (req, res) => {
     });
   } catch (err) {
     console.error("[Incidents] create failed:", err.message);
+    res.status(500).json({
+      error: err.message,
+      redis: getRedisStatus(),
+    });
+  }
+});
+
+router.put("/api/incidents/:id", async (req, res) => {
+  try {
+    const redis = getRedis();
+    if (!redis) {
+      return res.status(500).json({
+        error: "redis client not available",
+        redis: getRedisStatus(),
+      });
+    }
+
+    const id = getIncidentId(req);
+    const incident = sanitizeIncidentState(req.body && req.body.incident);
+    const handoverSummary = normalizeText(req.body && req.body.handoverSummary, 20000);
+
+    if (!id) {
+      return res.status(400).json({ error: "incident id is required" });
+    }
+
+    if (!hasIncidentContent(incident, handoverSummary)) {
+      return res.status(400).json({
+        error: "incident content is required",
+      });
+    }
+
+    const records = await readIncidentRecords(redis);
+    const recordIndex = records.findIndex((item) => item.id === id);
+
+    if (recordIndex === -1) {
+      return res.status(404).json({ error: "incident not found" });
+    }
+
+    const item = buildIncidentItem(incident, handoverSummary, records[recordIndex]);
+    records.splice(recordIndex, 1);
+    records.unshift(item);
+    await writeIncidentRecords(redis, records);
+
+    console.log(JSON.stringify({
+      type: "incident",
+      event: "updated",
+      id: item.id,
+      title: item.title,
+      timestamp: item.updatedAt,
+    }));
+
+    res.json({
+      incident: item,
+      redis: getRedisStatus(),
+    });
+  } catch (err) {
+    console.error("[Incidents] update failed:", err.message);
+    res.status(500).json({
+      error: err.message,
+      redis: getRedisStatus(),
+    });
+  }
+});
+
+router.patch("/api/incidents/:id/resolve", async (req, res) => {
+  try {
+    const redis = getRedis();
+    if (!redis) {
+      return res.status(500).json({
+        error: "redis client not available",
+        redis: getRedisStatus(),
+      });
+    }
+
+    const id = getIncidentId(req);
+    if (!id) {
+      return res.status(400).json({ error: "incident id is required" });
+    }
+
+    const records = await readIncidentRecords(redis);
+    const recordIndex = records.findIndex((item) => item.id === id);
+
+    if (recordIndex === -1) {
+      return res.status(404).json({ error: "incident not found" });
+    }
+
+    const now = new Date().toISOString();
+    const item = records[recordIndex];
+    const fields = item.incident && item.incident.fields ? item.incident.fields : {};
+    const nextFields = {
+      ...fields,
+      status: "Resolved / 已解決",
+    };
+
+    const nextItem = {
+      ...item,
+      updatedAt: now,
+      resolvedAt: item.resolvedAt || now,
+      status: nextFields.status,
+      incident: {
+        ...(item.incident || {}),
+        fields: nextFields,
+      },
+    };
+
+    records.splice(recordIndex, 1, nextItem);
+    await writeIncidentRecords(redis, records);
+
+    console.log(JSON.stringify({
+      type: "incident",
+      event: "resolved",
+      id: nextItem.id,
+      title: nextItem.title,
+      timestamp: now,
+    }));
+
+    res.json({
+      incident: nextItem,
+      redis: getRedisStatus(),
+    });
+  } catch (err) {
+    console.error("[Incidents] resolve failed:", err.message);
+    res.status(500).json({
+      error: err.message,
+      redis: getRedisStatus(),
+    });
+  }
+});
+
+router.delete("/api/incidents/:id", async (req, res) => {
+  try {
+    const redis = getRedis();
+    if (!redis) {
+      return res.status(500).json({
+        error: "redis client not available",
+        redis: getRedisStatus(),
+      });
+    }
+
+    const id = getIncidentId(req);
+    if (!id) {
+      return res.status(400).json({ error: "incident id is required" });
+    }
+
+    const records = await readIncidentRecords(redis);
+    const recordIndex = records.findIndex((item) => item.id === id);
+
+    if (recordIndex === -1) {
+      return res.status(404).json({ error: "incident not found" });
+    }
+
+    const [deleted] = records.splice(recordIndex, 1);
+    await writeIncidentRecords(redis, records);
+
+    console.log(JSON.stringify({
+      type: "incident",
+      event: "deleted",
+      id,
+      title: deleted.title,
+      timestamp: new Date().toISOString(),
+    }));
+
+    res.json({
+      deleted: true,
+      id,
+      redis: getRedisStatus(),
+    });
+  } catch (err) {
+    console.error("[Incidents] delete failed:", err.message);
     res.status(500).json({
       error: err.message,
       redis: getRedisStatus(),

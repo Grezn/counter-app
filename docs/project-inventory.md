@@ -102,6 +102,7 @@
 | `msp_theme` | localStorage | light/dark theme | 非敏感 |
 | `visitor_id` | localStorage | 訪客統計 ID | 非帳號身分 |
 | `noc_incident_state` | localStorage | 值班事件暫存 | 個人瀏覽器資料，不送後端保存 |
+| `noc_incident_active_record_id` | localStorage | 目前載入的事件紀錄 ID | 讓再次儲存時更新同一筆 Redis 紀錄 |
 | `reset_token` | sessionStorage | reset token 暫存 | 關閉分頁後消失 |
 
 ## 前端功能

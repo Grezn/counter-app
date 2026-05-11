@@ -1188,6 +1188,39 @@ button:disabled {
   flex: 0 0 auto;
 }
 
+.incident-history-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.incident-history-filter {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #303846;
+  border-radius: 8px;
+  background: #101418;
+}
+
+.incident-filter-button {
+  width: auto;
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  color: #a4adba;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.incident-filter-button.active {
+  background: #1e3a8a;
+  color: #eff6ff;
+}
+
 .incident-history-note {
   margin: -4px 0 0;
   color: #a4adba;
@@ -1208,6 +1241,10 @@ button:disabled {
   border-radius: 8px;
   background: #101418;
   border: 1px solid #2d3540;
+}
+
+.incident-record.resolved {
+  opacity: 0.76;
 }
 
 .incident-record-body {
@@ -1255,9 +1292,22 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
+.incident-record-state {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #bbf7d0;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .incident-record-actions {
   display: flex;
-  flex: 0 0 92px;
+  flex: 0 0 104px;
   flex-direction: column;
   gap: 8px;
 }
@@ -1581,6 +1631,26 @@ body {
 
 .quick-link {
   color: #1e3a8a;
+}
+
+html[data-theme="light"] .incident-history-filter {
+  background: #edf1f5;
+  border-color: #aebaca;
+}
+
+html[data-theme="light"] .incident-filter-button {
+  color: #64748b;
+}
+
+html[data-theme="light"] .incident-filter-button.active {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .incident-record-state {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
 }
 
 .back-to-top {
@@ -2086,10 +2156,12 @@ html[data-theme="dark"] a {
     width: 100%;
     flex: 0 0 auto;
     flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .incident-record-actions .action-btn {
     width: auto;
+    flex: 1 1 96px;
   }
 
   h1 {
