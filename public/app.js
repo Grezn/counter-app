@@ -1205,45 +1205,44 @@ function createIncidentRecordCard(record) {
   card.className = "incident-record";
   card.classList.toggle("resolved", isIncidentRecordResolved(record));
 
-  const actions = document.createElement("div");
-  actions.className = "incident-record-actions";
-
   const restoreButton = document.createElement("button");
   restoreButton.type = "button";
-  restoreButton.className = "action-btn";
+  restoreButton.className = "incident-record-action primary";
   restoreButton.textContent = "載入";
   restoreButton.addEventListener("click", () => restoreIncidentRecord(record));
 
   const copyButton = document.createElement("button");
   copyButton.type = "button";
-  copyButton.className = "action-btn";
-  copyButton.textContent = "複製摘要";
+  copyButton.className = "incident-record-action";
+  copyButton.textContent = "複製";
   copyButton.addEventListener("click", () => copyIncidentRecordSummary(record));
 
   const resolveButton = document.createElement("button");
   resolveButton.type = "button";
-  resolveButton.className = "action-btn";
+  resolveButton.className = "incident-record-action";
   resolveButton.textContent = "結案";
   resolveButton.addEventListener("click", () => resolveIncidentRecord(record));
 
   const deleteButton = document.createElement("button");
   deleteButton.type = "button";
-  deleteButton.className = "action-btn danger";
+  deleteButton.className = "incident-record-action danger";
   deleteButton.textContent = "刪除";
   deleteButton.addEventListener("click", () => deleteIncidentRecord(record));
-
-  actions.appendChild(restoreButton);
-  actions.appendChild(copyButton);
-  if (!isIncidentRecordResolved(record)) {
-    actions.appendChild(resolveButton);
-  }
-  actions.appendChild(deleteButton);
 
   const body = document.createElement("div");
   body.className = "incident-record-body";
 
   const top = document.createElement("div");
   top.className = "incident-record-top";
+
+  const topActions = document.createElement("div");
+  topActions.className = "incident-record-actions";
+  topActions.appendChild(restoreButton);
+  topActions.appendChild(copyButton);
+  if (!isIncidentRecordResolved(record)) {
+    topActions.appendChild(resolveButton);
+  }
+  topActions.appendChild(deleteButton);
 
   const titleBlock = document.createElement("div");
   titleBlock.className = "incident-record-title-block";
@@ -1262,9 +1261,9 @@ function createIncidentRecordCard(record) {
   if (record.createdAt) time.dateTime = record.createdAt;
 
   top.appendChild(titleBlock);
-  top.appendChild(time);
+  top.appendChild(topActions);
   body.appendChild(top);
-  card.appendChild(actions);
+  body.appendChild(time);
   card.appendChild(body);
 
   return card;

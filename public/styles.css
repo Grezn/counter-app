@@ -1234,9 +1234,6 @@ button:disabled {
 }
 
 .incident-record {
-  display: flex;
-  align-items: center;
-  gap: 16px;
   padding: 14px 16px;
   border-radius: 8px;
   background: #101418;
@@ -1249,14 +1246,13 @@ button:disabled {
 
 .incident-record-body {
   min-width: 0;
-  flex: 1 1 auto;
 }
 
 .incident-record-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
 .incident-record-title-block {
@@ -1282,7 +1278,8 @@ button:disabled {
 }
 
 .incident-record-time {
-  flex: 0 0 auto;
+  display: block;
+  margin-top: 10px;
   white-space: nowrap;
   font-weight: 800;
 }
@@ -1307,16 +1304,37 @@ button:disabled {
 
 .incident-record-actions {
   display: flex;
-  flex: 0 0 104px;
-  flex-direction: column;
-  gap: 8px;
+  flex: 0 0 auto;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.incident-record-actions .action-btn {
-  width: 100%;
-  min-height: 36px;
-  padding: 8px 10px;
-  font-size: 0.9rem;
+.incident-record-action {
+  width: auto;
+  min-width: 0;
+  min-height: 30px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #1d2530;
+  border: 1px solid #3a4b63;
+  color: #d8dde6;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.incident-record-action.primary {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+.incident-record-action.danger {
+  background: rgba(185, 28, 28, 0.18);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fecaca;
 }
 
 .runbook-panel {
@@ -1616,6 +1634,7 @@ body {
 
 .quick-link,
 .incident-record,
+.incident-record-action,
 .weather-refresh,
 .weather-summary,
 .weather-chip,
@@ -1651,6 +1670,24 @@ html[data-theme="light"] .incident-record-state {
   background: #dcfce7;
   border-color: #86efac;
   color: #14532d;
+}
+
+html[data-theme="light"] .incident-record-action {
+  background: #edf1f5;
+  border-color: #aebaca;
+  color: #334155;
+}
+
+html[data-theme="light"] .incident-record-action.primary {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+html[data-theme="light"] .incident-record-action.danger {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #7f1d1d;
 }
 
 .back-to-top {
@@ -1966,6 +2003,7 @@ html[data-theme="dark"] .view-tab.active {
 }
 
 html[data-theme="dark"] .quick-link,
+html[data-theme="dark"] .incident-record-action,
 html[data-theme="dark"] .weather-refresh,
 html[data-theme="dark"] .weather-summary,
 html[data-theme="dark"] .weather-chip,
@@ -1977,6 +2015,18 @@ html[data-theme="dark"] .runbook-controls input {
   background: #0f172a;
   border-color: #475569;
   color: #e5e7eb;
+}
+
+html[data-theme="dark"] .incident-record-action.primary {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+html[data-theme="dark"] .incident-record-action.danger {
+  background: rgba(185, 28, 28, 0.18);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fecaca;
 }
 
 html[data-theme="dark"] .quick-link {
@@ -2141,6 +2191,7 @@ html[data-theme="dark"] a {
 
   .incident-record-top {
     flex-direction: column;
+    align-items: stretch;
     gap: 6px;
   }
 
@@ -2148,20 +2199,17 @@ html[data-theme="dark"] a {
     white-space: normal;
   }
 
-  .incident-record {
-    flex-direction: column;
-  }
-
   .incident-record-actions {
     width: 100%;
     flex: 0 0 auto;
     flex-direction: row;
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
-  .incident-record-actions .action-btn {
+  .incident-record-action {
     width: auto;
-    flex: 1 1 96px;
+    flex: 1 1 72px;
   }
 
   h1 {
