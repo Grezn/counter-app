@@ -614,6 +614,13 @@ async function loadCount() {
 }
 
 const INCIDENT_STORAGE_KEY = "noc_incident_state";
+const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
+  { field: "title", label: "一句話主旨", elementId: "incidentTitle" },
+  { field: "status", label: "目前狀態", elementId: "incidentStatus" },
+  { field: "impact", label: "影響範圍", elementId: "incidentImpact" },
+  { field: "nextStep", label: "下一步", elementId: "incidentNextStep" },
+  { field: "notified", label: "已通知", elementId: "incidentNotified" },
+];
 const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
 let incidentRecordsCache = [];
@@ -840,13 +847,40 @@ function updateHandoverSummary() {
   }
 }
 
+function getMissingHandoverSummaryFields(state = readIncidentStateFromPage()) {
+  const fields = state.fields || {};
+  return HANDOVER_SUMMARY_REQUIRED_FIELDS.filter((item) => !String(fields[item.field] || "").trim());
+}
+
+function focusHandoverSummaryField(item) {
+  const field = item && document.getElementById(item.elementId);
+  if (!field) return;
+
+  field.focus();
+  field.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
 async function copyHandoverSummary() {
   try {
+    const state = readIncidentStateFromPage();
+    const missingFields = getMissingHandoverSummaryFields(state);
+
+    if (missingFields.length) {
+      setHandoverSummaryStatus(`交班摘要還缺：${missingFields.map((item) => item.label).join("、")}。`, "error");
+      focusHandoverSummaryField(missingFields[0]);
+      return;
+    }
+
     updateHandoverSummary();
-    await navigator.clipboard.writeText(document.getElementById("handoverSummary").value);
-    alert("已複製交班摘要");
+    const summary = document.getElementById("handoverSummary").value;
+    await navigator.clipboard.writeText(summary);
+
+    markIncidentCheck("整理交班資訊");
+    saveIncidentState();
+    updateHandoverSummary();
+    setHandoverSummaryStatus("已複製交班摘要。", "success");
   } catch (err) {
-    setError("交班摘要複製失敗：" + err.message);
+    setHandoverSummaryStatus("交班摘要複製失敗：" + err.message, "error");
   }
 }
 
@@ -917,6 +951,14 @@ function setIncidentHistoryStatus(message, type) {
   if (!status) return;
 
   status.className = type ? `incident-history-status ${type}` : "incident-history-status";
+  status.textContent = message || "";
+}
+
+function setHandoverSummaryStatus(message, type) {
+  const status = document.getElementById("handoverSummaryStatus");
+  if (!status) return;
+
+  status.className = type ? `handover-summary-status ${type}` : "handover-summary-status";
   status.textContent = message || "";
 }
 
@@ -1215,6 +1257,7 @@ function clearIncidentState() {
 
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
   setJiraStatus("");
+  setHandoverSummaryStatus("");
   setIncidentHistoryStatus("");
   updateHandoverSummary();
 }
@@ -1224,6 +1267,7 @@ function initIncidentPanel() {
   updateHandoverSummary();
   const syncIncidentState = () => {
     saveIncidentState();
+    setHandoverSummaryStatus("");
     updateHandoverSummary();
   };
 
