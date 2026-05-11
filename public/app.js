@@ -1331,26 +1331,13 @@ function getRecordsMissingNextStep(records = incidentRecordsCache) {
   });
 }
 
-function getRecordsMissingNextCheck(records = incidentRecordsCache) {
-  return getOpenIncidentRecords(records).filter((record) => {
-    const fields = getIncidentRecordFields(record);
-    return doesTrackingStatusNeedNextCheck(fields.trackingStatus)
-      && !getIncidentRecordNextCheckValue(record);
-  });
-}
-
 function renderHandoverReadiness(state = readIncidentStateFromPage()) {
   const bar = document.getElementById("handoverReadinessBar");
   if (!bar) return;
 
   const currentHasContent = hasIncidentContent(state);
-  const currentFields = state.fields || {};
   const missingSummaryFields = currentHasContent ? getMissingHandoverSummaryFields(state) : [];
-  const currentMissingNextCheck = currentHasContent
-    && doesTrackingStatusNeedNextCheck(currentFields.trackingStatus)
-    && !String(currentFields.nextCheckAt || "").trim();
   const dueRecords = getOpenIncidentRecords().filter(isIncidentRecordDue);
-  const recordsMissingNextCheck = getRecordsMissingNextCheck();
   const recordsMissingNextStep = getRecordsMissingNextStep();
   const readyToResolveRecords = getOpenIncidentRecords().filter(isIncidentRecordReadyToResolve);
   const staleResolvedRecords = incidentRecordsCache.filter(isIncidentRecordResolved);
@@ -1358,7 +1345,7 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
 
   if (missingSummaryFields.length) {
     issues.push({
-      label: `摘要缺 ${missingSummaryFields.length} 項`,
+      label: `摘要待補 ${missingSummaryFields.length} 項`,
       action: () => {
         setHandoverSummaryMissingStatus(missingSummaryFields);
         focusHandoverSummaryField(missingSummaryFields[0]);
@@ -1373,29 +1360,9 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
     });
   }
 
-  if (currentMissingNextCheck) {
-    issues.push({
-      label: "目前事件缺下次確認",
-      action: () => focusHandoverSummaryField({
-        elementId: "incidentNextCheckAt",
-      }),
-    });
-  }
-
   if (dueRecords.length) {
     issues.push({
       label: `待確認 ${dueRecords.length} 件`,
-      action: () => {
-        clearIncidentHistoryFilters();
-        setIncidentHistoryView("open");
-        scrollToIncidentHistory();
-      },
-    });
-  }
-
-  if (recordsMissingNextCheck.length) {
-    issues.push({
-      label: `缺下次確認 ${recordsMissingNextCheck.length} 件`,
       action: () => {
         clearIncidentHistoryFilters();
         setIncidentHistoryView("open");
@@ -1436,11 +1403,11 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
   const isReady = issues.length === 0;
   bar.className = `handover-readiness-bar ${isReady ? "ready" : "attention"}`;
 
-  const label = createTextElement("span", "readiness-label", isReady ? "可交班" : `還有 ${issues.length} 件要處理`);
+  const label = createTextElement("span", "readiness-label", isReady ? "可交班" : `交班提醒 ${issues.length} 項`);
   const message = createTextElement(
     "span",
     "readiness-message",
-    isReady ? "摘要與未結案事件看起來都完整。" : "交班前先處理這些項目。",
+    isReady ? "摘要與未結案事件看起來都完整。" : "這些只是檢查提示，可視情況處理。",
   );
   const actions = document.createElement("div");
   actions.className = "readiness-actions";
@@ -1726,11 +1693,6 @@ function normalizeIncidentTrackingStatus(value) {
 
 function getIncidentRecordTrackingStatus(record) {
   return normalizeIncidentTrackingStatus(getIncidentRecordFields(record).trackingStatus);
-}
-
-function doesTrackingStatusNeedNextCheck(status) {
-  const trackingStatus = normalizeIncidentTrackingStatus(status);
-  return trackingStatus === "需追蹤" || trackingStatus === "持續監控";
 }
 
 function canTrackingStatusSkipNextStep(status) {
