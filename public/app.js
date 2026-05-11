@@ -910,6 +910,7 @@ function applyIncidentStateToPage(state) {
     followup.checked = Boolean(state && state.followups && state.followups[followup.dataset.incidentFollowup]);
   });
 
+  updateIncidentNextCheckAvailability();
   updateServiceTypeFieldVisibility();
 }
 
@@ -949,6 +950,19 @@ function clearIncidentNextCheckAt() {
   updateHandoverSummary();
 }
 
+function updateIncidentNextCheckAvailability() {
+  const trackingStatus = document.getElementById("incidentTrackingStatus");
+  const nextCheckAt = document.getElementById("incidentNextCheckAt");
+  if (!trackingStatus || !nextCheckAt) return;
+
+  const shouldDisable = canTrackingStatusSkipNextCheck(trackingStatus.value);
+  if (shouldDisable) {
+    nextCheckAt.value = "";
+  }
+  nextCheckAt.disabled = shouldDisable;
+  nextCheckAt.title = shouldDisable ? "目前追蹤狀態不需要下次確認" : "";
+}
+
 function buildHandoverSummary() {
   const state = readIncidentStateFromPage();
   const fields = state.fields;
@@ -972,6 +986,9 @@ function buildHandoverSummary() {
       return followup.dataset.incidentFollowup;
     });
   const followupText = followupLines.length ? followupLines.join("、") : "-";
+  const nextCheckText = canTrackingStatusSkipNextCheck(fields.trackingStatus)
+    ? "不需設定"
+    : formatDisplayDateTime(fields.nextCheckAt);
   const doneChecks = getIncidentChecks()
     .filter((check) => check.checked)
     .map((check) => check.dataset.incidentCheck);
@@ -1026,7 +1043,7 @@ function buildHandoverSummary() {
     "【接手動作】",
     line("下一步", fields.nextStep),
     line("追蹤狀態", fields.trackingStatus),
-    line("下次確認", formatDisplayDateTime(fields.nextCheckAt)),
+    line("下次確認", nextCheckText),
     line("接手人員", fields.handoverOwner),
     line("已通知", fields.notified),
     "",
@@ -1615,9 +1632,13 @@ function canTrackingStatusSkipNextStep(status) {
   return trackingStatus === "不需追蹤" || trackingStatus === "可結案";
 }
 
+function canTrackingStatusSkipNextCheck(status) {
+  const trackingStatus = normalizeIncidentTrackingStatus(status);
+  return trackingStatus === "不需追蹤" || trackingStatus === "可結案";
+}
+
 function shouldIncidentRecordHonorNextCheck(record) {
-  const trackingStatus = getIncidentRecordTrackingStatus(record);
-  return trackingStatus !== "不需追蹤" && trackingStatus !== "可結案";
+  return !canTrackingStatusSkipNextCheck(getIncidentRecordTrackingStatus(record));
 }
 
 function isIncidentRecordReadyToResolve(record) {
@@ -2211,6 +2232,7 @@ function clearIncidentState() {
     followup.checked = false;
   });
 
+  updateIncidentNextCheckAvailability();
   updateServiceTypeFieldVisibility();
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
   setActiveIncidentRecordId("");
@@ -2231,6 +2253,7 @@ function initIncidentPanel() {
   }
   updateHandoverSummary();
   const syncIncidentState = () => {
+    updateIncidentNextCheckAvailability();
     saveIncidentState();
     setHandoverSummaryStatus("");
     updateServiceTypeFieldVisibility();
