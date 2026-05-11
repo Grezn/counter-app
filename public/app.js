@@ -960,6 +960,7 @@ function buildHandoverSummary() {
     "",
     "【接手動作】",
     line("下一步", fields.nextStep),
+    line("下次確認", formatDisplayDateTime(fields.nextCheckAt)),
     line("接手人員", fields.handoverOwner),
     line("已通知", fields.notified),
     "",
@@ -1274,9 +1275,58 @@ function formatIncidentRecordSavedTime(record) {
   return formatted === "-" ? "" : `更新 ${formatted}`;
 }
 
+function getIncidentRecordFields(record) {
+  return record && record.incident && record.incident.fields ? record.incident.fields : {};
+}
+
+function getIncidentRecordNextCheckValue(record) {
+  return String(getIncidentRecordFields(record).nextCheckAt || "").trim();
+}
+
+function parseIncidentDateTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function isIncidentRecordResolved(record) {
   const status = String(record && record.status ? record.status : "").toLowerCase();
   return Boolean(record && (record.resolvedAt || status.includes("resolved") || status.includes("已解決")));
+}
+
+function isIncidentRecordDue(record) {
+  const nextCheckAt = parseIncidentDateTime(getIncidentRecordNextCheckValue(record));
+  return Boolean(nextCheckAt && !isIncidentRecordResolved(record) && nextCheckAt.getTime() <= Date.now());
+}
+
+function getIncidentRecordNextCheckLabel(record) {
+  const nextCheckValue = getIncidentRecordNextCheckValue(record);
+  if (!nextCheckValue) return "";
+
+  const label = isIncidentRecordDue(record) ? "待確認" : "下次確認";
+  return `${label} ${formatIncidentRecordTime(nextCheckValue)}`;
+}
+
+function getIncidentRecordSortTime(record) {
+  const date = parseIncidentDateTime(record && (record.updatedAt || record.createdAt));
+  return date ? date.getTime() : 0;
+}
+
+function compareIncidentRecordsForDisplay(a, b) {
+  const aResolved = isIncidentRecordResolved(a);
+  const bResolved = isIncidentRecordResolved(b);
+  if (aResolved !== bResolved) return aResolved ? 1 : -1;
+
+  const aDue = isIncidentRecordDue(a);
+  const bDue = isIncidentRecordDue(b);
+  if (aDue !== bDue) return aDue ? -1 : 1;
+
+  const aNextCheck = parseIncidentDateTime(getIncidentRecordNextCheckValue(a));
+  const bNextCheck = parseIncidentDateTime(getIncidentRecordNextCheckValue(b));
+  if (aNextCheck && bNextCheck) return aNextCheck.getTime() - bNextCheck.getTime();
+  if (aNextCheck || bNextCheck) return aNextCheck ? -1 : 1;
+
+  return getIncidentRecordSortTime(b) - getIncidentRecordSortTime(a);
 }
 
 function getIncidentRecordMeta(record) {
@@ -1372,6 +1422,7 @@ function createIncidentRecordCard(record) {
   const card = document.createElement("article");
   card.className = "incident-record";
   card.classList.toggle("resolved", isIncidentRecordResolved(record));
+  card.classList.toggle("due", isIncidentRecordDue(record));
 
   const restoreButton = document.createElement("button");
   restoreButton.type = "button";
@@ -1416,6 +1467,16 @@ function createIncidentRecordCard(record) {
   topActions.appendChild(deleteButton);
 
   const savedTime = formatIncidentRecordSavedTime(record);
+  const nextCheckLabel = getIncidentRecordNextCheckLabel(record);
+  if (nextCheckLabel) {
+    const reminder = createTextElement(
+      "time",
+      isIncidentRecordDue(record) ? "incident-record-reminder due" : "incident-record-reminder",
+      nextCheckLabel,
+    );
+    reminder.dateTime = getIncidentRecordNextCheckValue(record);
+    side.appendChild(reminder);
+  }
   if (savedTime) {
     const time = createTextElement("time", "incident-record-time", savedTime);
     time.dateTime = record.updatedAt || record.createdAt;
@@ -1458,7 +1519,14 @@ function renderIncidentRecords(records) {
     return;
   }
 
-  list.replaceChildren(...records.map(createIncidentRecordCard));
+  const sortedRecords = [...records].sort(compareIncidentRecordsForDisplay);
+  list.replaceChildren(...sortedRecords.map(createIncidentRecordCard));
+}
+
+function refreshIncidentRecordReminderState() {
+  if (incidentRecordsCache.length) {
+    renderIncidentRecords(incidentRecordsCache);
+  }
 }
 
 function updateIncidentHistoryViewButtons() {
@@ -2052,9 +2120,11 @@ loadCount();
 setInterval(loadStats, 30000);
 setInterval(heartbeatActiveVisitor, 15000);
 setInterval(loadLocalWeather, 3 * 60 * 1000);
+setInterval(refreshIncidentRecordReminderState, 60 * 1000);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     heartbeatActiveVisitor();
     loadStats();
+    refreshIncidentRecordReminderState();
   }
 });

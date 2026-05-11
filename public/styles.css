@@ -1324,6 +1324,11 @@ button:disabled {
   opacity: 0.76;
 }
 
+.incident-record.due {
+  box-shadow: inset 3px 0 0 #f59e0b;
+  padding-left: 12px;
+}
+
 .incident-record-body {
   min-width: 0;
 }
@@ -1362,6 +1367,26 @@ button:disabled {
   line-height: 1.3;
   white-space: nowrap;
   font-weight: 700;
+}
+
+.incident-record-reminder {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  color: #bfdbfe;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.incident-record-reminder.due {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fde68a;
 }
 
 .incident-record-summary {
@@ -1759,6 +1784,18 @@ html[data-theme="light"] .incident-record-state {
   background: #dcfce7;
   border-color: #86efac;
   color: #14532d;
+}
+
+html[data-theme="light"] .incident-record-reminder {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e3a8a;
+}
+
+html[data-theme="light"] .incident-record-reminder.due {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
 }
 
 html[data-theme="light"] .incident-record-action {
