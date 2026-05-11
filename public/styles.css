@@ -1535,6 +1535,11 @@ button:disabled {
   padding-left: 12px;
 }
 
+.incident-record.ready-to-resolve {
+  box-shadow: inset 3px 0 0 #22c55e;
+  padding-left: 12px;
+}
+
 .incident-record-body {
   min-width: 0;
 }
@@ -1587,6 +1592,44 @@ button:disabled {
   font-weight: 800;
   line-height: 1.25;
   white-space: nowrap;
+}
+
+.incident-record-tracking {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+  color: #bfdbfe;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.incident-record-tracking.none {
+  background: rgba(100, 116, 139, 0.14);
+  border-color: rgba(148, 163, 184, 0.32);
+  color: #cbd5e1;
+}
+
+.incident-record-tracking.waiting {
+  background: rgba(168, 85, 247, 0.14);
+  border-color: rgba(216, 180, 254, 0.34);
+  color: #e9d5ff;
+}
+
+.incident-record-tracking.monitoring {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(251, 191, 36, 0.4);
+  color: #fde68a;
+}
+
+.incident-record-tracking.ready {
+  background: rgba(22, 101, 52, 0.22);
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #bbf7d0;
 }
 
 .incident-record-reminder.due {
@@ -2001,6 +2044,36 @@ html[data-theme="light"] .incident-record-reminder {
   background: #dbeafe;
   border-color: #93c5fd;
   color: #1e3a8a;
+}
+
+html[data-theme="light"] .incident-record-tracking {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e3a8a;
+}
+
+html[data-theme="light"] .incident-record-tracking.none {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+html[data-theme="light"] .incident-record-tracking.waiting {
+  background: #f3e8ff;
+  border-color: #d8b4fe;
+  color: #581c87;
+}
+
+html[data-theme="light"] .incident-record-tracking.monitoring {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+html[data-theme="light"] .incident-record-tracking.ready {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
 }
 
 html[data-theme="light"] .incident-record-reminder.due {

@@ -620,6 +620,7 @@ const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
   { field: "status", label: "目前狀態", elementId: "incidentStatus" },
   { field: "impact", label: "影響範圍", elementId: "incidentImpact" },
   { field: "nextStep", label: "下一步", elementId: "incidentNextStep" },
+  { field: "trackingStatus", label: "追蹤狀態", elementId: "incidentTrackingStatus" },
   { field: "notified", label: "已通知", elementId: "incidentNotified" },
 ];
 const INCIDENT_PHRASE_GROUPS = {
@@ -1024,6 +1025,7 @@ function buildHandoverSummary() {
     "",
     "【接手動作】",
     line("下一步", fields.nextStep),
+    line("追蹤狀態", fields.trackingStatus),
     line("下次確認", formatDisplayDateTime(fields.nextCheckAt)),
     line("接手人員", fields.handoverOwner),
     line("已通知", fields.notified),
@@ -1201,7 +1203,16 @@ function getOpenIncidentRecords(records = incidentRecordsCache) {
 function getRecordsMissingNextStep(records = incidentRecordsCache) {
   return getOpenIncidentRecords(records).filter((record) => {
     const fields = getIncidentRecordFields(record);
-    return !String(fields.nextStep || "").trim();
+    return !canTrackingStatusSkipNextStep(fields.trackingStatus)
+      && !String(fields.nextStep || "").trim();
+  });
+}
+
+function getRecordsMissingNextCheck(records = incidentRecordsCache) {
+  return getOpenIncidentRecords(records).filter((record) => {
+    const fields = getIncidentRecordFields(record);
+    return doesTrackingStatusNeedNextCheck(fields.trackingStatus)
+      && !getIncidentRecordNextCheckValue(record);
   });
 }
 
@@ -1210,9 +1221,15 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
   if (!bar) return;
 
   const currentHasContent = hasIncidentContent(state);
+  const currentFields = state.fields || {};
   const missingSummaryFields = currentHasContent ? getMissingHandoverSummaryFields(state) : [];
+  const currentMissingNextCheck = currentHasContent
+    && doesTrackingStatusNeedNextCheck(currentFields.trackingStatus)
+    && !String(currentFields.nextCheckAt || "").trim();
   const dueRecords = getOpenIncidentRecords().filter(isIncidentRecordDue);
+  const recordsMissingNextCheck = getRecordsMissingNextCheck();
   const recordsMissingNextStep = getRecordsMissingNextStep();
+  const readyToResolveRecords = getOpenIncidentRecords().filter(isIncidentRecordReadyToResolve);
   const staleResolvedRecords = incidentRecordsCache.filter(isIncidentRecordResolved);
   const issues = [];
 
@@ -1233,6 +1250,15 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
     });
   }
 
+  if (currentMissingNextCheck) {
+    issues.push({
+      label: "目前事件缺下次確認",
+      action: () => focusHandoverSummaryField({
+        elementId: "incidentNextCheckAt",
+      }),
+    });
+  }
+
   if (dueRecords.length) {
     issues.push({
       label: `待確認 ${dueRecords.length} 件`,
@@ -1244,9 +1270,31 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
     });
   }
 
+  if (recordsMissingNextCheck.length) {
+    issues.push({
+      label: `缺下次確認 ${recordsMissingNextCheck.length} 件`,
+      action: () => {
+        clearIncidentHistoryFilters();
+        setIncidentHistoryView("open");
+        scrollToIncidentHistory();
+      },
+    });
+  }
+
   if (recordsMissingNextStep.length) {
     issues.push({
       label: `未填下一步 ${recordsMissingNextStep.length} 件`,
+      action: () => {
+        clearIncidentHistoryFilters();
+        setIncidentHistoryView("open");
+        scrollToIncidentHistory();
+      },
+    });
+  }
+
+  if (readyToResolveRecords.length) {
+    issues.push({
+      label: `可結案 ${readyToResolveRecords.length} 件`,
       action: () => {
         clearIncidentHistoryFilters();
         setIncidentHistoryView("open");
@@ -1549,6 +1597,42 @@ function getIncidentRecordFields(record) {
   return record && record.incident && record.incident.fields ? record.incident.fields : {};
 }
 
+function normalizeIncidentTrackingStatus(value) {
+  return String(value || "").trim();
+}
+
+function getIncidentRecordTrackingStatus(record) {
+  return normalizeIncidentTrackingStatus(getIncidentRecordFields(record).trackingStatus);
+}
+
+function doesTrackingStatusNeedNextCheck(status) {
+  const trackingStatus = normalizeIncidentTrackingStatus(status);
+  return trackingStatus === "需追蹤" || trackingStatus === "持續監控";
+}
+
+function canTrackingStatusSkipNextStep(status) {
+  const trackingStatus = normalizeIncidentTrackingStatus(status);
+  return trackingStatus === "不需追蹤" || trackingStatus === "可結案";
+}
+
+function shouldIncidentRecordHonorNextCheck(record) {
+  const trackingStatus = getIncidentRecordTrackingStatus(record);
+  return trackingStatus !== "不需追蹤" && trackingStatus !== "可結案";
+}
+
+function isIncidentRecordReadyToResolve(record) {
+  return !isIncidentRecordResolved(record) && getIncidentRecordTrackingStatus(record) === "可結案";
+}
+
+function getIncidentTrackingStatusClass(status) {
+  const trackingStatus = normalizeIncidentTrackingStatus(status);
+  if (trackingStatus === "不需追蹤") return "none";
+  if (trackingStatus === "可結案") return "ready";
+  if (trackingStatus === "持續監控" || trackingStatus === "需追蹤") return "monitoring";
+  if (trackingStatus === "等客戶回覆" || trackingStatus === "等二線回覆") return "waiting";
+  return "";
+}
+
 function getIncidentRecordNextCheckValue(record) {
   return String(getIncidentRecordFields(record).nextCheckAt || "").trim();
 }
@@ -1566,12 +1650,15 @@ function isIncidentRecordResolved(record) {
 
 function isIncidentRecordDue(record) {
   const nextCheckAt = parseIncidentDateTime(getIncidentRecordNextCheckValue(record));
-  return Boolean(nextCheckAt && !isIncidentRecordResolved(record) && nextCheckAt.getTime() <= Date.now());
+  return Boolean(nextCheckAt
+    && shouldIncidentRecordHonorNextCheck(record)
+    && !isIncidentRecordResolved(record)
+    && nextCheckAt.getTime() <= Date.now());
 }
 
 function getIncidentRecordNextCheckLabel(record) {
   const nextCheckValue = getIncidentRecordNextCheckValue(record);
-  if (!nextCheckValue) return "";
+  if (!nextCheckValue || !shouldIncidentRecordHonorNextCheck(record)) return "";
 
   const label = isIncidentRecordDue(record) ? "待確認" : "下次確認";
   return `${label} ${formatIncidentRecordTime(nextCheckValue)}`;
@@ -1783,6 +1870,7 @@ function createIncidentRecordCard(record) {
   card.className = "incident-record";
   card.classList.toggle("resolved", isIncidentRecordResolved(record));
   card.classList.toggle("due", isIncidentRecordDue(record));
+  card.classList.toggle("ready-to-resolve", isIncidentRecordReadyToResolve(record));
 
   const restoreButton = document.createElement("button");
   restoreButton.type = "button";
@@ -1827,6 +1915,15 @@ function createIncidentRecordCard(record) {
   topActions.appendChild(deleteButton);
 
   const savedTime = formatIncidentRecordSavedTime(record);
+  const trackingStatus = getIncidentRecordTrackingStatus(record);
+  if (trackingStatus) {
+    side.appendChild(createTextElement(
+      "div",
+      `incident-record-tracking ${getIncidentTrackingStatusClass(trackingStatus)}`.trim(),
+      trackingStatus,
+    ));
+  }
+
   const nextCheckLabel = getIncidentRecordNextCheckLabel(record);
   if (nextCheckLabel) {
     const reminder = createTextElement(

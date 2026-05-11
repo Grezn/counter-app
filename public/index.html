@@ -177,6 +177,19 @@
         </div>
 
         <div class="field">
+          <label for="incidentTrackingStatus">追蹤狀態</label>
+          <select id="incidentTrackingStatus" data-incident-field="trackingStatus">
+            <option value="">未判斷</option>
+            <option value="需追蹤">需追蹤</option>
+            <option value="不需追蹤">不需追蹤</option>
+            <option value="等客戶回覆">等客戶回覆</option>
+            <option value="等二線回覆">等二線回覆</option>
+            <option value="持續監控">持續監控</option>
+            <option value="可結案">可結案</option>
+          </select>
+        </div>
+
+        <div class="field">
           <div class="field-label-row">
             <label for="incidentNextCheckAt">下次確認</label>
             <button class="field-mini-action" type="button" onclick="clearIncidentNextCheckAt()">清除</button>
