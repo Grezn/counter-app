@@ -86,6 +86,38 @@
           <button class="action-btn danger" onclick="clearIncidentState()">清空事件</button>
         </div>
       </div>
+      <section class="shift-handoff" aria-label="班別交接清單">
+        <div class="shift-handoff-header">
+          <div>
+            <h3 class="workflow-title">班別交接</h3>
+            <p id="shiftHandoffMeta" class="shift-handoff-meta">今日班別狀態載入中...</p>
+          </div>
+          <div class="shift-handoff-actions">
+            <button class="shift-action" type="button" onclick="startShiftHandoff()">開班</button>
+            <button class="shift-action primary" type="button" onclick="closeShiftHandoff()">產生收班小結</button>
+            <button class="shift-action" type="button" onclick="copyShiftHandoffSummary()">複製小結</button>
+          </div>
+        </div>
+        <div class="shift-check-groups">
+          <div class="shift-check-group">
+            <div class="shift-check-title">開班</div>
+            <label class="shift-check"><input type="checkbox" data-shift-check="openLine" />LINE</label>
+            <label class="shift-check"><input type="checkbox" data-shift-check="openOutlook" />Outlook</label>
+            <label class="shift-check"><input type="checkbox" data-shift-check="openJira" />Jira</label>
+            <label class="shift-check"><input type="checkbox" data-shift-check="openMonitoring" />監控入口</label>
+            <label class="shift-check"><input type="checkbox" data-shift-check="openPhone" />話機</label>
+          </div>
+          <div class="shift-check-group">
+            <div class="shift-check-title">收班</div>
+            <label class="shift-check"><input type="checkbox" data-shift-check="closeOpenIncidents" />未結案已確認</label>
+            <label class="shift-check"><input type="checkbox" data-shift-check="closeDueIncidents" />待確認已處理</label>
+            <label class="shift-check"><input type="checkbox" data-shift-check="closeReadyToResolve" />可結案已處理</label>
+            <label class="shift-check"><input type="checkbox" data-shift-check="closeSummaryCopied" />小結已複製</label>
+          </div>
+        </div>
+        <div id="shiftHandoffStatus" class="shift-handoff-status" role="status" aria-live="polite"></div>
+        <div id="shiftHandoffSummary" class="shift-handoff-summary" aria-live="polite"></div>
+      </section>
       <div id="handoverReadinessBar" class="handover-readiness-bar" aria-live="polite"></div>
       <div id="jiraStatus" class="jira-status" role="status" aria-live="polite"></div>
       <div id="handoverSummaryStatus" class="handover-summary-status" role="status" aria-live="polite"></div>
