@@ -1120,7 +1120,6 @@ button:disabled {
 .handover-summary-status:empty,
 .duplicate-incident-status:empty,
 .notes-timeline:empty,
-.shift-handoff-status:empty,
 .incident-history-status:empty {
   display: none;
 }
@@ -1214,125 +1213,6 @@ button:disabled {
   background: rgba(180, 83, 9, 0.16);
   border: 1px solid rgba(251, 191, 36, 0.35);
   color: #fed7aa;
-}
-
-.shift-handoff {
-  display: grid;
-  gap: 10px;
-  margin: -2px 0 14px;
-  padding: 10px 0;
-  border-top: 1px solid #2b3340;
-  border-bottom: 1px solid #2b3340;
-}
-
-.shift-handoff-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.shift-handoff-header .workflow-title {
-  margin: 0 0 4px;
-}
-
-.shift-handoff-meta {
-  margin: 0;
-  color: #a4adba;
-  font-size: 0.84rem;
-  line-height: 1.45;
-}
-
-.shift-handoff-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.shift-action {
-  width: auto;
-  min-height: 0;
-  margin: 0;
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: transparent;
-  border: 1px solid #344052;
-  color: #d8dde6;
-  font-size: 0.82rem;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
-.shift-action.primary {
-  background: #1e3a8a;
-  border-color: #2563eb;
-  color: #eff6ff;
-}
-
-.shift-check-groups {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 18px;
-}
-
-.shift-check-group {
-  display: flex;
-  align-items: center;
-  gap: 8px 10px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.shift-check-title {
-  color: #c7d0dd;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.shift-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #d8dde6;
-  font-size: 0.84rem;
-  line-height: 1.35;
-  white-space: nowrap;
-}
-
-.shift-check input {
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  accent-color: #0f766e;
-}
-
-.shift-handoff-status {
-  padding: 7px 9px;
-  border-radius: 7px;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.shift-handoff-status.success {
-  background: rgba(22, 101, 52, 0.22);
-  border: 1px solid rgba(74, 222, 128, 0.35);
-  color: #bbf7d0;
-}
-
-.shift-handoff-status.error {
-  background: rgba(239, 68, 68, 0.14);
-  border: 1px solid rgba(248, 113, 113, 0.35);
-  color: #fecaca;
-}
-
-.shift-handoff-summary {
-  color: #a4adba;
-  font-size: 0.84rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
 }
 
 .phone-call-status {
@@ -2133,8 +2013,6 @@ body {
 .links-note,
 .incident-subtitle,
 .incident-history-note,
-.shift-handoff-meta,
-.shift-handoff-summary,
 .service-type-hint,
 .readiness-message,
 .notes-timeline,
@@ -2182,42 +2060,6 @@ body {
 
 html[data-theme="light"] .incident-history-filter {
   border-color: #aebaca;
-}
-
-html[data-theme="light"] .shift-handoff {
-  border-color: #cbd5e1;
-}
-
-html[data-theme="light"] .shift-check-title {
-  color: #172033;
-}
-
-html[data-theme="light"] .shift-check {
-  color: #334155;
-}
-
-html[data-theme="light"] .shift-action {
-  background: transparent;
-  border-color: #aebaca;
-  color: #334155;
-}
-
-html[data-theme="light"] .shift-action.primary {
-  background: #0f766e;
-  border-color: #0d9488;
-  color: #ffffff;
-}
-
-html[data-theme="light"] .shift-handoff-status.success {
-  background: #dcfce7;
-  border-color: #86efac;
-  color: #14532d;
-}
-
-html[data-theme="light"] .shift-handoff-status.error {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  color: #7f1d1d;
 }
 
 html[data-theme="light"] .incident-filter-button {
@@ -2668,8 +2510,6 @@ html[data-theme="dark"] .weather-meta,
 html[data-theme="dark"] .links-note,
 html[data-theme="dark"] .incident-subtitle,
 html[data-theme="dark"] .incident-history-note,
-html[data-theme="dark"] .shift-handoff-meta,
-html[data-theme="dark"] .shift-handoff-summary,
 html[data-theme="dark"] .service-type-hint,
 html[data-theme="dark"] .readiness-message,
 html[data-theme="dark"] .notes-timeline,
@@ -2712,14 +2552,12 @@ html[data-theme="dark"] .view-tab.active {
 }
 
 html[data-theme="dark"] .handover-readiness-bar,
-html[data-theme="dark"] .shift-handoff,
 html[data-theme="dark"] .notes-timeline {
   border-color: #334155;
 }
 
 html[data-theme="dark"] .quick-link,
 html[data-theme="dark"] .incident-record-action,
-html[data-theme="dark"] .shift-action,
 html[data-theme="dark"] .phrase-trigger,
 html[data-theme="dark"] .field-mini-action,
 html[data-theme="dark"] .phrase-menu,
@@ -2739,12 +2577,6 @@ html[data-theme="dark"] .runbook-controls input {
 }
 
 html[data-theme="dark"] .incident-record-action.primary {
-  background: #1e3a8a;
-  border-color: #2563eb;
-  color: #eff6ff;
-}
-
-html[data-theme="dark"] .shift-action.primary {
   background: #1e3a8a;
   border-color: #2563eb;
   color: #eff6ff;
@@ -2870,7 +2702,6 @@ html[data-theme="dark"] a {
   .incident-grid,
   .incident-workflow,
   .incident-history-toolbar,
-  .shift-check-groups,
   .details-grid,
   .weather-strip,
   .runbook-card-body,

@@ -615,7 +615,6 @@ async function loadCount() {
 
 const INCIDENT_STORAGE_KEY = "noc_incident_state";
 const INCIDENT_ACTIVE_RECORD_STORAGE_KEY = "noc_incident_active_record_id";
-const SHIFT_HANDOFF_STORAGE_KEY = "noc_shift_handoff_state";
 const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
   { field: "title", label: "一句話主旨", elementId: "incidentTitle" },
   { field: "status", label: "目前狀態", elementId: "incidentStatus" },
@@ -663,19 +662,11 @@ const HANDOVER_SUMMARY_MODES = {
   compact: "精簡",
   update: "更新",
 };
-const SHIFT_HANDOFF_OPEN_CHECKS = ["openLine", "openOutlook", "openJira", "openMonitoring", "openPhone"];
-const SHIFT_HANDOFF_CLOSE_CHECKS = [
-  "closeOpenIncidents",
-  "closeDueIncidents",
-  "closeReadyToResolve",
-  "closeSummaryCopied",
-];
 let incidentRecordsCache = [];
 let activeIncidentRecordId = "";
 let activeIncidentSavedSnapshot = null;
 let incidentHistoryView = "open";
 let handoverSummaryMode = "full";
-let shiftHandoffState = null;
 let incidentHistoryFilters = {
   keyword: "",
   customer: "",
@@ -700,10 +691,6 @@ function getIncidentRadios() {
 function getIncidentFollowups() {
   // 後續處理方式是複選題，所以每一個 checkbox 都要各自記錄。
   return Array.from(document.querySelectorAll("[data-incident-followup]"));
-}
-
-function getShiftHandoffChecks() {
-  return Array.from(document.querySelectorAll("[data-shift-check]"));
 }
 
 function getSelectedIncidentRadioValue(name) {
@@ -950,15 +937,6 @@ function formatLocalTimeMinute(date = new Date()) {
 
 function formatDisplayDateTime(value) {
   return value ? value.replace("T", " ") : "-";
-}
-
-function getLocalDateKey(date = new Date()) {
-  const pad = (value) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-");
 }
 
 function setIncidentNow() {
@@ -1471,167 +1449,6 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
   });
 
   bar.replaceChildren(label, message, actions);
-}
-
-function createDefaultShiftHandoffState() {
-  return {
-    date: getLocalDateKey(),
-    startedAt: "",
-    endedAt: "",
-    checks: {},
-    lastSummary: "",
-  };
-}
-
-function normalizeShiftHandoffState(value) {
-  const today = getLocalDateKey();
-  if (!value || typeof value !== "object" || value.date !== today) {
-    return createDefaultShiftHandoffState();
-  }
-
-  return {
-    date: today,
-    startedAt: String(value.startedAt || ""),
-    endedAt: String(value.endedAt || ""),
-    checks: value.checks && typeof value.checks === "object" ? value.checks : {},
-    lastSummary: String(value.lastSummary || ""),
-  };
-}
-
-function loadShiftHandoffState() {
-  try {
-    const raw = localStorage.getItem(SHIFT_HANDOFF_STORAGE_KEY);
-    shiftHandoffState = normalizeShiftHandoffState(raw ? JSON.parse(raw) : null);
-  } catch {
-    shiftHandoffState = createDefaultShiftHandoffState();
-  }
-}
-
-function saveShiftHandoffState() {
-  try {
-    localStorage.setItem(SHIFT_HANDOFF_STORAGE_KEY, JSON.stringify(shiftHandoffState || createDefaultShiftHandoffState()));
-  } catch (err) {
-    setError("班別交接狀態暫存失敗：" + err.message);
-  }
-}
-
-function getShiftCheckDoneCount(checkIds) {
-  const checks = (shiftHandoffState && shiftHandoffState.checks) || {};
-  return checkIds.filter((id) => checks[id]).length;
-}
-
-function getShiftHandoffRecordCounts() {
-  const openRecords = getOpenIncidentRecords();
-  return {
-    open: openRecords.length,
-    due: openRecords.filter(isIncidentRecordDue).length,
-    ready: openRecords.filter(isIncidentRecordReadyToResolve).length,
-  };
-}
-
-function buildShiftHandoffSummary() {
-  const state = shiftHandoffState || createDefaultShiftHandoffState();
-  const counts = getShiftHandoffRecordCounts();
-  const openDone = getShiftCheckDoneCount(SHIFT_HANDOFF_OPEN_CHECKS);
-  const closeDone = getShiftCheckDoneCount(SHIFT_HANDOFF_CLOSE_CHECKS);
-  const startedAt = state.startedAt ? formatIncidentRecordTime(state.startedAt) : "-";
-  const endedAt = state.endedAt ? formatIncidentRecordTime(state.endedAt) : formatIncidentRecordTime(new Date().toISOString());
-
-  return [
-    `收班：未結案 ${counts.open} 件、待確認 ${counts.due} 件、可結案 ${counts.ready} 件。`,
-    `班別：開班 ${startedAt} / 收班 ${endedAt}。`,
-    `檢查：開班入口 ${openDone}/${SHIFT_HANDOFF_OPEN_CHECKS.length}，收班 ${closeDone}/${SHIFT_HANDOFF_CLOSE_CHECKS.length}。`,
-  ].join("\n");
-}
-
-function applyShiftHandoffStateToPage() {
-  const checks = (shiftHandoffState && shiftHandoffState.checks) || {};
-  getShiftHandoffChecks().forEach((check) => {
-    check.checked = Boolean(checks[check.dataset.shiftCheck]);
-  });
-}
-
-function setShiftHandoffStatus(message, type) {
-  const status = document.getElementById("shiftHandoffStatus");
-  if (!status) return;
-
-  status.className = type ? `shift-handoff-status ${type}` : "shift-handoff-status";
-  status.textContent = message || "";
-}
-
-function renderShiftHandoff() {
-  if (!shiftHandoffState) return;
-
-  const meta = document.getElementById("shiftHandoffMeta");
-  const summary = document.getElementById("shiftHandoffSummary");
-  const counts = getShiftHandoffRecordCounts();
-  const openDone = getShiftCheckDoneCount(SHIFT_HANDOFF_OPEN_CHECKS);
-  const closeDone = getShiftCheckDoneCount(SHIFT_HANDOFF_CLOSE_CHECKS);
-  const startedAt = shiftHandoffState.startedAt ? formatIncidentRecordTime(shiftHandoffState.startedAt) : "未開班";
-  const endedAt = shiftHandoffState.endedAt ? formatIncidentRecordTime(shiftHandoffState.endedAt) : "未收班";
-
-  if (meta) {
-    meta.textContent = `${shiftHandoffState.date} / ${startedAt} / ${endedAt} / 未結案 ${counts.open}、待確認 ${counts.due}、可結案 ${counts.ready}`;
-  }
-
-  if (summary) {
-    summary.textContent = shiftHandoffState.lastSummary
-      || `開班 ${openDone}/${SHIFT_HANDOFF_OPEN_CHECKS.length}，收班 ${closeDone}/${SHIFT_HANDOFF_CLOSE_CHECKS.length}`;
-  }
-}
-
-function updateShiftHandoffCheckState() {
-  if (!shiftHandoffState) shiftHandoffState = createDefaultShiftHandoffState();
-  shiftHandoffState.checks = {};
-  getShiftHandoffChecks().forEach((check) => {
-    shiftHandoffState.checks[check.dataset.shiftCheck] = check.checked;
-  });
-  saveShiftHandoffState();
-  renderShiftHandoff();
-}
-
-function startShiftHandoff() {
-  if (!shiftHandoffState) shiftHandoffState = createDefaultShiftHandoffState();
-  if (!shiftHandoffState.startedAt) {
-    shiftHandoffState.startedAt = new Date().toISOString();
-  }
-  saveShiftHandoffState();
-  renderShiftHandoff();
-  setShiftHandoffStatus("已記錄開班時間。", "success");
-}
-
-function closeShiftHandoff() {
-  if (!shiftHandoffState) shiftHandoffState = createDefaultShiftHandoffState();
-  shiftHandoffState.endedAt = new Date().toISOString();
-  shiftHandoffState.lastSummary = buildShiftHandoffSummary();
-  saveShiftHandoffState();
-  renderShiftHandoff();
-  setShiftHandoffStatus("已產生收班小結。", "success");
-}
-
-async function copyShiftHandoffSummary() {
-  try {
-    if (!shiftHandoffState) shiftHandoffState = createDefaultShiftHandoffState();
-    const summary = shiftHandoffState.lastSummary || buildShiftHandoffSummary();
-    shiftHandoffState.lastSummary = summary;
-    await navigator.clipboard.writeText(summary);
-    shiftHandoffState.checks.closeSummaryCopied = true;
-    saveShiftHandoffState();
-    applyShiftHandoffStateToPage();
-    renderShiftHandoff();
-    setShiftHandoffStatus("已複製收班小結。", "success");
-  } catch (err) {
-    setShiftHandoffStatus("收班小結複製失敗：" + err.message, "error");
-  }
-}
-
-function initShiftHandoffPanel() {
-  loadShiftHandoffState();
-  applyShiftHandoffStateToPage();
-  getShiftHandoffChecks().forEach((check) => {
-    check.addEventListener("change", updateShiftHandoffCheckState);
-  });
-  renderShiftHandoff();
 }
 
 function parseIncidentNotesTimeline(notes) {
@@ -2366,7 +2183,6 @@ function renderIncidentRecords(records) {
       ? "目前還沒有儲存的事件紀錄"
       : "目前沒有未結案事件紀錄";
     list.replaceChildren(createTextElement("div", "incident-history-empty", emptyText));
-    renderShiftHandoff();
     renderHandoverReadiness();
     renderDuplicateIncidentStatus();
     return;
@@ -2375,7 +2191,6 @@ function renderIncidentRecords(records) {
   const filteredRecords = getFilteredIncidentRecords(records);
   if (!filteredRecords.length) {
     list.replaceChildren(createTextElement("div", "incident-history-empty", "沒有符合篩選的事件紀錄"));
-    renderShiftHandoff();
     renderHandoverReadiness();
     renderDuplicateIncidentStatus();
     return;
@@ -2383,7 +2198,6 @@ function renderIncidentRecords(records) {
 
   const sortedRecords = [...filteredRecords].sort(compareIncidentRecordsForDisplay);
   list.replaceChildren(...sortedRecords.map(createIncidentRecordCard));
-  renderShiftHandoff();
   renderHandoverReadiness();
   renderDuplicateIncidentStatus();
 }
@@ -2537,7 +2351,6 @@ function clearIncidentState() {
 function initIncidentPanel() {
   initIncidentPhraseMenus();
   initIncidentHistoryFilters();
-  initShiftHandoffPanel();
   updateHandoverSummaryModeButtons();
   loadIncidentState();
   updateServiceTypeFieldVisibility();

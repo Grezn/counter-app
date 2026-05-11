@@ -104,7 +104,6 @@
 | `visitor_id` | localStorage | 訪客統計 ID | 非帳號身分 |
 | `noc_incident_state` | localStorage | 值班事件暫存 | 個人瀏覽器資料，不送後端保存 |
 | `noc_incident_active_record_id` | localStorage | 目前載入的事件紀錄 ID | 讓再次儲存時更新同一筆 Redis 紀錄 |
-| `noc_shift_handoff_state` | localStorage | 今日班別交接狀態 | 開班/收班 checklist 與收班小結，只保留本機今日狀態 |
 | `reset_token` | sessionStorage | reset token 暫存 | 關閉分頁後消失 |
 
 ## 前端功能
@@ -113,7 +112,7 @@
 - 計數器分頁：目前計數、+1、重設。
 - Reset：需要輸入 `RESET_TOKEN`，前端只放在本分頁 `sessionStorage`。
 - 本地即時氣象：瀏覽器可用 Geolocation，後端呼叫中央氣象署最近測站觀測與預報 API；也可在前端用「地區」手動固定顯示地區，避免桌機定位偏移。
-- 事件留存與交班：表單資料存在 localStorage，可產生完整/精簡/更新版交班摘要、追蹤狀態、交班前檢查、班別交接清單、事件搜尋篩選與處理紀錄時間軸。
+- 事件留存與交班：表單資料存在 localStorage，可產生完整/精簡/更新版交班摘要、追蹤狀態、交班前檢查、事件搜尋篩選與處理紀錄時間軸。
 - Jira 小卡：把事件與交班摘要送到後端，再由後端建立 Jira issue。
 - SOP 速查：從 `/api/runbooks` 讀取 `data/runbooks.json`。
 - 值班入口側邊欄：常用外部系統連結。
