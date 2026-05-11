@@ -1169,9 +1169,9 @@ button:disabled {
 
 .incident-history {
   margin-top: 16px;
-  border: 1px solid #303846;
+  border: 1px solid #2b3340;
   border-radius: 10px;
-  background: #11151b;
+  background: #111820;
   padding: 14px;
 }
 
@@ -1198,16 +1198,16 @@ button:disabled {
 .incident-history-filter {
   display: inline-flex;
   gap: 4px;
-  padding: 3px;
-  border: 1px solid #303846;
+  padding: 2px;
+  border: 1px solid #2b3340;
   border-radius: 8px;
-  background: #101418;
+  background: transparent;
 }
 
 .incident-filter-button {
   width: auto;
   margin: 0;
-  padding: 7px 10px;
+  padding: 6px 10px;
   border-radius: 6px;
   background: transparent;
   border: 0;
@@ -1230,14 +1230,13 @@ button:disabled {
 
 .incident-history-list {
   display: grid;
-  gap: 10px;
+  border-top: 1px solid #2b3340;
 }
 
 .incident-record {
-  padding: 14px 16px;
-  border-radius: 8px;
-  background: #101418;
-  border: 1px solid #2d3540;
+  padding: 14px 2px;
+  background: transparent;
+  border-bottom: 1px solid #252d39;
 }
 
 .incident-record.resolved {
@@ -1252,7 +1251,7 @@ button:disabled {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 18px;
 }
 
 .incident-record-title-block {
@@ -1263,13 +1262,12 @@ button:disabled {
 .incident-record-title {
   margin: 0 0 6px;
   color: #e8eaed;
-  font-size: 1.08rem;
+  font-size: 1.04rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .incident-record-meta,
-.incident-record-time,
 .incident-record-summary,
 .incident-history-empty {
   color: #a4adba;
@@ -1278,14 +1276,15 @@ button:disabled {
 }
 
 .incident-record-time {
-  display: block;
-  margin-top: 10px;
+  color: #a4adba;
+  font-size: 0.82rem;
+  line-height: 1.3;
   white-space: nowrap;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .incident-record-summary {
-  margin: 10px 0 0;
+  margin: 8px 0 0;
   overflow-wrap: anywhere;
 }
 
@@ -1305,22 +1304,30 @@ button:disabled {
 .incident-record-actions {
   display: flex;
   flex: 0 0 auto;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.incident-record-side {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .incident-record-action {
   width: auto;
   min-width: 0;
-  min-height: 30px;
+  min-height: 28px;
   margin: 0;
-  padding: 6px 10px;
+  padding: 5px 9px;
   border-radius: 6px;
-  background: #1d2530;
-  border: 1px solid #3a4b63;
+  background: transparent;
+  border: 1px solid #344052;
   color: #d8dde6;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 800;
   line-height: 1.2;
 }
@@ -1332,7 +1339,7 @@ button:disabled {
 }
 
 .incident-record-action.danger {
-  background: rgba(185, 28, 28, 0.18);
+  background: transparent;
   border-color: rgba(248, 113, 113, 0.4);
   color: #fecaca;
 }
@@ -1633,7 +1640,6 @@ body {
 }
 
 .quick-link,
-.incident-record,
 .incident-record-action,
 .weather-refresh,
 .weather-summary,
@@ -1653,7 +1659,6 @@ body {
 }
 
 html[data-theme="light"] .incident-history-filter {
-  background: #edf1f5;
   border-color: #aebaca;
 }
 
@@ -1673,7 +1678,7 @@ html[data-theme="light"] .incident-record-state {
 }
 
 html[data-theme="light"] .incident-record-action {
-  background: #edf1f5;
+  background: transparent;
   border-color: #aebaca;
   color: #334155;
 }
@@ -1685,7 +1690,7 @@ html[data-theme="light"] .incident-record-action.primary {
 }
 
 html[data-theme="light"] .incident-record-action.danger {
-  background: #fee2e2;
+  background: transparent;
   border-color: #fca5a5;
   color: #7f1d1d;
 }
@@ -1952,7 +1957,6 @@ html[data-theme="dark"] .link-drawer {
 
 html[data-theme="dark"] .link-drawer summary,
 html[data-theme="dark"] .link-drawer-body,
-html[data-theme="dark"] .incident-record,
 html[data-theme="dark"] .runbook-detail {
   background: #111827;
   border-color: #334155;
@@ -2192,11 +2196,15 @@ html[data-theme="dark"] a {
   .incident-record-top {
     flex-direction: column;
     align-items: stretch;
-    gap: 6px;
+    gap: 10px;
   }
 
   .incident-record-time {
     white-space: normal;
+  }
+
+  .incident-record-side {
+    align-items: flex-start;
   }
 
   .incident-record-actions {

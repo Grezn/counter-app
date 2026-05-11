@@ -1106,6 +1106,12 @@ function formatIncidentRecordTime(value) {
   }).format(date);
 }
 
+function formatIncidentRecordSavedTime(record) {
+  const value = record && (record.updatedAt || record.createdAt);
+  const formatted = formatIncidentRecordTime(value);
+  return formatted === "-" ? "" : `更新 ${formatted}`;
+}
+
 function isIncidentRecordResolved(record) {
   const status = String(record && record.status ? record.status : "").toLowerCase();
   return Boolean(record && (record.resolvedAt || status.includes("resolved") || status.includes("已解決")));
@@ -1235,6 +1241,9 @@ function createIncidentRecordCard(record) {
   const top = document.createElement("div");
   top.className = "incident-record-top";
 
+  const side = document.createElement("div");
+  side.className = "incident-record-side";
+
   const topActions = document.createElement("div");
   topActions.className = "incident-record-actions";
   topActions.appendChild(restoreButton);
@@ -1243,6 +1252,14 @@ function createIncidentRecordCard(record) {
     topActions.appendChild(resolveButton);
   }
   topActions.appendChild(deleteButton);
+
+  const savedTime = formatIncidentRecordSavedTime(record);
+  if (savedTime) {
+    const time = createTextElement("time", "incident-record-time", savedTime);
+    time.dateTime = record.updatedAt || record.createdAt;
+    side.appendChild(time);
+  }
+  side.appendChild(topActions);
 
   const titleBlock = document.createElement("div");
   titleBlock.className = "incident-record-title-block";
@@ -1257,13 +1274,9 @@ function createIncidentRecordCard(record) {
     titleBlock.appendChild(createTextElement("p", "incident-record-summary", record.summary));
   }
 
-  const time = createTextElement("time", "incident-record-time", formatIncidentRecordTime(record.createdAt));
-  if (record.createdAt) time.dateTime = record.createdAt;
-
   top.appendChild(titleBlock);
-  top.appendChild(topActions);
+  top.appendChild(side);
   body.appendChild(top);
-  body.appendChild(time);
   card.appendChild(body);
 
   return card;
