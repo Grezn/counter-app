@@ -884,6 +884,16 @@ function setIncidentNow() {
   updateHandoverSummary();
 }
 
+function clearIncidentNextCheckAt() {
+  const nextCheckAt = document.getElementById("incidentNextCheckAt");
+  if (!nextCheckAt) return;
+
+  nextCheckAt.value = "";
+  saveIncidentState();
+  setHandoverSummaryStatus("");
+  updateHandoverSummary();
+}
+
 function buildHandoverSummary() {
   const state = readIncidentStateFromPage();
   const fields = state.fields;

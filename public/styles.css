@@ -920,7 +920,8 @@ button:disabled {
   gap: 8px;
 }
 
-.phrase-trigger {
+.phrase-trigger,
+.field-mini-action {
   width: auto;
   min-height: 0;
   margin: 0;
@@ -1749,6 +1750,7 @@ body {
 .quick-link,
 .incident-record-action,
 .phrase-trigger,
+.field-mini-action,
 .phrase-menu,
 .weather-refresh,
 .weather-summary,
@@ -1817,6 +1819,12 @@ html[data-theme="light"] .incident-record-action.danger {
 }
 
 html[data-theme="light"] .phrase-trigger {
+  background: transparent;
+  border-color: #aebaca;
+  color: #64748b;
+}
+
+html[data-theme="light"] .field-mini-action {
   background: transparent;
   border-color: #aebaca;
   color: #64748b;
@@ -2158,6 +2166,7 @@ html[data-theme="dark"] .view-tab.active {
 html[data-theme="dark"] .quick-link,
 html[data-theme="dark"] .incident-record-action,
 html[data-theme="dark"] .phrase-trigger,
+html[data-theme="dark"] .field-mini-action,
 html[data-theme="dark"] .phrase-menu,
 html[data-theme="dark"] .weather-refresh,
 html[data-theme="dark"] .weather-summary,

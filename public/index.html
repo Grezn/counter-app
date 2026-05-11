@@ -175,7 +175,10 @@
         </div>
 
         <div class="field">
-          <label for="incidentNextCheckAt">下次確認</label>
+          <div class="field-label-row">
+            <label for="incidentNextCheckAt">下次確認</label>
+            <button class="field-mini-action" type="button" onclick="clearIncidentNextCheckAt()">清除</button>
+          </div>
           <input id="incidentNextCheckAt" type="datetime-local" data-incident-field="nextCheckAt" />
         </div>
 
