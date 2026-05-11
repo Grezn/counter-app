@@ -1200,41 +1200,8 @@ async function saveIncidentRecord() {
   }
 }
 
-function formatReportDateTime(date = new Date()) {
-  return new Intl.DateTimeFormat("zh-TW", {
-    timeZone: "Asia/Taipei",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(date);
-}
-
-function getWeatherReportText() {
-  if (latestWeatherReportText) return latestWeatherReportText;
-
-  const meta = document.getElementById("weatherMeta");
-  const content = document.getElementById("weatherContent");
-  return [meta && meta.textContent, content && content.textContent]
-    .map((value) => String(value || "").trim())
-    .filter(Boolean)
-    .join(" / ");
-}
-
-function getCoreLinkReportLines() {
-  const links = Array.from(document.querySelectorAll("#coreLinksGrid a.quick-link"));
-
-  if (!links.length) {
-    return ["- 無每日值班入口"];
-  }
-
-  return links.map((link) => {
-    const label = String(link.textContent || "").trim() || "入口";
-    return `- ${label}：${link.href}`;
-  });
+function normalizeReportValue(value) {
+  return String(value || "").trim();
 }
 
 function isIncidentRecordResolved(record) {
@@ -1242,23 +1209,61 @@ function isIncidentRecordResolved(record) {
   return status.includes("resolved") || status.includes("已解決");
 }
 
+function isIncidentRecordActionable(record) {
+  if (!record || isIncidentRecordResolved(record)) return false;
+
+  const fields = record.incident && record.incident.fields ? record.incident.fields : {};
+  return [
+    record.status,
+    fields.nextStep,
+    fields.handoverOwner,
+  ].some((value) => normalizeReportValue(value));
+}
+
+function isSameIncidentAsCurrentState(record, currentState) {
+  if (!record || !currentState) return false;
+
+  const fields = record.incident && record.incident.fields ? record.incident.fields : {};
+  const currentFields = currentState.fields || {};
+  const recordTitle = normalizeReportValue(record.title || fields.title);
+  const currentTitle = normalizeReportValue(currentFields.title);
+
+  if (!recordTitle || recordTitle !== currentTitle) return false;
+
+  const recordStartedAt = normalizeReportValue(fields.startedAt || record.startedAt);
+  const currentStartedAt = normalizeReportValue(currentFields.startedAt);
+  if (recordStartedAt || currentStartedAt) return recordStartedAt === currentStartedAt;
+
+  const recordKey = [
+    fields.customer,
+    fields.system,
+    fields.source,
+  ].map(normalizeReportValue).filter(Boolean).join("|");
+  const currentKey = [
+    currentFields.customer,
+    currentFields.system,
+    currentFields.source,
+  ].map(normalizeReportValue).filter(Boolean).join("|");
+
+  return Boolean(recordKey && recordKey === currentKey);
+}
+
 function formatIncidentRecordForReport(record, index) {
   const fields = record && record.incident && record.incident.fields ? record.incident.fields : {};
   const title = record.title || fields.title || "未命名事件";
-  const meta = getIncidentRecordMeta(record);
-  const startedAt = fields.startedAt || record.startedAt
-    ? formatDisplayDateTime(fields.startedAt || record.startedAt)
-    : formatIncidentRecordTime(record.createdAt);
+  const status = record.status || fields.status || "未標註狀態";
+  const owner = fields.handoverOwner || "-";
   const nextStep = fields.nextStep || record.summary || "-";
   const notified = fields.notified || "-";
+  const scope = [fields.customer, fields.system].filter(Boolean).join(" / ");
 
   return [
-    `${index + 1}. ${title}`,
-    `   狀態：${meta}`,
-    `   時間：${startedAt}`,
+    `${index + 1}. [${status}] ${title}`,
+    scope ? `   範圍：${scope}` : "",
     `   下一步：${nextStep}`,
+    `   接手人員：${owner}`,
     `   已通知：${notified}`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 function buildHandoverReport() {
@@ -1268,27 +1273,28 @@ function buildHandoverReport() {
   const hasCurrentIncident = hasIncidentContent(currentState);
   const currentSummary = document.getElementById("handoverSummary").value.trim();
   const openRecords = incidentRecordsCache
-    .filter((record) => !isIncidentRecordResolved(record))
+    .filter((record) => isIncidentRecordActionable(record))
+    .filter((record) => !isSameIncidentAsCurrentState(record, currentState))
     .slice(0, 5);
-  const weatherText = getWeatherReportText() || "-";
-  const linkLines = getCoreLinkReportLines();
+  const reportLines = ["【值班交班報告】"];
 
-  return [
-    "【值班交班報告】",
-    `產生時間：${formatReportDateTime()}`,
-    `本地氣象：${weatherText}`,
-    "",
-    "【目前表單事件】",
-    hasCurrentIncident ? currentSummary : "-",
-    "",
-    "【最近未結案事件】",
-    openRecords.length
-      ? openRecords.map(formatIncidentRecordForReport).join("\n\n")
-      : "-",
-    "",
-    "【每日值班入口】",
-    linkLines.join("\n"),
-  ].join("\n");
+  if (hasCurrentIncident) {
+    reportLines.push("", "【目前處理事件】", currentSummary);
+  }
+
+  if (openRecords.length) {
+    reportLines.push(
+      "",
+      "【其他待追蹤事項】",
+      openRecords.map(formatIncidentRecordForReport).join("\n\n"),
+    );
+  }
+
+  if (!hasCurrentIncident && !openRecords.length) {
+    reportLines.push("", "- 無需交接事件");
+  }
+
+  return reportLines.join("\n");
 }
 
 async function generateHandoverReport() {
@@ -1300,7 +1306,7 @@ async function generateHandoverReport() {
     await loadIncidentRecords({ showLoading: false });
     const report = buildHandoverReport();
     output.value = report;
-    setHandoverReportStatus("交班報告已產生。", "success");
+    setHandoverReportStatus("交班報告已產生，只包含事件與待追蹤事項。", "success");
     return report;
   } catch (err) {
     setHandoverReportStatus("交班報告產生失敗：" + err.message, "error");

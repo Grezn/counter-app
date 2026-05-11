@@ -302,11 +302,11 @@
         <textarea id="handoverReportOutput" class="handover-report-output" readonly></textarea>
       </section>
 
-      <section class="incident-history" aria-label="最近事件紀錄">
+      <section class="incident-history" aria-label="事件暫存紀錄">
         <div class="incident-history-header">
           <div>
-            <h3 class="workflow-title">最近事件紀錄</h3>
-            <p class="incident-history-note">儲存在後端 Redis，方便重新整理後接續交班。</p>
+            <h3 class="workflow-title">事件暫存紀錄</h3>
+            <p class="incident-history-note">用來載入或複製曾儲存的事件；交班報告只帶入仍需追蹤的項目。</p>
           </div>
           <button class="action-btn" type="button" onclick="loadIncidentRecords()">更新紀錄</button>
         </div>
@@ -362,7 +362,7 @@
         <div class="links-panel-header">
           <div>
             <h2 class="links-title">值班入口</h2>
-            <div class="links-note">每日固定入口放在外層；備用入口收在下方清單。</div>
+            <div class="links-note">供值班時快速開系統；固定連結不放進交班報告。</div>
           </div>
           <div class="links-header-actions">
             <button class="bulk-open" onclick="openCoreLinks()">一鍵開啟每日值班</button>
