@@ -1055,16 +1055,16 @@ function createIncidentRecordCard(record) {
   titleBlock.appendChild(createTextElement("h4", "incident-record-title", record.title || "未命名事件"));
   titleBlock.appendChild(createTextElement("div", "incident-record-meta", getIncidentRecordMeta(record)));
 
+  if (record.summary) {
+    titleBlock.appendChild(createTextElement("p", "incident-record-summary", record.summary));
+  }
+
   const time = createTextElement("time", "incident-record-time", formatIncidentRecordTime(record.createdAt));
   if (record.createdAt) time.dateTime = record.createdAt;
 
   top.appendChild(titleBlock);
   top.appendChild(time);
   card.appendChild(top);
-
-  if (record.summary) {
-    card.appendChild(createTextElement("p", "incident-record-summary", record.summary));
-  }
 
   const actions = document.createElement("div");
   actions.className = "incident-record-actions";
@@ -1083,7 +1083,7 @@ function createIncidentRecordCard(record) {
 
   actions.appendChild(restoreButton);
   actions.appendChild(copyButton);
-  card.appendChild(actions);
+  titleBlock.appendChild(actions);
 
   return card;
 }
