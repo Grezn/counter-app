@@ -1118,17 +1118,101 @@ button:disabled {
 
 .jira-status:empty,
 .handover-summary-status:empty,
+.duplicate-incident-status:empty,
+.notes-timeline:empty,
 .incident-history-status:empty {
   display: none;
 }
 
 .handover-summary-status,
+.duplicate-incident-status,
 .incident-history-status {
   margin: -4px 0 14px;
   padding: 10px 12px;
   border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.handover-readiness-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+  margin: -4px 0 14px;
+  padding: 8px 0;
+  border-top: 1px solid #2b3340;
+  border-bottom: 1px solid #2b3340;
+  color: #c7d0dd;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.readiness-label {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.handover-readiness-bar.ready .readiness-label {
+  background: rgba(22, 101, 52, 0.22);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  color: #bbf7d0;
+}
+
+.handover-readiness-bar.attention .readiness-label {
+  background: rgba(180, 83, 9, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.42);
+  color: #fed7aa;
+}
+
+.readiness-message {
+  color: #a4adba;
+}
+
+.readiness-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.readiness-action,
+.duplicate-incident-link {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.readiness-action:hover,
+.readiness-action:focus-visible,
+.duplicate-incident-link:hover,
+.duplicate-incident-link:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
+.duplicate-incident-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: rgba(180, 83, 9, 0.16);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: #fed7aa;
 }
 
 .phone-call-status {
@@ -1307,6 +1391,48 @@ button:disabled {
   resize: vertical;
 }
 
+.notes-timeline {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding-left: 10px;
+  border-left: 2px solid #334052;
+  color: #a4adba;
+}
+
+.notes-timeline-meta {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.notes-timeline-list {
+  display: grid;
+  gap: 5px;
+}
+
+.notes-timeline-row {
+  display: grid;
+  grid-template-columns: minmax(58px, auto) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.notes-timeline-row.muted {
+  opacity: 0.78;
+}
+
+.notes-timeline-time {
+  color: #bfdbfe;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.notes-timeline-text {
+  overflow-wrap: anywhere;
+}
+
 .incident-history {
   margin-top: 16px;
   border: 1px solid #2b3340;
@@ -1333,6 +1459,27 @@ button:disabled {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.incident-history-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.45fr) minmax(150px, 0.45fr);
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.incident-history-search,
+.incident-history-select {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #334052;
+  background: #101418;
+  color: #e8eaed;
+  font: inherit;
+  font-size: 0.86rem;
 }
 
 .incident-history-filter {
@@ -1787,6 +1934,8 @@ body {
 .incident-subtitle,
 .incident-history-note,
 .service-type-hint,
+.readiness-message,
+.notes-timeline,
 .drawer-hint,
 .link-count,
 .runbook-card-summary {
@@ -1816,6 +1965,8 @@ body {
 .field input:not([type="radio"]):not([type="checkbox"]),
 .field select,
 .field textarea,
+.incident-history-search,
+.incident-history-select,
 .summary-output,
 .runbook-controls input {
   background: #f3f6f9;
@@ -1903,6 +2054,38 @@ html[data-theme="light"] .summary-badge.missing {
   background: #fffbeb;
   border-color: #fcd34d;
   color: #92400e;
+}
+
+html[data-theme="light"] .handover-readiness-bar {
+  border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .handover-readiness-bar.ready .readiness-label {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
+}
+
+html[data-theme="light"] .handover-readiness-bar.attention .readiness-label,
+html[data-theme="light"] .duplicate-incident-status {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+html[data-theme="light"] .notes-timeline {
+  border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .notes-timeline-time {
+  color: #1e3a8a;
+}
+
+html[data-theme="light"] .readiness-action:hover,
+html[data-theme="light"] .readiness-action:focus-visible,
+html[data-theme="light"] .duplicate-incident-link:hover,
+html[data-theme="light"] .duplicate-incident-link:focus-visible {
+  color: #0f172a;
 }
 
 html[data-theme="light"] .missing-field-link:hover,
@@ -2205,6 +2388,8 @@ html[data-theme="dark"] .links-note,
 html[data-theme="dark"] .incident-subtitle,
 html[data-theme="dark"] .incident-history-note,
 html[data-theme="dark"] .service-type-hint,
+html[data-theme="dark"] .readiness-message,
+html[data-theme="dark"] .notes-timeline,
 html[data-theme="dark"] .incident-record-meta,
 html[data-theme="dark"] .incident-record-time,
 html[data-theme="dark"] .incident-record-summary,
@@ -2243,6 +2428,11 @@ html[data-theme="dark"] .view-tab.active {
   color: #ffffff;
 }
 
+html[data-theme="dark"] .handover-readiness-bar,
+html[data-theme="dark"] .notes-timeline {
+  border-color: #334155;
+}
+
 html[data-theme="dark"] .quick-link,
 html[data-theme="dark"] .incident-record-action,
 html[data-theme="dark"] .phrase-trigger,
@@ -2254,6 +2444,8 @@ html[data-theme="dark"] .weather-chip,
 html[data-theme="dark"] .field input:not([type="radio"]):not([type="checkbox"]),
 html[data-theme="dark"] .field select,
 html[data-theme="dark"] .field textarea,
+html[data-theme="dark"] .incident-history-search,
+html[data-theme="dark"] .incident-history-select,
 html[data-theme="dark"] .summary-output,
 html[data-theme="dark"] .runbook-controls input {
   background: #0f172a;
@@ -2386,6 +2578,7 @@ html[data-theme="dark"] a {
 
   .incident-grid,
   .incident-workflow,
+  .incident-history-toolbar,
   .details-grid,
   .weather-strip,
   .runbook-card-body,
@@ -2488,6 +2681,13 @@ html[data-theme="dark"] a {
   button {
     padding: 14px;
     border-radius: 12px;
+  }
+
+  .readiness-action,
+  .duplicate-incident-link,
+  .missing-field-link {
+    padding: 0;
+    border-radius: 0;
   }
 
   .stat-date {

@@ -86,8 +86,10 @@
           <button class="action-btn danger" onclick="clearIncidentState()">清空事件</button>
         </div>
       </div>
+      <div id="handoverReadinessBar" class="handover-readiness-bar" aria-live="polite"></div>
       <div id="jiraStatus" class="jira-status" role="status" aria-live="polite"></div>
       <div id="handoverSummaryStatus" class="handover-summary-status" role="status" aria-live="polite"></div>
+      <div id="duplicateIncidentStatus" class="duplicate-incident-status" role="status" aria-live="polite"></div>
       <div id="incidentHistoryStatus" class="incident-history-status" role="status" aria-live="polite"></div>
 
       <div class="incident-grid">
@@ -194,6 +196,7 @@
           </div>
           <div id="notesPhraseMenu" class="phrase-menu" hidden></div>
           <textarea id="incidentNotes" data-incident-field="notes" placeholder="依時間補處理紀錄，例如：22:15 確認告警；22:20 已轉二線。"></textarea>
+          <div id="incidentNotesTimeline" class="notes-timeline" aria-live="polite"></div>
         </div>
 
         <details class="incident-details">
@@ -324,6 +327,15 @@
             </div>
             <button class="action-btn" type="button" onclick="loadIncidentRecords()">更新紀錄</button>
           </div>
+        </div>
+        <div class="incident-history-toolbar" aria-label="事件紀錄搜尋與篩選">
+          <input id="incidentHistorySearch" class="incident-history-search" type="search" placeholder="搜尋事件、客戶、系統..." />
+          <select id="incidentHistoryCustomerFilter" class="incident-history-select" aria-label="依客戶篩選">
+            <option value="">全部客戶</option>
+          </select>
+          <select id="incidentHistorySystemFilter" class="incident-history-select" aria-label="依系統篩選">
+            <option value="">全部系統</option>
+          </select>
         </div>
         <div id="incidentHistoryList" class="incident-history-list">事件紀錄載入中...</div>
       </section>

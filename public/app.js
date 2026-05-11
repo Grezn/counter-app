@@ -658,7 +658,13 @@ const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
 let incidentRecordsCache = [];
 let activeIncidentRecordId = "";
+let activeIncidentSavedSnapshot = null;
 let incidentHistoryView = "open";
+let incidentHistoryFilters = {
+  keyword: "",
+  customer: "",
+  system: "",
+};
 
 function getIncidentFields() {
   // 用 data-incident-field 找到事件表單欄位。
@@ -764,7 +770,11 @@ function updateSaveIncidentButtonLabel() {
 }
 
 function setActiveIncidentRecordId(id) {
-  activeIncidentRecordId = String(id || "");
+  const nextActiveId = String(id || "");
+  if (nextActiveId !== activeIncidentRecordId) {
+    activeIncidentSavedSnapshot = null;
+  }
+  activeIncidentRecordId = nextActiveId;
 
   try {
     if (activeIncidentRecordId) {
@@ -787,6 +797,50 @@ function loadActiveIncidentRecordId() {
   }
 
   updateSaveIncidentButtonLabel();
+}
+
+function compactComparableMap(map, valueMapper = (value) => String(value || "").trim()) {
+  return Object.keys(map || {})
+    .sort()
+    .reduce((result, key) => {
+      const value = valueMapper(map[key]);
+      if (value) result[key] = value;
+      return result;
+    }, {});
+}
+
+function normalizeComparableIncidentState(state) {
+  const incidentState = state || {};
+
+  return {
+    fields: compactComparableMap(incidentState.fields),
+    checks: compactComparableMap(incidentState.checks, (value) => (value ? "1" : "")),
+    radios: compactComparableMap(incidentState.radios),
+    followups: compactComparableMap(incidentState.followups, (value) => (value ? "1" : "")),
+  };
+}
+
+function setActiveIncidentSavedSnapshot(record) {
+  activeIncidentSavedSnapshot = record && record.incident
+    ? normalizeComparableIncidentState(record.incident)
+    : null;
+}
+
+function getActiveIncidentRecord() {
+  if (!activeIncidentRecordId) return null;
+  return incidentRecordsCache.find((record) => record.id === activeIncidentRecordId) || null;
+}
+
+function hasCurrentIncidentUnsavedChanges(state = readIncidentStateFromPage()) {
+  if (!hasIncidentContent(state)) return false;
+
+  const currentSnapshot = normalizeComparableIncidentState(state);
+  const cachedRecord = getActiveIncidentRecord();
+  const savedSnapshot = activeIncidentSavedSnapshot
+    || (cachedRecord && normalizeComparableIncidentState(cachedRecord.incident));
+
+  if (!activeIncidentRecordId || !savedSnapshot) return true;
+  return JSON.stringify(currentSnapshot) !== JSON.stringify(savedSnapshot);
 }
 
 function normalizeIncidentFieldValue(fieldName, value) {
@@ -992,6 +1046,9 @@ function updateHandoverSummary() {
   }
 
   updateHandoverSummaryBadge();
+  renderIncidentNotesTimeline();
+  renderDuplicateIncidentStatus();
+  renderHandoverReadiness();
 }
 
 function closeIncidentPhraseMenus() {
@@ -1104,6 +1161,172 @@ function setHandoverSummaryMissingStatus(missingFields) {
   nodes.push(document.createTextNode("。"));
 
   status.replaceChildren(...nodes);
+}
+
+function scrollToIncidentHistory() {
+  const history = document.querySelector(".incident-history");
+  if (history) {
+    history.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+}
+
+function clearIncidentHistoryFilters() {
+  incidentHistoryFilters = {
+    keyword: "",
+    customer: "",
+    system: "",
+  };
+
+  const search = document.getElementById("incidentHistorySearch");
+  const customer = document.getElementById("incidentHistoryCustomerFilter");
+  const system = document.getElementById("incidentHistorySystemFilter");
+  if (search) search.value = "";
+  if (customer) customer.value = "";
+  if (system) system.value = "";
+}
+
+function createInlineAction(label, onClick, className = "readiness-action") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = className;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function getOpenIncidentRecords(records = incidentRecordsCache) {
+  return (records || []).filter((record) => !isIncidentRecordResolved(record));
+}
+
+function getRecordsMissingNextStep(records = incidentRecordsCache) {
+  return getOpenIncidentRecords(records).filter((record) => {
+    const fields = getIncidentRecordFields(record);
+    return !String(fields.nextStep || "").trim();
+  });
+}
+
+function renderHandoverReadiness(state = readIncidentStateFromPage()) {
+  const bar = document.getElementById("handoverReadinessBar");
+  if (!bar) return;
+
+  const currentHasContent = hasIncidentContent(state);
+  const missingSummaryFields = currentHasContent ? getMissingHandoverSummaryFields(state) : [];
+  const dueRecords = getOpenIncidentRecords().filter(isIncidentRecordDue);
+  const recordsMissingNextStep = getRecordsMissingNextStep();
+  const staleResolvedRecords = incidentRecordsCache.filter(isIncidentRecordResolved);
+  const issues = [];
+
+  if (missingSummaryFields.length) {
+    issues.push({
+      label: `摘要缺 ${missingSummaryFields.length} 項`,
+      action: () => {
+        setHandoverSummaryMissingStatus(missingSummaryFields);
+        focusHandoverSummaryField(missingSummaryFields[0]);
+      },
+    });
+  }
+
+  if (hasCurrentIncidentUnsavedChanges(state)) {
+    issues.push({
+      label: activeIncidentRecordId ? "目前事件未更新" : "目前事件未儲存",
+      action: () => saveIncidentRecord(),
+    });
+  }
+
+  if (dueRecords.length) {
+    issues.push({
+      label: `待確認 ${dueRecords.length} 件`,
+      action: () => {
+        clearIncidentHistoryFilters();
+        setIncidentHistoryView("open");
+        scrollToIncidentHistory();
+      },
+    });
+  }
+
+  if (recordsMissingNextStep.length) {
+    issues.push({
+      label: `未填下一步 ${recordsMissingNextStep.length} 件`,
+      action: () => {
+        clearIncidentHistoryFilters();
+        setIncidentHistoryView("open");
+        scrollToIncidentHistory();
+      },
+    });
+  }
+
+  if (staleResolvedRecords.length && incidentHistoryView === "open") {
+    issues.push({
+      label: `已解決仍在列表 ${staleResolvedRecords.length} 件`,
+      action: () => loadIncidentRecords({ showLoading: false }),
+    });
+  }
+
+  const isReady = issues.length === 0;
+  bar.className = `handover-readiness-bar ${isReady ? "ready" : "attention"}`;
+
+  const label = createTextElement("span", "readiness-label", isReady ? "可交班" : `還有 ${issues.length} 件要處理`);
+  const message = createTextElement(
+    "span",
+    "readiness-message",
+    isReady ? "摘要與未結案事件看起來都完整。" : "交班前先處理這些項目。",
+  );
+  const actions = document.createElement("div");
+  actions.className = "readiness-actions";
+  issues.forEach((issue) => {
+    actions.appendChild(createInlineAction(issue.label, issue.action));
+  });
+
+  bar.replaceChildren(label, message, actions);
+}
+
+function parseIncidentNotesTimeline(notes) {
+  return String(notes || "")
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const match = line.match(/^(?:(\d{4}[/-]\d{1,2}[/-]\d{1,2}|\d{1,2}[/-]\d{1,2})\s+)?(\d{1,2}:\d{2})(?:\s*[-|]\s*)?(.*)$/);
+      if (!match) {
+        return {
+          time: "補充",
+          text: line,
+          hasTime: false,
+        };
+      }
+
+      return {
+        time: `${match[1] ? `${match[1]} ` : ""}${match[2]}`,
+        text: match[3] ? match[3].trim() : line,
+        hasTime: true,
+      };
+    });
+}
+
+function renderIncidentNotesTimeline() {
+  const timeline = document.getElementById("incidentNotesTimeline");
+  const notes = document.getElementById("incidentNotes");
+  if (!timeline || !notes) return;
+
+  const entries = parseIncidentNotesTimeline(notes.value);
+  if (!entries.length || !entries.some((entry) => entry.hasTime)) {
+    timeline.replaceChildren();
+    return;
+  }
+
+  const meta = createTextElement("div", "notes-timeline-meta", `時間軸 ${entries.length} 筆`);
+  const list = document.createElement("div");
+  list.className = "notes-timeline-list";
+
+  entries.forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = entry.hasTime ? "notes-timeline-row" : "notes-timeline-row muted";
+    row.appendChild(createTextElement("span", "notes-timeline-time", entry.time));
+    row.appendChild(createTextElement("span", "notes-timeline-text", entry.text));
+    list.appendChild(row);
+  });
+
+  timeline.replaceChildren(meta, list);
 }
 
 async function copyHandoverSummary() {
@@ -1386,11 +1609,100 @@ function getIncidentRecordMeta(record) {
   ].filter(Boolean).join(" / ") || "未分類事件";
 }
 
+function normalizeIncidentSearchText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function getIncidentSearchTokens(value) {
+  return normalizeIncidentSearchText(value)
+    .replace(/[^\w\u4e00-\u9fff]+/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length >= 3);
+}
+
+function countSharedIncidentTokens(left, right) {
+  const rightTokens = new Set(getIncidentSearchTokens(right));
+  return getIncidentSearchTokens(left).filter((token) => rightTokens.has(token)).length;
+}
+
+function getIncidentRecordSearchText(record) {
+  const fields = getIncidentRecordFields(record);
+  return [
+    record.title,
+    record.summary,
+    record.severity,
+    record.status,
+    record.customer,
+    record.system,
+    record.source,
+    record.handoverSummary,
+    fields.problemDescription,
+    fields.impact,
+    fields.nextStep,
+    fields.notes,
+  ].join(" ");
+}
+
+function isLikelyDuplicateIncident(state, record) {
+  if (!record || record.id === activeIncidentRecordId || isIncidentRecordResolved(record)) return false;
+
+  const fields = state.fields || {};
+  const recordFields = getIncidentRecordFields(record);
+  const title = normalizeIncidentSearchText(fields.title);
+  const recordTitle = normalizeIncidentSearchText(record.title || recordFields.title);
+  if (!title || !recordTitle) return false;
+
+  const sameCustomer = Boolean(fields.customer && record.customer)
+    && normalizeIncidentSearchText(fields.customer) === normalizeIncidentSearchText(record.customer);
+  const sameSystem = Boolean(fields.system && record.system)
+    && normalizeIncidentSearchText(fields.system) === normalizeIncidentSearchText(record.system);
+  const titleContains = title.length >= 8 && recordTitle.length >= 8
+    && (title.includes(recordTitle) || recordTitle.includes(title));
+  const sharedTokens = countSharedIncidentTokens(title, recordTitle);
+
+  return titleContains
+    || sharedTokens >= 2
+    || ((sameCustomer || sameSystem) && sharedTokens >= 1);
+}
+
+function getDuplicateIncidentMatches(state = readIncidentStateFromPage()) {
+  if (!hasIncidentContent(state)) return [];
+
+  return incidentRecordsCache
+    .filter((record) => isLikelyDuplicateIncident(state, record))
+    .sort(compareIncidentRecordsForDisplay)
+    .slice(0, 3);
+}
+
+function renderDuplicateIncidentStatus(state = readIncidentStateFromPage()) {
+  const status = document.getElementById("duplicateIncidentStatus");
+  if (!status) return;
+
+  const matches = getDuplicateIncidentMatches(state);
+  if (!matches.length) {
+    status.replaceChildren();
+    return;
+  }
+
+  const label = createTextElement("span", "", "可能已有相似未結案事件：");
+  const actions = matches.map((record) => createInlineAction(
+    record.title || "未命名事件",
+    () => restoreIncidentRecord(record),
+    "duplicate-incident-link",
+  ));
+
+  status.replaceChildren(label, ...actions);
+}
+
 function restoreIncidentRecord(record) {
   if (!record || !record.incident) return;
 
   applyIncidentStateToPage(record.incident);
   setActiveIncidentRecordId(record.id);
+  setActiveIncidentSavedSnapshot(record);
   saveIncidentState();
   updateHandoverSummary();
   setHandoverSummaryStatus("");
@@ -1427,6 +1739,7 @@ async function resolveIncidentRecord(record) {
 
     if (activeIncidentRecordId === record.id && data.incident && data.incident.incident) {
       applyIncidentStateToPage(data.incident.incident);
+      setActiveIncidentSavedSnapshot(data.incident);
       saveIncidentState();
       updateHandoverSummary();
     }
@@ -1552,22 +1865,117 @@ function createIncidentRecordCard(record) {
   return card;
 }
 
+function getUniqueIncidentFilterValues(records, fieldName) {
+  return Array.from(new Set((records || [])
+    .map((record) => String(record[fieldName] || getIncidentRecordFields(record)[fieldName] || "").trim())
+    .filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, "zh-Hant"));
+}
+
+function setIncidentFilterOptions(select, placeholder, values, currentValue) {
+  if (!select) return "";
+
+  const options = [""].concat(values);
+  const nextValue = options.includes(currentValue) ? currentValue : "";
+
+  select.replaceChildren(...options.map((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value || placeholder;
+    return option;
+  }));
+  select.value = nextValue;
+  return nextValue;
+}
+
+function renderIncidentHistoryFilterOptions(records) {
+  incidentHistoryFilters.customer = setIncidentFilterOptions(
+    document.getElementById("incidentHistoryCustomerFilter"),
+    "全部客戶",
+    getUniqueIncidentFilterValues(records, "customer"),
+    incidentHistoryFilters.customer,
+  );
+  incidentHistoryFilters.system = setIncidentFilterOptions(
+    document.getElementById("incidentHistorySystemFilter"),
+    "全部系統",
+    getUniqueIncidentFilterValues(records, "system"),
+    incidentHistoryFilters.system,
+  );
+}
+
+function getFilteredIncidentRecords(records) {
+  const keyword = normalizeIncidentSearchText(incidentHistoryFilters.keyword);
+  const keywords = keyword ? keyword.split(/\s+/).filter(Boolean) : [];
+
+  return (records || []).filter((record) => {
+    const fields = getIncidentRecordFields(record);
+    const customer = String(record.customer || fields.customer || "").trim();
+    const system = String(record.system || fields.system || "").trim();
+    if (incidentHistoryFilters.customer && customer !== incidentHistoryFilters.customer) return false;
+    if (incidentHistoryFilters.system && system !== incidentHistoryFilters.system) return false;
+
+    if (!keywords.length) return true;
+    const searchableText = normalizeIncidentSearchText(getIncidentRecordSearchText(record));
+    return keywords.every((item) => searchableText.includes(item));
+  });
+}
+
+function initIncidentHistoryFilters() {
+  const search = document.getElementById("incidentHistorySearch");
+  const customer = document.getElementById("incidentHistoryCustomerFilter");
+  const system = document.getElementById("incidentHistorySystemFilter");
+
+  if (search) {
+    search.addEventListener("input", () => {
+      incidentHistoryFilters.keyword = search.value;
+      renderIncidentRecords(incidentRecordsCache);
+    });
+  }
+
+  if (customer) {
+    customer.addEventListener("change", () => {
+      incidentHistoryFilters.customer = customer.value;
+      renderIncidentRecords(incidentRecordsCache);
+    });
+  }
+
+  if (system) {
+    system.addEventListener("change", () => {
+      incidentHistoryFilters.system = system.value;
+      renderIncidentRecords(incidentRecordsCache);
+    });
+  }
+}
+
 function renderIncidentRecords(records) {
   const list = document.getElementById("incidentHistoryList");
   if (!list) return;
 
   incidentRecordsCache = Array.isArray(records) ? records : [];
+  renderIncidentHistoryFilterOptions(incidentRecordsCache);
 
   if (!records || records.length === 0) {
     const emptyText = incidentHistoryView === "all"
       ? "目前還沒有儲存的事件紀錄"
       : "目前沒有未結案事件紀錄";
     list.replaceChildren(createTextElement("div", "incident-history-empty", emptyText));
+    renderHandoverReadiness();
+    renderDuplicateIncidentStatus();
     return;
   }
 
-  const sortedRecords = [...records].sort(compareIncidentRecordsForDisplay);
+  const filteredRecords = getFilteredIncidentRecords(records);
+  if (!filteredRecords.length) {
+    list.replaceChildren(createTextElement("div", "incident-history-empty", "沒有符合篩選的事件紀錄"));
+    renderHandoverReadiness();
+    renderDuplicateIncidentStatus();
+    return;
+  }
+
+  const sortedRecords = [...filteredRecords].sort(compareIncidentRecordsForDisplay);
   list.replaceChildren(...sortedRecords.map(createIncidentRecordCard));
+  renderHandoverReadiness();
+  renderDuplicateIncidentStatus();
 }
 
 function refreshIncidentRecordReminderState() {
@@ -1609,7 +2017,7 @@ async function loadIncidentRecords(options = {}) {
     }
 
     const params = new URLSearchParams({
-      limit: "20",
+      limit: "50",
       view: incidentHistoryView,
     });
     const res = await fetch(`/api/incidents?${params.toString()}`, {
@@ -1622,6 +2030,10 @@ async function loadIncidentRecords(options = {}) {
     }
 
     incidentRecordsCache = data.incidents || [];
+    const activeRecord = getActiveIncidentRecord();
+    if (activeRecord) {
+      setActiveIncidentSavedSnapshot(activeRecord);
+    }
     renderIncidentRecords(incidentRecordsCache);
     return incidentRecordsCache;
   } catch (err) {
@@ -1668,6 +2080,7 @@ async function saveIncidentRecord() {
     }
 
     setActiveIncidentRecordId(data.incident.id);
+    setActiveIncidentSavedSnapshot(data.incident);
     setIncidentHistoryStatus(`${recordId ? "已更新事件" : "已儲存事件"}：${data.incident.title}`, "success");
     await loadIncidentRecords({ showLoading: false });
   } catch (err) {
@@ -1712,6 +2125,7 @@ function clearIncidentState() {
 
 function initIncidentPanel() {
   initIncidentPhraseMenus();
+  initIncidentHistoryFilters();
   loadIncidentState();
   updateServiceTypeFieldVisibility();
   loadActiveIncidentRecordId();

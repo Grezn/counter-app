@@ -94,6 +94,7 @@
 | `stats:total_unique_visitors` | HyperLogLog | 累計不重複訪客估算 | 無 |
 | `stats:daily_unique_visitors:YYYY-MM-DD` | HyperLogLog | 每日不重複訪客估算 | 30 天 |
 | `stats:active_visitors_zset` | sorted set | 最近 30 秒活躍訪客 | 約 60 秒 |
+| `incidents:recent` | list | 最近事件暫存紀錄，供未結案列表、搜尋篩選與交班檢查列使用 | 無 |
 
 ### Browser storage
 
@@ -111,7 +112,7 @@
 - 計數器分頁：目前計數、+1、重設。
 - Reset：需要輸入 `RESET_TOKEN`，前端只放在本分頁 `sessionStorage`。
 - 本地即時氣象：瀏覽器可用 Geolocation，後端呼叫中央氣象署最近測站觀測與預報 API；也可在前端用「地區」手動固定顯示地區，避免桌機定位偏移。
-- 事件留存與交班：表單資料存在 localStorage，可產生交班摘要。
+- 事件留存與交班：表單資料存在 localStorage，可產生交班摘要、交班前檢查、事件搜尋篩選與處理紀錄時間軸。
 - Jira 小卡：把事件與交班摘要送到後端，再由後端建立 Jira issue。
 - SOP 速查：從 `/api/runbooks` 讀取 `data/runbooks.json`。
 - 值班入口側邊欄：常用外部系統連結。
