@@ -276,7 +276,7 @@ h1 {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 8px 9px;
   border-radius: 7px;
@@ -291,7 +291,7 @@ h1 {
   font-size: 0.7rem;
   font-weight: 800;
   line-height: 1.1;
-  text-align: center;
+  text-align: left;
 }
 
 .weather-chip-value {
@@ -302,7 +302,7 @@ h1 {
   font-weight: 800;
   line-height: 1.2;
   overflow-wrap: break-word;
-  text-align: center;
+  text-align: left;
 }
 
 .weather-placeholder {
