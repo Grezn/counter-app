@@ -1218,6 +1218,64 @@ button:disabled {
   font-size: 0.98rem;
 }
 
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.summary-header .workflow-title {
+  margin: 0;
+}
+
+.summary-badge {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #3a4b63;
+  background: transparent;
+  color: #a4adba;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.summary-badge.complete {
+  background: rgba(22, 101, 52, 0.22);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: #bbf7d0;
+}
+
+.summary-badge.missing {
+  background: rgba(180, 83, 9, 0.18);
+  border-color: rgba(251, 191, 36, 0.42);
+  color: #fed7aa;
+}
+
+.missing-field-link {
+  display: inline;
+  width: auto;
+  min-height: 0;
+  margin: 0 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.missing-field-link:hover,
+.missing-field-link:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
 .check-item {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
@@ -1828,6 +1886,28 @@ html[data-theme="light"] .field-mini-action {
   background: transparent;
   border-color: #aebaca;
   color: #64748b;
+}
+
+html[data-theme="light"] .summary-badge {
+  border-color: #aebaca;
+  color: #64748b;
+}
+
+html[data-theme="light"] .summary-badge.complete {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
+}
+
+html[data-theme="light"] .summary-badge.missing {
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+html[data-theme="light"] .missing-field-link:hover,
+html[data-theme="light"] .missing-field-link:focus-visible {
+  color: #450a0a;
 }
 
 html[data-theme="light"] .phrase-trigger[aria-expanded="true"] {

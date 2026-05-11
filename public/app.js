@@ -990,6 +990,8 @@ function updateHandoverSummary() {
   if (output) {
     output.value = buildHandoverSummary();
   }
+
+  updateHandoverSummaryBadge();
 }
 
 function closeIncidentPhraseMenus() {
@@ -1069,14 +1071,49 @@ function focusHandoverSummaryField(item) {
   field.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
+function updateHandoverSummaryBadge(state = readIncidentStateFromPage()) {
+  const badge = document.getElementById("handoverSummaryBadge");
+  if (!badge) return;
+
+  const missingFields = getMissingHandoverSummaryFields(state);
+  const isComplete = missingFields.length === 0;
+  badge.className = `summary-badge ${isComplete ? "complete" : "missing"}`;
+  badge.textContent = isComplete ? "摘要完整" : `缺 ${missingFields.length} 項`;
+  badge.title = isComplete
+    ? "交班摘要可複製"
+    : `尚缺：${missingFields.map((item) => item.label).join("、")}`;
+}
+
+function setHandoverSummaryMissingStatus(missingFields) {
+  const status = document.getElementById("handoverSummaryStatus");
+  if (!status) return;
+
+  status.className = "handover-summary-status error";
+
+  const nodes = [document.createTextNode("交班摘要還缺：")];
+  missingFields.forEach((item, index) => {
+    if (index > 0) nodes.push(document.createTextNode("、"));
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "missing-field-link";
+    button.textContent = item.label;
+    button.addEventListener("click", () => focusHandoverSummaryField(item));
+    nodes.push(button);
+  });
+  nodes.push(document.createTextNode("。"));
+
+  status.replaceChildren(...nodes);
+}
+
 async function copyHandoverSummary() {
   try {
     const state = readIncidentStateFromPage();
     const missingFields = getMissingHandoverSummaryFields(state);
 
     if (missingFields.length) {
-      setHandoverSummaryStatus(`交班摘要還缺：${missingFields.map((item) => item.label).join("、")}。`, "error");
-      focusHandoverSummaryField(missingFields[0]);
+      setHandoverSummaryMissingStatus(missingFields);
+      updateHandoverSummaryBadge(state);
       return;
     }
 
