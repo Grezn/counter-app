@@ -622,6 +622,31 @@ const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
   { field: "nextStep", label: "下一步", elementId: "incidentNextStep" },
   { field: "notified", label: "已通知", elementId: "incidentNotified" },
 ];
+const INCIDENT_PHRASE_GROUPS = {
+  nextStep: {
+    fieldId: "incidentNextStep",
+    menuId: "nextStepPhraseMenu",
+    phrases: [
+      "已通知二線，等待回覆。",
+      "持續監控，若再發生告警再升級處理。",
+      "請客戶補充錯誤截圖 / 序號 / 聯絡資訊。",
+      "待客戶或窗口回覆後再更新處理紀錄。",
+      "已建立 Jira 小卡，後續於小卡追蹤。",
+    ],
+  },
+  notes: {
+    fieldId: "incidentNotes",
+    menuId: "notesPhraseMenu",
+    withTime: true,
+    phrases: [
+      "已確認告警時間與來源。",
+      "已確認目前暫無服務影響。",
+      "已通知相關窗口並等待回覆。",
+      "已依 SOP 完成初步檢查。",
+      "已回覆客戶目前處理狀態。",
+    ],
+  },
+};
 const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
 let incidentRecordsCache = [];
@@ -794,6 +819,11 @@ function formatLocalDateTime(date) {
   ].join("-") + "T" + [pad(date.getHours()), pad(date.getMinutes())].join(":");
 }
 
+function formatLocalTimeMinute(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return [pad(date.getHours()), pad(date.getMinutes())].join(":");
+}
+
 function formatDisplayDateTime(value) {
   return value ? value.replace("T", " ") : "-";
 }
@@ -881,6 +911,70 @@ function updateHandoverSummary() {
   if (output) {
     output.value = buildHandoverSummary();
   }
+}
+
+function closeIncidentPhraseMenus() {
+  Object.values(INCIDENT_PHRASE_GROUPS).forEach((group) => {
+    const menu = document.getElementById(group.menuId);
+    const trigger = document.querySelector(`[aria-controls="${group.menuId}"]`);
+
+    if (menu) menu.hidden = true;
+    if (trigger) trigger.setAttribute("aria-expanded", "false");
+  });
+}
+
+function toggleIncidentPhraseMenu(groupName) {
+  const group = INCIDENT_PHRASE_GROUPS[groupName];
+  if (!group) return;
+
+  const menu = document.getElementById(group.menuId);
+  const trigger = document.querySelector(`[aria-controls="${group.menuId}"]`);
+  if (!menu) return;
+
+  const shouldOpen = menu.hidden;
+  closeIncidentPhraseMenus();
+  menu.hidden = !shouldOpen;
+  if (trigger) trigger.setAttribute("aria-expanded", String(shouldOpen));
+}
+
+function insertTextAtFieldEnd(field, text) {
+  const currentValue = field.value;
+  const prefix = currentValue && !currentValue.endsWith("\n") ? "\n" : "";
+  field.value = `${currentValue}${prefix}${text}`;
+  field.focus();
+  field.selectionStart = field.value.length;
+  field.selectionEnd = field.value.length;
+}
+
+function insertIncidentPhrase(groupName, phrase) {
+  const group = INCIDENT_PHRASE_GROUPS[groupName];
+  const field = group && document.getElementById(group.fieldId);
+  if (!group || !field) return;
+
+  const text = group.withTime ? `${formatLocalTimeMinute()} ${phrase}` : phrase;
+  insertTextAtFieldEnd(field, text);
+  saveIncidentState();
+  setHandoverSummaryStatus("");
+  updateHandoverSummary();
+  closeIncidentPhraseMenus();
+}
+
+function initIncidentPhraseMenus() {
+  Object.entries(INCIDENT_PHRASE_GROUPS).forEach(([groupName, group]) => {
+    const menu = document.getElementById(group.menuId);
+    if (!menu) return;
+
+    const buttons = group.phrases.map((phrase) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "phrase-menu-item";
+      button.textContent = phrase;
+      button.addEventListener("click", () => insertIncidentPhrase(groupName, phrase));
+      return button;
+    });
+
+    menu.replaceChildren(...buttons);
+  });
 }
 
 function getMissingHandoverSummaryFields(state = readIncidentStateFromPage()) {
@@ -1433,6 +1527,7 @@ function clearIncidentState() {
 }
 
 function initIncidentPanel() {
+  initIncidentPhraseMenus();
   loadIncidentState();
   loadActiveIncidentRecordId();
   if (!hasIncidentContent(readIncidentStateFromPage())) {
@@ -1460,6 +1555,18 @@ function initIncidentPanel() {
 
   getIncidentFollowups().forEach((followup) => {
     followup.addEventListener("change", syncIncidentState);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".has-phrase-menu")) {
+      closeIncidentPhraseMenus();
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeIncidentPhraseMenus();
+    }
   });
 }
 

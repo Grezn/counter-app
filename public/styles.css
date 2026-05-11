@@ -882,6 +882,10 @@ button:disabled {
   gap: 6px;
 }
 
+.field.has-phrase-menu {
+  position: relative;
+}
+
 .field.full {
   grid-column: 1 / -1;
 }
@@ -902,6 +906,72 @@ button:disabled {
   color: #c7d0dd;
   font-size: 0.84rem;
   font-weight: 700;
+}
+
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.phrase-trigger {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid #3a4b63;
+  color: #a4adba;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.phrase-trigger[aria-expanded="true"] {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+.phrase-menu {
+  position: absolute;
+  z-index: 20;
+  top: 28px;
+  right: 0;
+  display: grid;
+  width: min(340px, 100%);
+  padding: 6px;
+  border-radius: 8px;
+  background: #101418;
+  border: 1px solid #334052;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.phrase-menu[hidden] {
+  display: none;
+}
+
+.phrase-menu-item {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: 0;
+  color: #d8dde6;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.phrase-menu-item:hover,
+.phrase-menu-item:focus-visible {
+  background: #1d2530;
+  outline: none;
 }
 
 .field input:not([type="radio"]):not([type="checkbox"]),
@@ -1641,6 +1711,8 @@ body {
 
 .quick-link,
 .incident-record-action,
+.phrase-trigger,
+.phrase-menu,
 .weather-refresh,
 .weather-summary,
 .weather-chip,
@@ -1693,6 +1765,33 @@ html[data-theme="light"] .incident-record-action.danger {
   background: transparent;
   border-color: #fca5a5;
   color: #7f1d1d;
+}
+
+html[data-theme="light"] .phrase-trigger {
+  background: transparent;
+  border-color: #aebaca;
+  color: #64748b;
+}
+
+html[data-theme="light"] .phrase-trigger[aria-expanded="true"] {
+  background: #0f766e;
+  border-color: #0d9488;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .phrase-menu {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  box-shadow: 0 16px 32px rgba(30, 41, 59, 0.18);
+}
+
+html[data-theme="light"] .phrase-menu-item {
+  color: #334155;
+}
+
+html[data-theme="light"] .phrase-menu-item:hover,
+html[data-theme="light"] .phrase-menu-item:focus-visible {
+  background: #edf1f5;
 }
 
 .back-to-top {
@@ -2008,6 +2107,8 @@ html[data-theme="dark"] .view-tab.active {
 
 html[data-theme="dark"] .quick-link,
 html[data-theme="dark"] .incident-record-action,
+html[data-theme="dark"] .phrase-trigger,
+html[data-theme="dark"] .phrase-menu,
 html[data-theme="dark"] .weather-refresh,
 html[data-theme="dark"] .weather-summary,
 html[data-theme="dark"] .weather-chip,
@@ -2031,6 +2132,17 @@ html[data-theme="dark"] .incident-record-action.danger {
   background: rgba(185, 28, 28, 0.18);
   border-color: rgba(248, 113, 113, 0.4);
   color: #fecaca;
+}
+
+html[data-theme="dark"] .phrase-trigger[aria-expanded="true"] {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+html[data-theme="dark"] .phrase-menu-item:hover,
+html[data-theme="dark"] .phrase-menu-item:focus-visible {
+  background: #1d2530;
 }
 
 html[data-theme="dark"] .quick-link {
@@ -2218,6 +2330,12 @@ html[data-theme="dark"] a {
   .incident-record-action {
     width: auto;
     flex: 1 1 72px;
+  }
+
+  .phrase-menu {
+    position: static;
+    width: 100%;
+    margin-bottom: 6px;
   }
 
   h1 {

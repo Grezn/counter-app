@@ -165,8 +165,12 @@
           <textarea id="incidentHandoverOwner" data-incident-field="handoverOwner" placeholder="工程師 / 業務 / 部門 / 無"></textarea>
         </div>
 
-        <div class="field span-2">
-          <label for="incidentNextStep">下一步</label>
+        <div class="field span-2 has-phrase-menu">
+          <div class="field-label-row">
+            <label for="incidentNextStep">下一步</label>
+            <button class="phrase-trigger" type="button" onclick="toggleIncidentPhraseMenu('nextStep')" aria-controls="nextStepPhraseMenu" aria-expanded="false">常用句</button>
+          </div>
+          <div id="nextStepPhraseMenu" class="phrase-menu" hidden></div>
           <textarea id="incidentNextStep" data-incident-field="nextStep" placeholder="下一個動作、等待誰回覆、預計何時再確認。"></textarea>
         </div>
 
@@ -175,8 +179,12 @@
           <textarea id="incidentNotified" data-incident-field="notified" placeholder="人員、時間、管道。"></textarea>
         </div>
 
-        <div class="field full">
-          <label for="incidentNotes">處理紀錄</label>
+        <div class="field full has-phrase-menu">
+          <div class="field-label-row">
+            <label for="incidentNotes">處理紀錄</label>
+            <button class="phrase-trigger" type="button" onclick="toggleIncidentPhraseMenu('notes')" aria-controls="notesPhraseMenu" aria-expanded="false">常用句</button>
+          </div>
+          <div id="notesPhraseMenu" class="phrase-menu" hidden></div>
           <textarea id="incidentNotes" data-incident-field="notes" placeholder="依時間補處理紀錄，例如：22:15 確認告警；22:20 已轉二線。"></textarea>
         </div>
 
