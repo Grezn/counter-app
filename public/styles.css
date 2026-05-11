@@ -1035,13 +1035,11 @@ button:disabled {
 }
 
 .jira-status:empty,
-.incident-history-status:empty,
-.handover-report-status:empty {
+.incident-history-status:empty {
   display: none;
 }
 
-.incident-history-status,
-.handover-report-status {
+.incident-history-status {
   margin: -4px 0 14px;
   padding: 10px 12px;
   border-radius: 8px;
@@ -1087,22 +1085,19 @@ button:disabled {
   color: #fecaca;
 }
 
-.incident-history-status.pending,
-.handover-report-status.pending {
+.incident-history-status.pending {
   background: rgba(59, 130, 246, 0.16);
   border: 1px solid rgba(59, 130, 246, 0.35);
   color: #bfdbfe;
 }
 
-.incident-history-status.success,
-.handover-report-status.success {
+.incident-history-status.success {
   background: rgba(22, 101, 52, 0.22);
   border: 1px solid rgba(74, 222, 128, 0.35);
   color: #bbf7d0;
 }
 
-.incident-history-status.error,
-.handover-report-status.error {
+.incident-history-status.error {
   background: rgba(239, 68, 68, 0.14);
   border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fecaca;
@@ -1164,48 +1159,6 @@ button:disabled {
   font: inherit;
   font-size: 0.9rem;
   line-height: 1.5;
-  resize: vertical;
-}
-
-.handover-report {
-  margin-top: 16px;
-  border: 1px solid #303846;
-  border-radius: 10px;
-  background: #11151b;
-  padding: 14px;
-}
-
-.handover-report-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.handover-report-header .workflow-title {
-  margin: 0;
-}
-
-.handover-report-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.handover-report-output {
-  width: 100%;
-  min-height: 260px;
-  box-sizing: border-box;
-  border: 1px solid #334052;
-  border-radius: 8px;
-  background: #101418;
-  color: #e8eaed;
-  padding: 12px;
-  font: inherit;
-  font-size: 0.92rem;
-  line-height: 1.55;
   resize: vertical;
 }
 
@@ -1565,7 +1518,6 @@ body {
 .link-drawer,
 .checklist-box,
 .summary-box,
-.handover-report,
 .incident-history,
 .counter-surface,
 .runbook-card {
@@ -1616,7 +1568,6 @@ body {
 .field select,
 .field textarea,
 .summary-output,
-.handover-report-output,
 .runbook-controls input {
   background: #f3f6f9;
   border-color: #aebaca;
@@ -1727,23 +1678,20 @@ body {
 }
 
 .jira-status.success,
-.incident-history-status.success,
-.handover-report-status.success {
+.incident-history-status.success {
   background: #dcfce7;
   border-color: #86efac;
   color: #14532d;
 }
 
 .jira-status.error,
-.incident-history-status.error,
-.handover-report-status.error {
+.incident-history-status.error {
   background: #fee2e2;
   border-color: #fca5a5;
   color: #7f1d1d;
 }
 
-.incident-history-status.pending,
-.handover-report-status.pending {
+.incident-history-status.pending {
   background: #dbeafe;
   border-color: #93c5fd;
   color: #1e3a8a;
@@ -1861,7 +1809,6 @@ html[data-theme="dark"] .weather-strip,
 html[data-theme="dark"] .core-links-block,
 html[data-theme="dark"] .checklist-box,
 html[data-theme="dark"] .summary-box,
-html[data-theme="dark"] .handover-report,
 html[data-theme="dark"] .incident-history,
 html[data-theme="dark"] .counter-surface,
 html[data-theme="dark"] .runbook-card {
@@ -1948,7 +1895,6 @@ html[data-theme="dark"] .field input:not([type="radio"]):not([type="checkbox"]),
 html[data-theme="dark"] .field select,
 html[data-theme="dark"] .field textarea,
 html[data-theme="dark"] .summary-output,
-html[data-theme="dark"] .handover-report-output,
 html[data-theme="dark"] .runbook-controls input {
   background: #0f172a;
   border-color: #475569;

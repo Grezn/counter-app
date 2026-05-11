@@ -920,14 +920,6 @@ function setIncidentHistoryStatus(message, type) {
   status.textContent = message || "";
 }
 
-function setHandoverReportStatus(message, type) {
-  const status = document.getElementById("handoverReportStatus");
-  if (!status) return;
-
-  status.className = type ? `handover-report-status ${type}` : "handover-report-status";
-  status.textContent = message || "";
-}
-
 function setCreateJiraButtonLoading(isLoading) {
   const button = document.getElementById("createJiraIssueButton");
   if (!button) return;
@@ -1200,137 +1192,6 @@ async function saveIncidentRecord() {
   }
 }
 
-function normalizeReportValue(value) {
-  return String(value || "").trim();
-}
-
-function isIncidentRecordResolved(record) {
-  const status = String(record && record.status ? record.status : "").toLowerCase();
-  return status.includes("resolved") || status.includes("已解決");
-}
-
-function isIncidentRecordActionable(record) {
-  if (!record || isIncidentRecordResolved(record)) return false;
-
-  const fields = record.incident && record.incident.fields ? record.incident.fields : {};
-  return [
-    record.status,
-    fields.nextStep,
-    fields.handoverOwner,
-  ].some((value) => normalizeReportValue(value));
-}
-
-function isSameIncidentAsCurrentState(record, currentState) {
-  if (!record || !currentState) return false;
-
-  const fields = record.incident && record.incident.fields ? record.incident.fields : {};
-  const currentFields = currentState.fields || {};
-  const recordTitle = normalizeReportValue(record.title || fields.title);
-  const currentTitle = normalizeReportValue(currentFields.title);
-
-  if (!recordTitle || recordTitle !== currentTitle) return false;
-
-  const recordStartedAt = normalizeReportValue(fields.startedAt || record.startedAt);
-  const currentStartedAt = normalizeReportValue(currentFields.startedAt);
-  if (recordStartedAt || currentStartedAt) return recordStartedAt === currentStartedAt;
-
-  const recordKey = [
-    fields.customer,
-    fields.system,
-    fields.source,
-  ].map(normalizeReportValue).filter(Boolean).join("|");
-  const currentKey = [
-    currentFields.customer,
-    currentFields.system,
-    currentFields.source,
-  ].map(normalizeReportValue).filter(Boolean).join("|");
-
-  return Boolean(recordKey && recordKey === currentKey);
-}
-
-function formatIncidentRecordForReport(record, index) {
-  const fields = record && record.incident && record.incident.fields ? record.incident.fields : {};
-  const title = record.title || fields.title || "未命名事件";
-  const status = record.status || fields.status || "未標註狀態";
-  const owner = fields.handoverOwner || "-";
-  const nextStep = fields.nextStep || record.summary || "-";
-  const notified = fields.notified || "-";
-  const scope = [fields.customer, fields.system].filter(Boolean).join(" / ");
-
-  return [
-    `${index + 1}. [${status}] ${title}`,
-    scope ? `   範圍：${scope}` : "",
-    `   下一步：${nextStep}`,
-    `   接手人員：${owner}`,
-    `   已通知：${notified}`,
-  ].filter(Boolean).join("\n");
-}
-
-function buildHandoverReport() {
-  updateHandoverSummary();
-
-  const currentState = readIncidentStateFromPage();
-  const hasCurrentIncident = hasIncidentContent(currentState);
-  const currentSummary = document.getElementById("handoverSummary").value.trim();
-  const openRecords = incidentRecordsCache
-    .filter((record) => isIncidentRecordActionable(record))
-    .filter((record) => !isSameIncidentAsCurrentState(record, currentState))
-    .slice(0, 5);
-  const reportLines = ["【值班交班報告】"];
-
-  if (hasCurrentIncident) {
-    reportLines.push("", "【目前處理事件】", currentSummary);
-  }
-
-  if (openRecords.length) {
-    reportLines.push(
-      "",
-      "【其他待追蹤事項】",
-      openRecords.map(formatIncidentRecordForReport).join("\n\n"),
-    );
-  }
-
-  if (!hasCurrentIncident && !openRecords.length) {
-    reportLines.push("", "- 無需交接事件");
-  }
-
-  return reportLines.join("\n");
-}
-
-async function generateHandoverReport() {
-  const output = document.getElementById("handoverReportOutput");
-  if (!output) return "";
-
-  try {
-    setHandoverReportStatus("正在產生交班報告...", "pending");
-    await loadIncidentRecords({ showLoading: false });
-    const report = buildHandoverReport();
-    output.value = report;
-    setHandoverReportStatus("交班報告已產生，只包含事件與待追蹤事項。", "success");
-    return report;
-  } catch (err) {
-    setHandoverReportStatus("交班報告產生失敗：" + err.message, "error");
-    return "";
-  }
-}
-
-async function copyHandoverReport() {
-  const output = document.getElementById("handoverReportOutput");
-  if (!output) return;
-
-  try {
-    const report = output.value.trim() || await generateHandoverReport();
-    if (!report) {
-      throw new Error("沒有可複製的交班報告");
-    }
-
-    await navigator.clipboard.writeText(report);
-    setHandoverReportStatus("已複製交班報告。", "success");
-  } catch (err) {
-    setHandoverReportStatus("交班報告複製失敗：" + err.message, "error");
-  }
-}
-
 function clearIncidentState() {
   if (!confirm("確定要清空目前事件紀錄嗎？")) {
     return;
@@ -1355,9 +1216,6 @@ function clearIncidentState() {
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
   setJiraStatus("");
   setIncidentHistoryStatus("");
-  setHandoverReportStatus("");
-  const reportOutput = document.getElementById("handoverReportOutput");
-  if (reportOutput) reportOutput.value = "";
   updateHandoverSummary();
 }
 
