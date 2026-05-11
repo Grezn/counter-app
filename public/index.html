@@ -81,11 +81,13 @@
         <div class="incident-actions">
           <button class="action-btn" onclick="setIncidentNow()">填入現在時間</button>
           <button class="action-btn" onclick="copyHandoverSummary()">複製交班摘要</button>
+          <button id="saveIncidentButton" class="action-btn primary" onclick="saveIncidentRecord()">儲存事件</button>
           <button id="createJiraIssueButton" class="action-btn jira" onclick="createJiraIssue()">建立 Jira 小卡</button>
           <button class="action-btn danger" onclick="clearIncidentState()">清空事件</button>
         </div>
       </div>
       <div id="jiraStatus" class="jira-status" role="status" aria-live="polite"></div>
+      <div id="incidentHistoryStatus" class="incident-history-status" role="status" aria-live="polite"></div>
 
       <div class="incident-grid">
         <div class="incident-core-title">接手重點</div>
@@ -287,6 +289,17 @@
           <textarea id="handoverSummary" class="summary-output" readonly></textarea>
         </div>
       </div>
+
+      <section class="incident-history" aria-label="最近事件紀錄">
+        <div class="incident-history-header">
+          <div>
+            <h3 class="workflow-title">最近事件紀錄</h3>
+            <p class="incident-history-note">儲存在後端 Redis，方便重新整理後接續交班。</p>
+          </div>
+          <button class="action-btn" type="button" onclick="loadIncidentRecords()">更新紀錄</button>
+        </div>
+        <div id="incidentHistoryList" class="incident-history-list">事件紀錄載入中...</div>
+      </section>
     </section>
     </main>
 

@@ -995,6 +995,12 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.action-btn.primary {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
 .action-btn.jira {
   background: #14532d;
   border-color: #2f7a50;
@@ -1019,8 +1025,17 @@ button:disabled {
   font-weight: 700;
 }
 
-.jira-status:empty {
+.jira-status:empty,
+.incident-history-status:empty {
   display: none;
+}
+
+.incident-history-status {
+  margin: -4px 0 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .phone-call-status {
@@ -1056,6 +1071,24 @@ button:disabled {
 }
 
 .jira-status.error {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}
+
+.incident-history-status.pending {
+  background: rgba(59, 130, 246, 0.16);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #bfdbfe;
+}
+
+.incident-history-status.success {
+  background: rgba(22, 101, 52, 0.22);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #bbf7d0;
+}
+
+.incident-history-status.error {
   background: rgba(239, 68, 68, 0.14);
   border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fecaca;
@@ -1118,6 +1151,91 @@ button:disabled {
   font-size: 0.9rem;
   line-height: 1.5;
   resize: vertical;
+}
+
+.incident-history {
+  margin-top: 16px;
+  border: 1px solid #303846;
+  border-radius: 10px;
+  background: #11151b;
+  padding: 14px;
+}
+
+.incident-history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.incident-history-header .action-btn {
+  flex: 0 0 auto;
+}
+
+.incident-history-note {
+  margin: -4px 0 0;
+  color: #a4adba;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.incident-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.incident-record {
+  padding: 12px;
+  border-radius: 8px;
+  background: #101418;
+  border: 1px solid #2d3540;
+}
+
+.incident-record-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.incident-record-title-block {
+  min-width: 0;
+}
+
+.incident-record-title {
+  margin: 0 0 4px;
+  color: #e8eaed;
+  font-size: 0.96rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.incident-record-meta,
+.incident-record-time,
+.incident-record-summary,
+.incident-history-empty {
+  color: #a4adba;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.incident-record-time {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.incident-record-summary {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.incident-record-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
 
 .runbook-panel {
@@ -1374,6 +1492,7 @@ body {
 .link-drawer,
 .checklist-box,
 .summary-box,
+.incident-history,
 .counter-surface,
 .runbook-card {
   background: #ffffff;
@@ -1395,6 +1514,7 @@ body {
 .weather-meta,
 .links-note,
 .incident-subtitle,
+.incident-history-note,
 .drawer-hint,
 .link-count,
 .runbook-card-summary {
@@ -1404,6 +1524,7 @@ body {
 .links-title,
 .weather-title,
 .incident-title,
+.incident-record-title,
 .counter-title,
 .incident-core-title,
 .workflow-title,
@@ -1413,6 +1534,7 @@ body {
 }
 
 .quick-link,
+.incident-record,
 .weather-refresh,
 .weather-summary,
 .weather-chip,
@@ -1448,6 +1570,10 @@ body {
 
 .weather-forecast-note,
 .weather-placeholder,
+.incident-record-meta,
+.incident-record-time,
+.incident-record-summary,
+.incident-history-empty,
 .counter-subtitle {
   color: #64748b;
 }
@@ -1525,16 +1651,24 @@ body {
   color: #1e3a8a;
 }
 
-.jira-status.success {
+.jira-status.success,
+.incident-history-status.success {
   background: #dcfce7;
   border-color: #86efac;
   color: #14532d;
 }
 
-.jira-status.error {
+.jira-status.error,
+.incident-history-status.error {
   background: #fee2e2;
   border-color: #fca5a5;
   color: #7f1d1d;
+}
+
+.incident-history-status.pending {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e3a8a;
 }
 
 .phone-call-status {
@@ -1649,6 +1783,7 @@ html[data-theme="dark"] .weather-strip,
 html[data-theme="dark"] .core-links-block,
 html[data-theme="dark"] .checklist-box,
 html[data-theme="dark"] .summary-box,
+html[data-theme="dark"] .incident-history,
 html[data-theme="dark"] .counter-surface,
 html[data-theme="dark"] .runbook-card {
   background: #111827;
@@ -1676,6 +1811,7 @@ html[data-theme="dark"] .link-drawer {
 
 html[data-theme="dark"] .link-drawer summary,
 html[data-theme="dark"] .link-drawer-body,
+html[data-theme="dark"] .incident-record,
 html[data-theme="dark"] .runbook-detail {
   background: #111827;
   border-color: #334155;
@@ -1686,6 +1822,11 @@ html[data-theme="dark"] .label,
 html[data-theme="dark"] .weather-meta,
 html[data-theme="dark"] .links-note,
 html[data-theme="dark"] .incident-subtitle,
+html[data-theme="dark"] .incident-history-note,
+html[data-theme="dark"] .incident-record-meta,
+html[data-theme="dark"] .incident-record-time,
+html[data-theme="dark"] .incident-record-summary,
+html[data-theme="dark"] .incident-history-empty,
 html[data-theme="dark"] .counter-subtitle,
 html[data-theme="dark"] .drawer-hint,
 html[data-theme="dark"] .link-count,
@@ -1697,6 +1838,7 @@ html[data-theme="dark"] .runbook-card-summary {
 html[data-theme="dark"] .links-title,
 html[data-theme="dark"] .weather-title,
 html[data-theme="dark"] .incident-title,
+html[data-theme="dark"] .incident-record-title,
 html[data-theme="dark"] .counter-title,
 html[data-theme="dark"] .incident-core-title,
 html[data-theme="dark"] .workflow-title,
@@ -1891,6 +2033,14 @@ html[data-theme="dark"] a {
 
   .counter-actions {
     grid-template-columns: 1fr;
+  }
+
+  .incident-record-top {
+    flex-direction: column;
+  }
+
+  .incident-record-time {
+    white-space: normal;
   }
 
   h1 {

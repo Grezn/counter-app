@@ -698,30 +698,33 @@ function loadIncidentState() {
     const raw = localStorage.getItem(INCIDENT_STORAGE_KEY);
     if (!raw) return;
 
-    const state = JSON.parse(raw);
-    const savedFields = state.fields || {};
-
-    getIncidentFields().forEach((field) => {
-      const fieldName = field.dataset.incidentField;
-      field.value = Object.prototype.hasOwnProperty.call(savedFields, fieldName)
-        ? normalizeIncidentFieldValue(fieldName, savedFields[fieldName])
-        : "";
-    });
-
-    getIncidentChecks().forEach((check) => {
-      check.checked = Boolean(state.checks && state.checks[check.dataset.incidentCheck]);
-    });
-
-    getIncidentRadios().forEach((radio) => {
-      radio.checked = Boolean(state.radios && state.radios[radio.dataset.incidentRadio] === radio.value);
-    });
-
-    getIncidentFollowups().forEach((followup) => {
-      followup.checked = Boolean(state.followups && state.followups[followup.dataset.incidentFollowup]);
-    });
+    applyIncidentStateToPage(JSON.parse(raw));
   } catch (err) {
     setError("事件暫存讀取失敗：" + err.message);
   }
+}
+
+function applyIncidentStateToPage(state) {
+  const savedFields = state && state.fields ? state.fields : {};
+
+  getIncidentFields().forEach((field) => {
+    const fieldName = field.dataset.incidentField;
+    field.value = Object.prototype.hasOwnProperty.call(savedFields, fieldName)
+      ? normalizeIncidentFieldValue(fieldName, savedFields[fieldName])
+      : "";
+  });
+
+  getIncidentChecks().forEach((check) => {
+    check.checked = Boolean(state && state.checks && state.checks[check.dataset.incidentCheck]);
+  });
+
+  getIncidentRadios().forEach((radio) => {
+    radio.checked = Boolean(state && state.radios && state.radios[radio.dataset.incidentRadio] === radio.value);
+  });
+
+  getIncidentFollowups().forEach((followup) => {
+    followup.checked = Boolean(state && state.followups && state.followups[followup.dataset.incidentFollowup]);
+  });
 }
 
 function formatLocalDateTime(date) {
@@ -895,12 +898,28 @@ function setJiraStatus(message, type, linkUrl) {
   status.replaceChildren(messageNode, link);
 }
 
+function setIncidentHistoryStatus(message, type) {
+  const status = document.getElementById("incidentHistoryStatus");
+  if (!status) return;
+
+  status.className = type ? `incident-history-status ${type}` : "incident-history-status";
+  status.textContent = message || "";
+}
+
 function setCreateJiraButtonLoading(isLoading) {
   const button = document.getElementById("createJiraIssueButton");
   if (!button) return;
 
   button.disabled = isLoading;
   button.textContent = isLoading ? "建立中..." : "建立 Jira 小卡";
+}
+
+function setSaveIncidentButtonLoading(isLoading) {
+  const button = document.getElementById("saveIncidentButton");
+  if (!button) return;
+
+  button.disabled = isLoading;
+  button.textContent = isLoading ? "儲存中..." : "儲存事件";
 }
 
 function markIncidentCheck(label) {
@@ -978,6 +997,175 @@ async function createJiraIssue() {
   }
 }
 
+function formatIncidentRecordTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value).replace("T", " ").slice(0, 16);
+
+  return new Intl.DateTimeFormat("zh-TW", {
+    timeZone: "Asia/Taipei",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+function getIncidentRecordMeta(record) {
+  return [
+    record.severity,
+    record.status,
+    record.customer,
+    record.system,
+    record.source,
+  ].filter(Boolean).join(" / ") || "未分類事件";
+}
+
+function restoreIncidentRecord(record) {
+  if (!record || !record.incident) return;
+
+  applyIncidentStateToPage(record.incident);
+  saveIncidentState();
+  updateHandoverSummary();
+  setIncidentHistoryStatus(`已載入事件：${record.title || record.id}`, "success");
+  setActiveView("dashboard");
+  const title = document.getElementById("incidentTitle");
+  if (title) title.focus();
+}
+
+async function copyIncidentRecordSummary(record) {
+  try {
+    await navigator.clipboard.writeText(record.handoverSummary || "");
+    setIncidentHistoryStatus("已複製這筆事件的交班摘要。", "success");
+  } catch (err) {
+    setIncidentHistoryStatus("複製事件摘要失敗：" + err.message, "error");
+  }
+}
+
+function createIncidentRecordCard(record) {
+  const card = document.createElement("article");
+  card.className = "incident-record";
+
+  const top = document.createElement("div");
+  top.className = "incident-record-top";
+
+  const titleBlock = document.createElement("div");
+  titleBlock.className = "incident-record-title-block";
+  titleBlock.appendChild(createTextElement("h4", "incident-record-title", record.title || "未命名事件"));
+  titleBlock.appendChild(createTextElement("div", "incident-record-meta", getIncidentRecordMeta(record)));
+
+  const time = createTextElement("time", "incident-record-time", formatIncidentRecordTime(record.createdAt));
+  if (record.createdAt) time.dateTime = record.createdAt;
+
+  top.appendChild(titleBlock);
+  top.appendChild(time);
+  card.appendChild(top);
+
+  if (record.summary) {
+    card.appendChild(createTextElement("p", "incident-record-summary", record.summary));
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "incident-record-actions";
+
+  const restoreButton = document.createElement("button");
+  restoreButton.type = "button";
+  restoreButton.className = "action-btn";
+  restoreButton.textContent = "載入";
+  restoreButton.addEventListener("click", () => restoreIncidentRecord(record));
+
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.className = "action-btn";
+  copyButton.textContent = "複製摘要";
+  copyButton.addEventListener("click", () => copyIncidentRecordSummary(record));
+
+  actions.appendChild(restoreButton);
+  actions.appendChild(copyButton);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function renderIncidentRecords(records) {
+  const list = document.getElementById("incidentHistoryList");
+  if (!list) return;
+
+  if (!records || records.length === 0) {
+    list.replaceChildren(createTextElement("div", "incident-history-empty", "目前還沒有儲存的事件紀錄"));
+    return;
+  }
+
+  list.replaceChildren(...records.map(createIncidentRecordCard));
+}
+
+async function loadIncidentRecords() {
+  const list = document.getElementById("incidentHistoryList");
+
+  try {
+    if (list) {
+      list.replaceChildren(createTextElement("div", "incident-history-empty", "事件紀錄載入中..."));
+    }
+
+    const res = await fetch("/api/incidents?limit=20", {
+      cache: "no-store",
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Load incidents failed");
+    }
+
+    renderIncidentRecords(data.incidents || []);
+  } catch (err) {
+    if (list) {
+      list.replaceChildren(createTextElement("div", "incident-history-empty", "事件紀錄讀取失敗：" + err.message));
+    }
+    setIncidentHistoryStatus("事件紀錄讀取失敗：" + err.message, "error");
+  }
+}
+
+async function saveIncidentRecord() {
+  const state = readIncidentStateFromPage();
+
+  if (!hasIncidentContent(state)) {
+    setIncidentHistoryStatus("先填寫事件內容，再儲存紀錄。", "error");
+    return;
+  }
+
+  try {
+    clearError();
+    setIncidentHistoryStatus("正在儲存事件紀錄...", "pending");
+    setSaveIncidentButtonLoading(true);
+    updateHandoverSummary();
+
+    const res = await fetch("/api/incidents", {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        incident: state,
+        handoverSummary: document.getElementById("handoverSummary").value,
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Save incident failed");
+    }
+
+    setIncidentHistoryStatus(`已儲存事件：${data.incident.title}`, "success");
+    await loadIncidentRecords();
+  } catch (err) {
+    setIncidentHistoryStatus("儲存事件失敗：" + err.message, "error");
+  } finally {
+    setSaveIncidentButtonLoading(false);
+  }
+}
+
 function clearIncidentState() {
   if (!confirm("確定要清空目前事件紀錄嗎？")) {
     return;
@@ -1001,6 +1189,7 @@ function clearIncidentState() {
 
   localStorage.removeItem(INCIDENT_STORAGE_KEY);
   setJiraStatus("");
+  setIncidentHistoryStatus("");
   updateHandoverSummary();
 }
 
@@ -1434,6 +1623,7 @@ initLinksPanel();
 initBackToTop();
 initTheme();
 initViewTabs();
+loadIncidentRecords();
 loadLocalWeather();
 trackView();
 loadCount();

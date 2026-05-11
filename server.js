@@ -11,6 +11,7 @@ const healthRoutes = require("./routes/health");
 const jiraRoutes = require("./routes/jira");
 const runbookRoutes = require("./routes/runbooks");
 const weatherRoutes = require("./routes/weather");
+const incidentRoutes = require("./routes/incidents");
 const { connectRedis } = require("./services/redis");
 
 // 建立 Express app。你可以把 app 想成「網站伺服器本體」。
@@ -121,6 +122,7 @@ app.use("/", healthRoutes);
 app.use("/", jiraRoutes);
 app.use("/", runbookRoutes);
 app.use("/", weatherRoutes);
+app.use("/", incidentRoutes);
 
 async function startServer() {
   // 先連 Redis，再開始 listen。
