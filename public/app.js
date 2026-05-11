@@ -648,6 +648,97 @@ const INCIDENT_PHRASE_GROUPS = {
     ],
   },
 };
+const INCIDENT_TEMPLATES = [
+  {
+    id: "disk",
+    label: "磁碟告警",
+    fields: {
+      title: "磁碟空間告警待確認",
+      severity: "Warning / 警告",
+      status: "Monitoring / 監控中",
+      source: "Email",
+      problemDescription: "監控告警顯示磁碟使用率達門檻，需確認成長原因、剩餘空間與是否需要清理或擴充。",
+      impact: "目前先確認是否影響服務；若未見異常，持續觀察告警狀態。",
+      nextStep: "確認磁碟使用率、主要佔用目錄與近期成長；必要時通知二線或窗口協助清理 / 擴充。",
+      trackingStatus: "持續監控",
+      notified: "待通知相關窗口。",
+    },
+  },
+  {
+    id: "resource",
+    label: "CPU / 記憶體",
+    fields: {
+      title: "CPU / Memory 使用率告警待確認",
+      severity: "Warning / 警告",
+      status: "Monitoring / 監控中",
+      source: "Email",
+      problemDescription: "監控告警顯示 CPU 或 Memory 使用率達門檻，需確認是否為短暫尖峰、排程作業或服務異常。",
+      impact: "目前先確認是否有延遲、服務不可用或資源不足跡象。",
+      nextStep: "確認資源使用趨勢、主要程序與最近異動；若持續偏高再通知二線或系統窗口協助處理。",
+      trackingStatus: "持續監控",
+      notified: "待通知相關窗口。",
+    },
+  },
+  {
+    id: "website",
+    label: "網站異常",
+    fields: {
+      title: "網站或服務異常待確認",
+      severity: "Service Impact / 服務影響",
+      status: "Triage / 初步判斷",
+      source: "Customer",
+      problemDescription: "收到網站或服務異常通報，需確認錯誤現象、發生時間、受影響範圍與最近變更。",
+      impact: "可能影響使用者連線或服務可用性，需先確認是單一使用者、特定區域或整體服務。",
+      nextStep: "確認網址 / 服務名稱、錯誤訊息、HTTP 狀態或截圖；必要時通知二線協助排查。",
+      trackingStatus: "需追蹤",
+      notified: "待回覆通報窗口。",
+    },
+  },
+  {
+    id: "backup",
+    label: "備份失敗",
+    fields: {
+      title: "備份失敗告警待確認",
+      severity: "Warning / 警告",
+      status: "Triage / 初步判斷",
+      source: "Email",
+      problemDescription: "備份作業失敗或未完成，需確認失敗時間、任務名稱、錯誤訊息與是否有可用備份點。",
+      impact: "目前先確認是否影響還原能力；若為連續失敗或重要系統需優先升級處理。",
+      nextStep: "確認備份平台錯誤原因、最近成功時間與重跑可行性；必要時通知系統負責人或二線。",
+      trackingStatus: "需追蹤",
+      notified: "待通知系統負責人。",
+    },
+  },
+  {
+    id: "network",
+    label: "VPN / 線路",
+    fields: {
+      title: "VPN / 線路連線異常待確認",
+      severity: "Service Impact / 服務影響",
+      status: "Triage / 初步判斷",
+      source: "Customer",
+      problemDescription: "收到 VPN 或線路連線異常通報，需確認影響使用者、錯誤訊息、連線時間與是否為單一端點問題。",
+      impact: "可能影響遠端連線或站點間服務存取，需先確認影響範圍與替代連線方式。",
+      nextStep: "確認連線來源、目的端、錯誤訊息與線路狀態；必要時通知網路窗口或二線協助排查。",
+      trackingStatus: "需追蹤",
+      notified: "待回覆通報窗口。",
+    },
+  },
+  {
+    id: "waiting",
+    label: "等回覆觀察",
+    fields: {
+      title: "等待客戶或窗口回覆",
+      severity: "Info / 資訊",
+      status: "Waiting / 等待回覆",
+      problemDescription: "目前已完成初步回覆或處理，待客戶 / 窗口補充結果或確認是否仍有異常。",
+      impact: "待回覆確認，暫無新的影響資訊。",
+      nextStep: "待客戶或窗口回覆後再更新處理紀錄。",
+      trackingStatus: "等客戶回覆",
+      notified: "已回覆客戶 / 窗口目前處理狀態。",
+    },
+  },
+];
 const SERVICE_TYPE_HINTS = {
   general: "一般諮詢只保留後續處理與其他補充，避免不必要的報修欄位干擾。",
   repair: "產品報修會顯示產品、合約、序號與對接窗口欄位。",
@@ -880,6 +971,98 @@ function normalizeIncidentFieldValue(fieldName, value) {
   };
 
   return maps[fieldName] && maps[fieldName][value] ? maps[fieldName][value] : value;
+}
+
+function getIncidentFieldByName(fieldName) {
+  return getIncidentFields().find((field) => field.dataset.incidentField === fieldName) || null;
+}
+
+function getIncidentTemplateById(templateId) {
+  return INCIDENT_TEMPLATES.find((template) => template.id === templateId) || null;
+}
+
+function updateIncidentTemplateApplyState() {
+  const select = document.getElementById("incidentTemplateSelect");
+  const button = document.getElementById("applyIncidentTemplateButton");
+  if (!select || !button) return;
+
+  button.disabled = !select.value;
+}
+
+function initIncidentTemplates() {
+  const select = document.getElementById("incidentTemplateSelect");
+  if (!select) return;
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "選擇常見情境";
+  const options = INCIDENT_TEMPLATES.map((template) => {
+    const option = document.createElement("option");
+    option.value = template.id;
+    option.textContent = template.label;
+    return option;
+  });
+
+  select.replaceChildren(placeholder, ...options);
+  select.addEventListener("change", updateIncidentTemplateApplyState);
+  updateIncidentTemplateApplyState();
+}
+
+function applyIncidentTemplateField(fieldName, value) {
+  const field = getIncidentFieldByName(fieldName);
+  if (!field || String(field.value || "").trim()) return false;
+
+  field.value = normalizeIncidentFieldValue(fieldName, value);
+  return Boolean(String(field.value || "").trim());
+}
+
+function applyIncidentTemplateRadio(radioName, value) {
+  if (getSelectedIncidentRadioValue(radioName)) return false;
+
+  const radio = getIncidentRadios().find((item) => (
+    item.dataset.incidentRadio === radioName && item.value === value
+  ));
+  if (!radio) return false;
+
+  radio.checked = true;
+  return true;
+}
+
+function applyIncidentTemplateFollowup(followupName, value) {
+  const followup = getIncidentFollowups().find((item) => item.dataset.incidentFollowup === followupName);
+  if (!followup || followup.checked === Boolean(value)) return false;
+
+  followup.checked = Boolean(value);
+  return true;
+}
+
+function applySelectedIncidentTemplate() {
+  const select = document.getElementById("incidentTemplateSelect");
+  const template = select ? getIncidentTemplateById(select.value) : null;
+  if (!select || !template) return;
+
+  const appliedFields = Object.entries(template.fields || {})
+    .filter(([fieldName, value]) => applyIncidentTemplateField(fieldName, value)).length;
+  const appliedRadios = Object.entries(template.radios || {})
+    .filter(([radioName, value]) => applyIncidentTemplateRadio(radioName, value)).length;
+  const appliedFollowups = Object.entries(template.followups || {})
+    .filter(([followupName, value]) => applyIncidentTemplateFollowup(followupName, value)).length;
+  const appliedCount = appliedFields + appliedRadios + appliedFollowups;
+
+  updateIncidentNextCheckAvailability();
+  updateServiceTypeFieldVisibility();
+  saveIncidentState();
+  updateHandoverSummary();
+
+  select.value = "";
+  updateIncidentTemplateApplyState();
+
+  setHandoverSummaryStatus(
+    appliedCount
+      ? `已套用事件樣板：${template.label}`
+      : "目前欄位已有內容；樣板未覆蓋任何欄位。",
+    appliedCount ? "success" : "pending",
+  );
 }
 
 function loadIncidentState() {
@@ -2312,6 +2495,7 @@ function clearIncidentState() {
 
 function initIncidentPanel() {
   initIncidentPhraseMenus();
+  initIncidentTemplates();
   initIncidentHistoryFilters();
   updateHandoverSummaryModeButtons();
   loadIncidentState();

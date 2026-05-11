@@ -907,6 +907,32 @@ button:disabled {
   font-weight: 800;
 }
 
+.incident-template-field {
+  max-width: 560px;
+}
+
+.incident-template-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.incident-template-apply {
+  min-width: 70px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+.incident-template-apply:disabled {
+  background: transparent;
+  border-color: #334052;
+  color: #6b7280;
+}
+
 .field label {
   color: #c7d0dd;
   font-size: 0.84rem;
@@ -2149,6 +2175,18 @@ html[data-theme="light"] .field-mini-action {
   color: #64748b;
 }
 
+html[data-theme="light"] .incident-template-apply:not(:disabled) {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #eff6ff;
+}
+
+html[data-theme="light"] .incident-template-apply:disabled {
+  background: transparent;
+  border-color: #aebaca;
+  color: #94a3b8;
+}
+
 html[data-theme="light"] .summary-badge {
   border-color: #aebaca;
   color: #64748b;
@@ -2791,6 +2829,14 @@ html[data-theme="dark"] a {
     position: static;
     width: 100%;
     margin-bottom: 6px;
+  }
+
+  .incident-template-control {
+    grid-template-columns: 1fr;
+  }
+
+  .incident-template-apply {
+    width: 100%;
   }
 
   h1 {

@@ -95,6 +95,16 @@
       <div class="incident-grid">
         <div class="incident-core-title">接手重點</div>
 
+        <div class="field full incident-template-field">
+          <label for="incidentTemplateSelect">事件樣板</label>
+          <div class="incident-template-control">
+            <select id="incidentTemplateSelect" aria-label="事件樣板">
+              <option value="">選擇常見情境</option>
+            </select>
+            <button id="applyIncidentTemplateButton" class="field-mini-action incident-template-apply" type="button" onclick="applySelectedIncidentTemplate()" disabled>套用</button>
+          </div>
+        </div>
+
         <div class="field">
           <label for="incidentStartedAt">事件時間</label>
           <input id="incidentStartedAt" type="datetime-local" data-incident-field="startedAt" />
