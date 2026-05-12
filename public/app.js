@@ -2188,7 +2188,9 @@ function createIncidentRecordCard(record) {
 
   const savedTime = formatIncidentRecordSavedTime(record);
   const trackingStatus = getIncidentRecordTrackingStatus(record);
-  if (trackingStatus) {
+  if (isIncidentRecordResolved(record)) {
+    side.appendChild(createTextElement("div", "incident-record-state", "已解決"));
+  } else if (trackingStatus) {
     side.appendChild(createTextElement(
       "div",
       `incident-record-tracking ${getIncidentTrackingStatusClass(trackingStatus)}`.trim(),
@@ -2217,10 +2219,6 @@ function createIncidentRecordCard(record) {
   titleBlock.className = "incident-record-title-block";
   titleBlock.appendChild(createTextElement("h4", "incident-record-title", record.title || "未命名事件"));
   titleBlock.appendChild(createTextElement("div", "incident-record-meta", getIncidentRecordMeta(record)));
-
-  if (isIncidentRecordResolved(record)) {
-    titleBlock.appendChild(createTextElement("div", "incident-record-state", "已解決"));
-  }
 
   if (record.summary) {
     titleBlock.appendChild(createTextElement("p", "incident-record-summary", record.summary));
