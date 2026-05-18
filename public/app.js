@@ -2648,6 +2648,10 @@ function getRunbookLinkAliases(runbook) {
       candidates.push("原 SOP");
     }
 
+    if (link.label === "通話記錄用表格") {
+      candidates.push("通話記錄用表格", "通話記錄表格", "紀錄表單", "記錄表單");
+    }
+
     candidates.forEach((candidate) => {
       const alias = String(candidate || "").trim();
       const key = alias.toLowerCase();
