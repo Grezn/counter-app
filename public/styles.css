@@ -1932,11 +1932,15 @@ button:disabled {
   margin-bottom: 0;
 }
 
-.runbook-detail li.runbook-note-line {
+.runbook-detail li.runbook-note-line,
+.runbook-detail li.runbook-numbered-line {
   margin-left: -18px;
   list-style: none;
-  color: #0369a1;
-  font-weight: 800;
+  color: inherit;
+}
+
+.runbook-detail li.runbook-note-line {
+  font-weight: 700;
 }
 
 .runbook-inline-link {
@@ -1992,8 +1996,7 @@ button:disabled {
   user-select: text;
 }
 
-.runbook-related-links,
-.runbook-quick-actions {
+.runbook-related-links {
   margin-top: 14px;
 }
 
@@ -2008,8 +2011,7 @@ button:disabled {
   margin-top: 0;
 }
 
-.runbook-link,
-.runbook-fill {
+.runbook-link {
   width: auto;
   margin: 0;
   padding: 8px 10px;
@@ -2023,12 +2025,6 @@ button:disabled {
   color: #1d4ed8;
   background: #eff6ff;
   border: 1px solid #bfdbfe;
-}
-
-.runbook-fill {
-  color: #ffffff;
-  background: #334155;
-  border: 1px solid #334155;
 }
 
 .runbook-empty {
@@ -2405,11 +2401,6 @@ html[data-theme="light"] .phrase-menu-item:focus-visible {
   color: #23436f;
 }
 
-.runbook-fill {
-  background: #1e3a8a;
-  border-color: #1e3a8a;
-}
-
 .links-panel-tab {
   background: #0f766e;
   border-color: #0f766e;
@@ -2752,10 +2743,6 @@ html[data-theme="dark"] .check-item,
 html[data-theme="dark"] .choice-item,
 html[data-theme="dark"] .runbook-detail ul {
   color: #cbd5e1;
-}
-
-html[data-theme="dark"] .runbook-detail li.runbook-note-line {
-  color: #7dd3fc;
 }
 
 html[data-theme="dark"] .runbook-copy-group {

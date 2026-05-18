@@ -2764,6 +2764,14 @@ function createRunbookCopyButton(items, label = "複製") {
   return button;
 }
 
+function getRunbookListItemClass(item) {
+  const normalizedItem = String(item || "").trim();
+
+  if (normalizedItem.startsWith("※")) return "runbook-note-line";
+  if (/^\d+\.\s/.test(normalizedItem)) return "runbook-numbered-line";
+  return "";
+}
+
 function appendRunbookCopyGroups(parent, copyGroups, runbook) {
   if (!copyGroups || copyGroups.length === 0) return;
 
@@ -2812,10 +2820,10 @@ function appendRunbookList(parent, title, items, runbook, options = {}) {
     const list = document.createElement("ul");
     items.forEach((item) => {
       const listItem = document.createElement("li");
-      const normalizedItem = String(item || "").trim();
+      const itemClass = getRunbookListItemClass(item);
 
-      if (normalizedItem.startsWith("※")) {
-        listItem.className = "runbook-note-line";
+      if (itemClass) {
+        listItem.className = itemClass;
       }
 
       appendRunbookLinkedText(listItem, item, runbook);
@@ -2837,34 +2845,6 @@ function appendRunbookExtraSections(parent, sections, runbook) {
       copyGroups: section.copyGroups || [],
     });
   });
-}
-
-function fillIncidentNextStepFromRunbook(runbook) {
-  // 讓 SOP 不只可以看，也可以快速帶進事件表單的「下一步」。
-  const nextStep = document.getElementById("incidentNextStep");
-  if (!nextStep) return;
-  const stepLines = (runbook.steps || []).length
-    ? runbook.steps.map((step, idx) => `${idx + 1}. ${step}`)
-    : (runbook.extraSections || []).flatMap((section) => [
-      section.title,
-      ...(section.items || []),
-      ...((section.copyGroups || []).flatMap((group) => [
-        group.label,
-        group.text,
-      ])),
-    ]);
-
-  nextStep.value = [
-    `[Runbook] ${runbook.title}`,
-    ...stepLines,
-  ].join("\n");
-
-  markIncidentCheck("查閱對應 SOP");
-  saveIncidentState();
-  updateHandoverSummary();
-  setActiveView("dashboard");
-  nextStep.focus();
-  nextStep.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function createRunbookCard(runbook) {
@@ -2916,24 +2896,12 @@ function createRunbookCard(runbook) {
   relatedLinks.appendChild(createTextElement("h4", "runbook-related-title", "相關連結"));
   relatedLinks.appendChild(actions);
 
-  const quickActions = document.createElement("div");
-  quickActions.className = "runbook-quick-actions";
-  quickActions.appendChild(createTextElement("h4", "runbook-related-title", "快速操作"));
-
-  const fillButton = document.createElement("button");
-  fillButton.type = "button";
-  fillButton.className = "runbook-fill";
-  fillButton.textContent = "帶入下一步";
-  fillButton.addEventListener("click", () => fillIncidentNextStepFromRunbook(runbook));
-  quickActions.appendChild(fillButton);
-
   card.appendChild(header);
   card.appendChild(meta);
   card.appendChild(body);
   if ((runbook.links || []).length > 0) {
     card.appendChild(relatedLinks);
   }
-  card.appendChild(quickActions);
 
   return card;
 }
