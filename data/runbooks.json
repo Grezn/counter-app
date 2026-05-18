@@ -75,27 +75,6 @@
           ]
         },
         {
-          "title": "Outlook 信件規則建議",
-          "items": [
-            "規則用途：將疑似 Dell Server/Storage 報修信集中到 Dell 資料夾，實際是否回報仍依值班規則人工判斷",
-            "條件：收件者地址包含 support@ginnet.com.tw",
-            "建議加強條件：郵件標題或內文包含 Dell、ServiceTag、Server、Storage、PowerEdge、PowerVault、PowerStore、EMC 等關鍵字",
-            "動作：移至 Dell 資料夾",
-            "建議勾選：停止處理其他規則",
-            "※ Outlook 規則不建議直接判斷值班時間；時間與產品類別由值班人員依 SOP 判斷"
-          ]
-        },
-        {
-          "title": "報修信判斷重點",
-          "items": [
-            "信箱：support@ginnet.com.tw",
-            "報修時間：上班期間 18:00 ~ 09:00",
-            "非上班期間：All Day",
-            "產品：非 Client 產品",
-            "Client 產品不列入：NB / Desktop / Monitor"
-          ]
-        },
-        {
           "title": "信件判斷 - 需回覆",
           "items": [
             "客戶產品類別 非 Clinet 端 (NB/ Desktop/ Monitor) 之報修信件",
@@ -111,18 +90,6 @@
             "2. 撥打值班電話, 簡述客戶問題及產品類別, 並詢問當前值班人員姓名",
             "3. 將客戶信件使用「轉寄」, 收件人為值班人員信箱, CC：slm@ginnet.com.tw <slm@ginnet.com.tw>; support@ginnet.com.tw <support@ginnet.com.tw>",
             "4. 紀錄表單 即完成"
-          ]
-        },
-        {
-          "title": "流程圖重點",
-          "items": [
-            "客戶報修信寄至 support@ginnet.com.tw",
-            "MSP 值班工程師確認為非 Client 產品後，撥打值班手機 0936-030-276",
-            "電話中詢問值班人員姓名與 Mail Address",
-            "若三通聯繫不到值班人員，請聯繫技術主管 Ice 0972797257 或 Gary 0917156071",
-            "使用轉寄郵件，Mail To 為值班人員 Mail Address",
-            "CC：slm@ginnet.com.tw、support@ginnet.com.tw",
-            "值班人員後續回覆客戶報修郵件，或轉給客戶 / 產品工程師"
           ]
         },
         {
