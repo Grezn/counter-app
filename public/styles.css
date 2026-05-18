@@ -1940,6 +1940,12 @@ button:disabled {
 }
 
 .runbook-detail li.runbook-note-line {
+  display: block;
+  margin: 5px 0 7px -18px;
+  padding: 6px 8px;
+  border-left: 3px solid #94a3b8;
+  border-radius: 6px;
+  background: #f1f5f9;
   font-weight: 700;
 }
 
@@ -2755,6 +2761,12 @@ html[data-theme="dark"] .runbook-copy-group-label {
 }
 
 html[data-theme="dark"] .runbook-copy-group-value {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .runbook-detail li.runbook-note-line {
+  background: rgba(148, 163, 184, 0.12);
+  border-left-color: #64748b;
   color: #cbd5e1;
 }
 

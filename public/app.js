@@ -2764,6 +2764,23 @@ function createRunbookCopyButton(items, label = "複製") {
   return button;
 }
 
+function getRunbookCopyGroupButtonLabel(group) {
+  const label = String(group && group.label ? group.label : "").trim();
+  const shortLabel = label.replace(/\s*Team$/i, "");
+
+  return shortLabel ? `複製 ${shortLabel}` : "複製";
+}
+
+function getRunbookLinkButtonLabel(link) {
+  const label = String(link && link.label ? link.label : "").trim();
+
+  if (!label) return "開啟連結";
+  if (/^開啟/.test(label)) return label;
+  if (label === "Subnet 登入頁面") return "開啟 Subnet";
+
+  return `開啟 ${label}`;
+}
+
 function getRunbookListItemClass(item) {
   const normalizedItem = String(item || "").trim();
 
@@ -2785,7 +2802,7 @@ function appendRunbookCopyGroups(parent, copyGroups, runbook) {
     const header = document.createElement("div");
     header.className = "runbook-copy-group-header";
     header.appendChild(createTextElement("strong", "runbook-copy-group-label", group.label));
-    header.appendChild(createRunbookCopyButton([group.text], "複製"));
+    header.appendChild(createRunbookCopyButton([group.text], getRunbookCopyGroupButtonLabel(group)));
 
     const value = document.createElement("div");
     value.className = "runbook-copy-group-value";
@@ -2887,7 +2904,7 @@ function createRunbookCard(runbook) {
     anchor.href = link.href;
     anchor.target = "_blank";
     anchor.rel = "noopener noreferrer";
-    anchor.textContent = link.label;
+    anchor.textContent = getRunbookLinkButtonLabel(link);
     actions.appendChild(anchor);
   });
 

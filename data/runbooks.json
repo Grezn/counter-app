@@ -476,7 +476,7 @@
       "title": "MinIO SOP",
       "summary": "MinIO Subnet Issue / Panic Alert 操作流程。",
       "severityLabel": "服務支援",
-      "severity": "MinIO SLA 為 5x8, MinIO Support 為 7x24 皆會回應",
+      "severity": "SLA 5x8；Support 7x24 皆會回應",
       "dutyRules": [],
       "replyRules": [],
       "triggers": [],
@@ -498,10 +498,10 @@
         {
           "title": "服務支援說明",
           "items": [
-            "MinIO SLA 為 5x8",
-            "MinIO Support 為 7x24 皆會回應",
-            "5x8以外時間可先轉至 MinIO",
-            "待 5x8 時間再回應到 iTop 上"
+            "SLA：5x8",
+            "Support：7x24 皆會回應",
+            "5x8 以外：可先轉至 MinIO",
+            "5x8 時間：再回應到 iTop 上"
           ]
         },
         {
@@ -522,7 +522,7 @@
         {
           "title": "緊急情況操作步驟",
           "items": [
-            "※ 非警急情況請勿使用",
+            "※ 非緊急情況請勿使用",
             "1. 在 ITop 看見客戶開立 Case, 客戶說明是緊急狀況將內容複製翻譯成英文",
             "2. 登入 MINIO Subnet",
             "3. 點選左側選單中的「Panic」",
