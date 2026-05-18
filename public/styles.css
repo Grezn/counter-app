@@ -1884,12 +1884,12 @@ button:disabled {
 .runbook-card-body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 16px;
+  gap: 18px;
+  margin-top: 18px;
 }
 
 .runbook-detail {
-  padding: 12px;
+  padding: 14px;
   border-radius: 8px;
   background: #ffffff;
   border: 1px solid #d8dee8;
@@ -1901,7 +1901,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .runbook-detail h4,
@@ -1921,11 +1921,11 @@ button:disabled {
   padding-left: 18px;
   color: #475569;
   font-size: 0.9rem;
-  line-height: 1.55;
+  line-height: 1.68;
 }
 
 .runbook-detail li {
-  margin-bottom: 3px;
+  margin-bottom: 5px;
 }
 
 .runbook-detail li:last-child {
@@ -1970,13 +1970,17 @@ button:disabled {
 
 .runbook-copy-groups {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+
+.runbook-copy-groups-many {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .runbook-copy-group {
   display: grid;
-  gap: 7px;
-  padding: 10px;
+  gap: 8px;
+  padding: 12px;
   border-radius: 8px;
   background: #f8fafc;
   border: 1px solid #d8dee8;
@@ -1997,13 +2001,17 @@ button:disabled {
 .runbook-copy-group-value {
   color: #475569;
   font-size: 0.9rem;
-  line-height: 1.55;
+  line-height: 1.65;
   overflow-wrap: anywhere;
   user-select: text;
 }
 
 .runbook-related-links {
   margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #d8dee8;
 }
 
 .runbook-related-title {
@@ -2756,6 +2764,11 @@ html[data-theme="dark"] .runbook-copy-group {
   border-color: #334155;
 }
 
+html[data-theme="dark"] .runbook-related-links {
+  background: #111827;
+  border-color: #334155;
+}
+
 html[data-theme="dark"] .runbook-copy-group-label {
   color: #f8fafc;
 }
@@ -2841,6 +2854,7 @@ html[data-theme="dark"] a {
   .details-grid,
   .weather-strip,
   .runbook-card-body,
+  .runbook-copy-groups-many,
   .runbook-controls {
     grid-template-columns: 1fr;
   }

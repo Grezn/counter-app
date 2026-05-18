@@ -2798,6 +2798,9 @@ function appendRunbookCopyGroups(parent, copyGroups, runbook) {
 
   const groups = document.createElement("div");
   groups.className = "runbook-copy-groups";
+  if (copyGroups.length > 4) {
+    groups.classList.add("runbook-copy-groups-many");
+  }
 
   copyGroups.forEach((group) => {
     const row = document.createElement("div");
@@ -2919,10 +2922,10 @@ function createRunbookCard(runbook) {
 
   card.appendChild(header);
   card.appendChild(meta);
-  card.appendChild(body);
   if ((runbook.links || []).length > 0) {
     card.appendChild(relatedLinks);
   }
+  card.appendChild(body);
 
   return card;
 }
