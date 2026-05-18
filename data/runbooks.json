@@ -292,142 +292,534 @@
     {
       "id": "akamai-duty-case-flow",
       "category": "akamai",
-      "title": "Akamai 進線與開 Case SOP",
-      "summary": "Akamai CDN / AAP / Linode / EAA 進線後，判斷是否要排查或開立 Case，並依 5x8 / 非 5x8 時段升級。",
-      "severity": "Case 固定 3-Low Impact，特殊事件依 SOP 判斷",
-      "dutyRules": [
-        "MSP 有流程上的問題找 Bowie。",
-        "若有明確開單需求，直接進入開立 Case 步驟，完成後回報值班群組。",
-        "若沒有明確開單需求，先判斷是否為 CDN / AAP 可排查問題；無法排查再開 Case。",
-        "5x8 時段回報二線並簡述問題；非 5x8 時段提供客戶資訊範本、開立 Case 並回報值班群組。",
-        "未收到二線工程師明確回覆，不可視為處理完成。"
-      ],
-      "replyRules": [
-        "Line 群組：5x8 時段 15 分鐘無回應，@主要 SE、@次要 SE；30 分鐘仍無回覆，依主要 SE、次要 SE、Kevin、Alvin 升級。",
-        "Line 群組：非 5x8 時段 15 分鐘無回應，先與客戶確認是否需立即介入，並使用 Webex 聯繫 SE。",
-        "信件進線：直接進入開立 Case 步驟。",
-        "電話進線：詢問客戶基本聯絡資訊後，寄信請客戶填寫資訊範本，再進入開立 Case 步驟。"
-      ],
-      "triggers": [
-        "Akamai 客戶透過 Line、信件或電話進線。",
-        "客戶要求開立 Case 或問題諮詢。",
-        "客戶詢問 CDN / AAP / Linode / EAA 相關問題。",
-        "特殊客戶光寶僅協助向原廠開立 Case。"
-      ],
-      "firstChecks": [
-        "確認是否有明確開單需求。",
-        "確認目前是否為 5x8 時段。",
-        "確認案件類型：開立 Case 或問題諮詢。",
-        "收集 Account Name、聯絡窗口姓名、Mail、產品類別、案件標題、問題描述與附件。",
-        "若資訊未齊全，不可開立 Case。不得以客戶口述直接開單。"
-      ],
-      "steps": [
-        "若需開 Case，Category 選 Technical Support Issue。",
-        "Product 不知道則選 Other；Problem 不知道則選 Other。",
-        "Subject 使用「客戶 Account Name - 問題標題」。",
-        "Description 填入客戶問題，Severity 固定 3-Low Impact。",
-        "Upload File 上傳客戶附件，若有。",
-        "Name 使用 Akamai-support，Phone Number 使用 +886800008669，Email 使用 akamai-support@metaage.com.tw。",
-        "完成後回報 Akamai 值班群組與客戶。"
-      ],
-      "escalateWhen": [
-        "5x8 時段 30 分鐘仍無 SE 回覆。",
-        "非 5x8 時段客戶要求立即介入。",
-        "無法完成 CDN / AAP 排查。",
-        "Prolexic 流量清洗需求或疑似攻擊事件。"
-      ],
-      "contacts": [
-        "開 Case Name：Akamai-support",
-        "開 Case Phone Number：+886800008669",
-        "開 Case Email：akamai-support@metaage.com.tw",
-        "Prolexic GCIC 聯絡人：Aaron Wu，+886953640182，aaron.wu@staff.1111.com.tw",
-        "Prolexic 開 Case 用 Email：gcic@metaage.com.tw",
-        "Prolexic 原廠收信 Mail：managesecurity@akamai.com",
-        "緊急電話開 Case：美國 1-866-800-0366，新加坡 +65-6576-9350"
-      ],
-      "mailRecipients": [
-        "蓋亞：support@gaia.net; alan.liu@metaguru.com.tw; weishiau@metaage.com.tw; bowiehsieh@metaage.com.tw; andychan@metaage.com.tw; gary.chen@metaage.com.tw",
-        "歐米：shmilyliu@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw; andychan@metaage.com.tw; weishiau@metaage.com.tw",
-        "智雲：twop@myserver.asia; webber@myserver.asia; nimoliang@metaage.com.tw; bowiehsieh@metaage.com.tw; jeffchu@metaage.com.tw; joe_chen@metaage.com.tw; gary.chen@metaage.com.tw",
-        "摩速：gary.chen@mlytics.com; francis.lien@mlytics.com; wesley.tsai@mlytics.com; simon.shaw@mlytics.com; victor.chen@mlytics.com; willy.hong@mlytics.com; nimoliang@metaage.com.tw; gary.chen@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw",
-        "AJ：akamai-support@ajinfotech.com.tw; senachen@metaage.com.tw; andychan@metaage.com.tw; gary.chen@metaage.com.tw; bowiehsieh@metaage.com.tw"
-      ],
+      "title": "Akamai SOP",
+      "summary": "Akamai 進線、開 Case、案件追蹤、Portal 帳號、EAA 與 Prolexic 流程。",
+      "severityLabel": "Case Severity",
+      "severity": "固定選擇 3-Low Impact",
+      "dutyRules": [],
+      "replyRules": [],
+      "ignoreRules": [],
+      "triggers": [],
+      "firstChecks": [],
+      "steps": [],
+      "escalateWhen": [],
+      "contacts": [],
+      "mailRecipients": [],
       "extraSections": [
         {
-          "title": "客戶資訊範本",
+          "title": "進線處理流程",
           "items": [
-            "中文：您好，請幫我填寫以下資料以利於後續處理：案件類型、Account Name、聯絡窗口姓名、聯絡窗口 Mail、產品類別、案件標題、問題描述。",
-            "英文：Hello, please help provide the following information to facilitate further processing: Case Type, Account Name, Contact Person Name, Contact Person Email, Product Category, Case Title, Issue Description.",
-            "若客戶已有給部分資料，請先行填入。"
+            "Step 1. 是否有明確開單需求？",
+            "✔ 有",
+            "→ 直接進入「開立 Case 步驟」",
+            "→ 完成後回報值班群組",
+            "✘ 無",
+            "→ 判斷是否為 CDN / AAP 可排查問題",
+            "→ 依 SOP 排查",
+            "→ 若無法排查 → 進入「開立 Case 步驟」",
+            "Step 2. 是否為 5x8 時段？",
+            "✔ 是",
+            "→ 回報二線 (簡述問題)",
+            "✘ 否",
+            "→ 提供客戶資訊範本",
+            "→ 開立 Case",
+            "→ 回報值班群組"
           ]
         },
         {
-          "title": "可開 Case 類型",
+          "title": "Line 群組聯繫規則",
           "items": [
-            "Report、Billing 顯示異常相關。",
-            "憑證部署、Cache、站台無法訪問、顯示異常、訪問緩慢。",
-            "原先使用正常但突然故障之報修。",
-            "Access log 調閱、攻擊事件判斷。",
-            "正常使用中的設定要進行設定調整之確認。",
-            "不可開 Case：新配置且尚未使用中的設定除錯相關。"
+            "5x8 時段",
+            "15 分鐘無回應 →",
+            "@主要SE",
+            "@次要SE",
+            "若 5x8 時段內 30 分鐘仍無回覆：",
+            "→ 啟動升級順序",
+            "→ 主要 SE → 次要 SE → Kevin → Alvin",
+            "非 5x8 時段",
+            "15 分鐘無回應 →",
+            "與客戶確認是否需立即介入",
+            "使用 Webex 聯繫 SE",
+            "⚠️ 未收到二線工程師明確回覆，不可視為處理完成",
+            "持續跟進升級順序",
+            "主要 SE",
+            "次要 SE",
+            "Kevin",
+            "Alvin",
+            "開立 Case"
           ]
         },
         {
-          "title": "內部回報範本",
+          "title": "信件 / 電話進線",
           "items": [
-            "原廠 CaseID、案件類型、Account Name、聯絡窗口姓名、聯絡窗口 Mail、產品類別、案件標題、問題描述、MSP 排查內容描述。",
-            "Line 群組提問：@負責SE 您好，[Line群名稱] [客戶名稱] 有提出問題，問題內容：",
-            "轉交二線回覆：[客戶Account] 的案件已轉交二線工程師 [XXX] 接手處理，後續該案件轉由 [XXX] 負責。"
+            "② 信件",
+            "直接進入開立 Case 步驟",
+            "③ 電話",
+            "詢問客戶基本聯絡資訊後",
+            "寄信給客戶填寫",
+            "進入開立 Case 步驟",
+            "詢問範本：",
+            "若客戶已有給部分資料，請先行填入",
+            "※ 特殊客戶(僅協助向原廠開立 Case)：",
+            "光寶"
+          ],
+          "copyGroups": [
+            {
+              "label": "詢問範本",
+              "copyLabel": "複製範本",
+              "text": "您好，請幫我填寫以下資料以利於後續處理\n\n1. 案件類型(開立Case or 問題諮詢)：\n2. Account Name：\n3. 聯絡窗口姓名：\n4. 聯絡窗口 Mail：\n5. 產品類別：\n6. 案件標題：\n7. 問題描述(包含文字敘述、畫面截圖、附件)："
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "開立 Case 步驟 - 判斷類型",
+          "items": [
+            "判斷類型：",
+            "ＯReport、Billing 顯示異常相關",
+            "Ｏ憑證部署相關",
+            "ＯCache 相關",
+            "Ｏ站台相關 (無法訪問、顯示異常、訪問緩慢)",
+            "Ｏ原先使用正常但突然故障之報修相關",
+            "ＯAccess log 調閱相關、攻擊事件判斷相關",
+            "Ｏ正常使用中的設定要進行設定調整之確認相關",
+            "Ｏ其他特殊需求",
+            "Ｘ新配置且尚未使用中的設定除錯相關"
           ]
         },
         {
-          "title": "Prolexic 流量清洗",
+          "title": "開立 Case 步驟 - Case 欄位",
           "items": [
-            "必須再次與客戶確認要開啟 Prolexic 流量清洗，才可開立 Case。",
-            "目前僅接受 GCIC 清洗流量需求。",
-            "信件主旨需帶客戶名稱，例如 GCIC Please Cleaning Flow。",
-            "信件內容只能使用英文。",
-            "原廠 SOCC 團隊會身份驗證，需提供客戶名稱與開 Case Email。",
-            "開立完成後，複製 Akamai 回信內 Case 編號，再回覆 Akamai 清洗與監控 24 小時。"
+            "開立 Case",
+            "Category：Technical Support Issue",
+            "Product：不知道則選擇 Other",
+            "Problem：不知道則選擇 Other",
+            "Subject：客戶 Account Name - 問題標題",
+            "Description：填入客戶問題",
+            "Severity：固定選擇 3-Low Impact",
+            "Upload File：客戶的附件 (若有)"
+          ],
+          "copyGroups": [
+            {
+              "label": "Name",
+              "copyLabel": "複製 Name",
+              "text": "Akamai-support"
+            },
+            {
+              "label": "Phone Number",
+              "copyLabel": "複製電話",
+              "text": "+886800008669"
+            },
+            {
+              "label": "Email",
+              "copyLabel": "複製信箱",
+              "text": "akamai-support@metaage.com.tw"
+            }
           ]
         },
         {
-          "title": "案件追蹤",
+          "title": "回報 Akamai 值班群組 & 客戶",
           "items": [
-            "5x8 上班時段使用 Webex 群組追蹤。",
-            "下班、休假日時段使用 Support Chat 追蹤。",
-            "Webex 詢問範本：Hi Team，請協助追蹤確認一下 Case [CaseID] 目前的案件處理進度，謝謝。",
-            "Support Chat：Account 選 Metaage Corporation - Tier 1 Reseller，Support > Support Chat > Technical Support > Launch Chat。",
-            "Short Description：This case [CaseID] has not received any response so far。",
-            "Products 選 Other；交談需使用英文。"
+            "待 Akamai Support 回覆第一封信件後按「全部回覆」，並將以下信箱加入「副本」即可",
+            "該案負責業務 Mail",
+            "客戶窗口 Mail"
+          ],
+          "copyGroups": [
+            {
+              "label": "客戶回覆範例",
+              "copyLabel": "複製客戶回覆",
+              "text": "您好，已幫您開立完成。\nCase ID："
+            },
+            {
+              "label": "回覆內部群組範本（[]中請自行替換）",
+              "copyLabel": "複製內部範本",
+              "text": "原廠CaseID :\n案件類型(開立Case or 問題諮詢) :\nAccount Name :\n聯絡窗口姓名 :\n聯絡窗口Mail :\n產品類別 :\n案件標題 :\n問題描述(包含文字敘述、畫面截圖、附件) :\nMSP排查內容描述 :"
+            },
+            {
+              "label": "Line 群組有提問回覆範本",
+              "copyLabel": "複製 Line 範本",
+              "text": "@負責SE 您好, [請替換Line群名稱] [客戶名稱] 有提出問題\n問題內容："
+            },
+            {
+              "label": "如有需要，後續確認後回覆",
+              "copyLabel": "複製接手範本",
+              "text": "[客戶Account]的案件已轉交二線工程師[XXX]\n接手處理，後續該案件轉由[XXX]負責。"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "特殊 Case - Prolexic (流量清洗)",
+          "items": [
+            "必須跟客戶再次確認是要開啟 Prolexic 流量清洗 才進行開立 Case",
+            "※ 目前僅接受 GCIC 清洗流量的需求，相關資料如下："
+          ],
+          "copyGroups": [
+            {
+              "label": "名稱",
+              "copyLabel": "複製名稱",
+              "text": "GCIC"
+            },
+            {
+              "label": "聯絡人",
+              "copyLabel": "複製聯絡人",
+              "text": "Aaron Wu"
+            },
+            {
+              "label": "電話",
+              "copyLabel": "複製電話",
+              "text": "+886953640182"
+            },
+            {
+              "label": "Mail",
+              "copyLabel": "複製 Mail",
+              "text": "aaron.wu@staff.1111.com.tw"
+            },
+            {
+              "label": "開 Case 用 Email",
+              "copyLabel": "複製 Case Email",
+              "text": "gcic@metaage.com.tw"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "Prolexic 1. 緊急時打電話開 Case 步驟",
+          "items": [
+            "(美國)",
+            "1-866-800-0366",
+            "(新加坡)",
+            "+65-6576-9350",
+            "原廠 SOCC 團隊會進行身份驗證，需要提供以下資訊：",
+            "客戶名稱",
+            "開 Case Email"
+          ],
+          "copyGroups": [
+            {
+              "label": "美國",
+              "copyLabel": "複製美國電話",
+              "text": "1-866-800-0366"
+            },
+            {
+              "label": "新加坡",
+              "copyLabel": "複製新加坡電話",
+              "text": "+65-6576-9350"
+            }
           ]
         },
         {
-          "title": "ACC Portal 新增帳號",
+          "title": "Prolexic 2. 一般情況發信步驟",
           "items": [
-            "請客戶提供 Account Name、Email、First Name、Last Name、Contract、Group、Role。",
-            "切換到客戶 Account，進入 Identity & Access > Settings。",
-            "Allowed email domains 新增客戶 email domain，若已存在則保持預設。",
-            "進入 User and API Clients > Create user，填入 Email、姓名、Time zone Asia/Taipei、Country Taiwan。",
-            "根據客戶給的 Account + Contract 選 Role，確認後 Submit。"
-          ]
+            "1. 填寫以下資訊：",
+            "信件主旨：標題必須帶客戶名稱 Ex: GCIC Please Cleaning Flow",
+            "※ 信件內容只能使用英文",
+            "要用對應的 Case Email 發信，會幫每個客戶獨立建立一個 Metaage 信箱。",
+            "客戶會有一份 Runbook，裡面有 Authorized Contacts list，CC 客戶的 Email 必須在清單內。"
+          ],
+          "copyGroups": [
+            {
+              "label": "發信 Mail",
+              "copyLabel": "複製發信 Mail",
+              "text": "gcic@metaage.com.tw"
+            },
+            {
+              "label": "原廠收信 Mail",
+              "copyLabel": "複製原廠 Mail",
+              "text": "managesecurity@akamai.com"
+            },
+            {
+              "label": "CC 客戶 Mail",
+              "copyLabel": "複製 CC Mail",
+              "text": "aaron.wu@staff.1111.com.tw"
+            },
+            {
+              "label": "信件主旨範例",
+              "copyLabel": "複製主旨",
+              "text": "GCIC Please Cleaning Flow"
+            },
+            {
+              "label": "信件內容",
+              "copyLabel": "複製內容",
+              "text": "Hi Sir,\n\nCustomer is being attack. Please Cleaning the flow. Thanks."
+            }
+          ],
+          "wide": true
         },
         {
-          "title": "EAA 報修流程",
+          "title": "Prolexic 開立完成後回覆 Akamai",
           "items": [
-            "客戶以 Mail 或 Line 進線時，確認資訊是否符合範本且包含截圖或 Agent log。",
-            "資訊不足時提供 SOP 或資訊範本請客戶搜集，完成後再開 Case。",
-            "開立 Akamai Case 時，將客戶聯絡人 Email 直接 Loop CC。",
-            "若客戶來信為英文，提供英文範本。",
-            "EAA 可開單：Web/Agent 無法連線、連線緩慢、Agent 安裝或更新後無法連線、身分驗證問題、Mobile 使用問題、Report 無法查到連線紀錄。",
-            "EAA 不可開單：新配置且尚未使用中的設定除錯相關。"
-          ]
+            "2. 開立完成後會收到 Akamai 回信，複製內文中的 Case 編號並回覆 Akamai：",
+            "信件主旨：※ 請自行更改為複製的 Case ID",
+            "信件內容：※ 內容中日期與時間請更改為當下時間",
+            "3. 待 Akamai 回覆開始執行即完成"
+          ],
+          "copyGroups": [
+            {
+              "label": "發信 Mail",
+              "copyLabel": "複製發信 Mail",
+              "text": "gcic@metaage.com.tw"
+            },
+            {
+              "label": "原廠收信 Mail",
+              "copyLabel": "複製原廠 Mail",
+              "text": "managesecurity@akamai.com"
+            },
+            {
+              "label": "CC 客戶 Mail",
+              "copyLabel": "複製 CC Mail",
+              "text": "aaron.wu@staff.1111.com.tw"
+            },
+            {
+              "label": "信件主旨範例",
+              "copyLabel": "複製主旨",
+              "text": "[AKAM-CASE #F-CS-3771356]"
+            },
+            {
+              "label": "信件內容",
+              "copyLabel": "複製內容",
+              "text": "Hi Sir,\n\nPlease clean and monitor the traffic 24 hours from 10/28 17:34(GMT+8). Thank you."
+            }
+          ],
+          "wide": true
         },
         {
           "title": "Linode 問題",
           "items": [
-            "既有使用中帳戶移轉至 Metaage：提供 Linode 帳戶移轉說明。",
-            "如何從 Linode 平台開立 Ticket：提供 Linode 開立 Ticket SOP。"
+            "1. 客戶詢問該如何將既有已在使用中的帳戶移轉至Metaage",
+            "給予 Linode 帳戶移轉說明 給客戶參考",
+            "2. 客戶詢問該如何從 Linode 平台上開立 Ticket",
+            "給予 Linode 開立 Ticket SOP 給客戶"
+          ]
+        },
+        {
+          "title": "案件追蹤 SOP",
+          "items": [
+            "目前 Akamai 原廠有以下兩種案件追蹤方式，並依照時段使用",
+            "1. Webex群組 :🔔[External] Akamai & Metaage(5x8上班時段)",
+            "2. Support Chat(下班、休假日時段)"
+          ]
+        },
+        {
+          "title": "Webex 追蹤",
+          "items": [
+            "1. 在群組中詢問：",
+            "※ [] 內的資料請自行編輯更換",
+            "2. 將 Webex Support 的回覆內容回覆給客戶 / SI",
+            "※ [] 內的資料請自行編輯更換"
+          ],
+          "copyGroups": [
+            {
+              "label": "Webex 詢問範本",
+              "copyLabel": "複製 Webex 範本",
+              "text": "Hi Team,\n請協助追蹤確認一下 Case [貼上 CaseID] 目前的案件處理進度\n謝謝"
+            },
+            {
+              "label": "回覆客戶 / SI 範本",
+              "copyLabel": "複製回覆範本",
+              "text": "目前已向原廠確認案件進度\n[Support 回覆內容整理]\n並會請其盡快給予回覆\n感謝您的耐心等候"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "Support Chat 追蹤",
+          "items": [
+            "1. Account: Metaage Corporation - Tier 1 Reseller",
+            "2. 點選 Support",
+            "3. 點選 Support Chat",
+            "4. 點選 Technical Support",
+            "5. 點選 Launch Chat",
+            "6. 填入以下資料",
+            "※ [] 內的資料請自行編輯更換",
+            "• Products: Other",
+            "7. 點選 Chat Now 後開始交談 (英文)",
+            "8. 系統會協助開立一個這個追蹤案件的 Case (會收到信)",
+            "9. 將 Chat 內 Support 回覆的內容回覆給客戶/SI",
+            "※ [] 內的資料請自行編輯更換"
+          ],
+          "copyGroups": [
+            {
+              "label": "Short Description",
+              "copyLabel": "複製 Short",
+              "text": "This case [貼上CaseID] has not received any response so far"
+            },
+            {
+              "label": "Full Description",
+              "copyLabel": "複製 Full",
+              "text": "This case (Case ID) has not received any response so far. From [開立 Case 時間] to [Support 最後回覆時間], no further replies have been received. We kindly request your assistance in checking the current status of this case. Thank you."
+            },
+            {
+              "label": "回覆客戶 / SI 範本",
+              "copyLabel": "複製回覆範本",
+              "text": "目前已向原廠確認案件進度\n[Support 回覆內容整理]\n並會請其盡快給予回覆\n感謝您的耐心等候"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "Portal 新增帳號 SOP - 客戶填寫格式",
+          "items": [
+            "1. 請客戶依照以下格式填寫"
+          ],
+          "copyGroups": [
+            {
+              "label": "填寫格式",
+              "copyLabel": "複製格式",
+              "text": "1. Account Name : [Console 頁面右上角顯示的名稱]\n2. Email : \n3. First Name : \n4. Last Name : \n5. Contract : \n6. Group（沒有Sub Group可不填）：\n7. Role(Admin、Editor、Viewer or Other Role Name) :"
+            },
+            {
+              "label": "範例",
+              "copyLabel": "複製範例",
+              "text": "1. Account Name : Metaage Inc. Corp\n2. Email : demolin@gmail.com\n3. First Name : demo\n4. Last Name : lin\n5. Contract : W-NKF57L\n6. Group(i&#Sub Group • Kth) : Ginnet\n7. Role(Admin、Editor、Viewer or Other Role Name) : Viewer"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "Portal 新增帳號 SOP - 操作步驟",
+          "items": [
+            "2. 切換到客戶的 Account (參考客戶給的 Account Name)",
+            "3. 左上角「 ≡ 」展開選擇「Identity & Access」",
+            "4. 選擇「 Settings」",
+            "5. Allowed email domains:",
+            "「新增」客戶 email @後的 domain, 若已經有則保持預設",
+            "6. 點選「Update Settings」",
+            "7. 選擇「User and API Clients」",
+            "8. 點選 「Create user」",
+            "9. 「Email」 & 「Verify email」 填入客戶 Mail",
+            "10. 確認無誤點選 「Continue」",
+            "11. 填入以下資料",
+            "First name: [客戶給予的]",
+            "Last name: [客戶給予的]",
+            "Time zone: Asia/Taipei",
+            "Country: Taiwan",
+            "根據客戶給予的 Account + Contract 在後面選擇 Role",
+            "確認無誤點選 「Submit」 即完成帳號新增"
+          ],
+          "wide": true
+        },
+        {
+          "title": "EAA 報修流程",
+          "items": [
+            "1. 客戶以 Mail or Line 進線",
+            "2. 確認客戶給予的資訊是否符合資訊範本",
+            "3. 確認客戶給予的資訊是否有包含畫面截圖 or Agent log",
+            "是 -> 進行步驟 4",
+            "否 -> 提供 SOP 請客戶依照步驟搜集 (SOP 事前有先提供給客戶了, 若客戶不曉得再提供步驟給客戶), 完成後進行步驟 4",
+            "4. 開立 Akamai Case, 並將客戶聯絡人 Email 直接 Loop (CC) 即可",
+            "5. 以客戶進線方式回報案件編號並告知客戶後續可以直接透過開立好的信件直接向原廠追蹤進度, 再到 Akamai 值班群組回報"
+          ],
+          "wide": true
+        },
+        {
+          "title": "Case 範本",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "中文",
+              "copyLabel": "複製中文",
+              "text": "您好，請幫我填寫以下資料以利於後續處理\n\n1. 案件類型(開立Case or 問題諮詢)：\n2. Account Name：\n3. 聯絡窗口姓名：\n4. 聯絡窗口 Mail：\n5. 產品類別：\n6. 案件標題：\n7. 問題描述(包含文字敘述、畫面截圖、附件)："
+            },
+            {
+              "label": "英文",
+              "copyLabel": "複製英文",
+              "text": "Hello, please help provide the following information to facilitate further processing:\n1. Case Type (Open a Case or Inquiry):\n2. Account Name:\n3. Contact Person Name:\n4. Contact Person Email:\n5. Product Category:\n6. Case Title:\n7. Issue Description (including written description, screenshots, and attachments):"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "EAA 資訊範本",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "中文",
+              "copyLabel": "複製中文",
+              "text": "請提供使用資訊(only use for EAA):\n1. 問題發生時間: \n2. 地區與Public IP:\n3. User Name:\n4. 裝置OS:\n5. 預設使用的瀏覽器:\n6. 訪問的Application:\n7. 先前是否有成功訪問過的紀錄: 是/否，如填寫”是”則接續填寫7-1\n  1) 請問裝置是否有任何變動(請簡述):\n8. 連線方式: Web/Client access，如填寫”Client access”則接續填寫8-1、8-2、8-3\n  1) 是否為首次安裝GPA:\n  2) 當前安裝版本:\n  3) 關閉再重啟GPA或重新安裝GPA後，是否還會遇到相同錯誤:"
+            },
+            {
+              "label": "英文",
+              "copyLabel": "複製英文",
+              "text": "Please provide the following usage information (for EAA use only):\n1. Time when the issue occurred:\n2. Region and Public IP:\n3. User Name:\n4. Device Operating System:\n5. Default Browser:\n6. Application being accessed:\n7. Has the user previously accessed the application successfully? (Yes/No)\nIf “Yes”, please continue with 7-1:\n  1. Have there been any changes to the device? (Please briefly describe):\n8. Connection Method: Web / Client Access\nIf “Client Access”, please continue with 8-1, 8-2, and 8-3:\n  1. Is this the first time installing GPA?\n  2. Current installed version:\n  3. After closing and reopening GPA or reinstalling GPA, does the same issue still occur?"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "EAA 資訊範本填寫範例",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "範例",
+              "copyLabel": "複製範例",
+              "text": "請提供使用資訊:\n1. 問題發生時間: 2024/01/01 12:34 PM GTM+8\n2. 地區與Public IP: 台灣， 60.250.1.1\n3. User Name: test888@metaage.com.tw or AD User\n4. 裝置OS: Windows 11 / macOS 26 (Tahoe) / Linux Ubuntu 22.04\n5. 預設使用的瀏覽器: Chrome / FireFox / Edge等\n6. 訪問的Application: hostname.metaage.com.tw:443 or 10.1.2.3:3389\n7. 先前是否有成功訪問過的紀錄: 是/否，如填寫”是”則接續填寫7-1\n1) 請問裝置是否有任何變動(請簡述): 系統更新、使用不同的網路環境、安裝或更新防毒、同時使用其他VPN agent等等\n8. 連線方式: Web/Client access，如填寫”Client access”則接續填寫8-1、8-2、8-3\n1) 是否為首次安裝GPA: 是/否\n2) 當前安裝版本: v7.1.3\n3) 關閉再重啟GPA或重新安裝GPA後，是否還會遇到相同錯誤: 是"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "EAA 注意事項",
+          "items": [
+            "1. 電話與 Line 群組報修方式都統一詢問客戶能聯繫的窗口 Mail, 並以 Mail 的方式回覆資訊範本請客戶回填",
+            "2. Mail 的報修方式除非客戶已經以我方範本格式, 否則一律回覆範本給客戶回填",
+            "3. 如果客戶來信為英文, 則提供英文範本給客戶填寫",
+            "⚠️ 若資訊未齊全，不可開立 Case。",
+            "⚠️ 不得以「客戶口述」直接開單。"
+          ],
+          "wide": true
+        },
+        {
+          "title": "判斷問題類型是否能開 Case",
+          "items": [
+            "✓ 可開單 :",
+            "User透過Web/Agent無法連線",
+            "User透過Web/Agent連線緩慢，Latency過高",
+            "Agent新安裝/更新版本後無法連線",
+            "Agent進行身分驗證時相關問題",
+            "Agent安裝時出現錯誤碼問題",
+            "Mobile使用相關問題",
+            "Report無法查到User的連線紀錄",
+            "X 不可開Case :",
+            "新配置且尚未使用中的設定除錯相關"
+          ],
+          "wide": true
+        },
+        {
+          "title": "寄信用信件",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "蓋亞",
+              "copyLabel": "複製蓋亞",
+              "text": "support@gaia.net; alan.liu@metaguru.com.tw; weishiau@metaage.com.tw; bowiehsieh@metaage.com.tw; andychan@metaage.com.tw; gary.chen@metaage.com.tw"
+            },
+            {
+              "label": "歐米",
+              "copyLabel": "複製歐米",
+              "text": "shmilyliu@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw; andychan@metaage.com.tw; weishiau@metaage.com.tw"
+            },
+            {
+              "label": "智雲",
+              "copyLabel": "複製智雲",
+              "text": "twop@myserver.asia; webber@myserver.asia; nimoliang@metaage.com.tw; bowiehsieh@metaage.com.tw; jeffchu@metaage.com.tw; joe_chen@metaage.com.tw; gary.chen@metaage.com.tw"
+            },
+            {
+              "label": "摩速",
+              "copyLabel": "複製摩速",
+              "text": "gary.chen@mlytics.com; francis.lien@mlytics.com; wesley.tsai@mlytics.com; simon.shaw@mlytics.com; victor.chen@mlytics.com; willy.hong@mlytics.com; nimoliang@metaage.com.tw; gary.chen@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw"
+            },
+            {
+              "label": "AJ",
+              "copyLabel": "複製 AJ",
+              "text": "akamai-support@ajinfotech.com.tw; senachen@metaage.com.tw; andychan@metaage.com.tw; gary.chen@metaage.com.tw; bowiehsieh@metaage.com.tw"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "流程問題",
+          "items": [
+            "MSP 有流程上的問題 找 Bowie。"
           ]
         }
       ],

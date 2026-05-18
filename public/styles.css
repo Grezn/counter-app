@@ -1896,6 +1896,10 @@ button:disabled {
   user-select: text;
 }
 
+.runbook-detail.wide {
+  grid-column: 1 / -1;
+}
+
 .runbook-detail-heading {
   display: flex;
   align-items: center;
@@ -2000,6 +2004,7 @@ button:disabled {
   font-size: 0.9rem;
   line-height: 1.55;
   overflow-wrap: anywhere;
+  white-space: pre-line;
   user-select: text;
 }
 

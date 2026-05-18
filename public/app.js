@@ -2792,8 +2792,19 @@ function getRunbookLinkButtonLabel(link) {
 function getRunbookListItemClass(item) {
   const normalizedItem = String(item || "").trim();
 
-  if (normalizedItem.startsWith("※")) return "runbook-note-line";
-  if (/^\d+\.\s/.test(normalizedItem)) return "runbook-numbered-line";
+  if (normalizedItem.startsWith("※") || normalizedItem.startsWith("⚠️")) {
+    return "runbook-note-line";
+  }
+
+  if (
+    /^\d+\.\s/.test(normalizedItem)
+    || /^Step\s+\d+\./i.test(normalizedItem)
+    || /^[①②③✔✘✓ＯＸX→•]/.test(normalizedItem)
+    || /^[是否]\s*->/.test(normalizedItem)
+  ) {
+    return "runbook-numbered-line";
+  }
+
   return "";
 }
 
@@ -2833,6 +2844,9 @@ function appendRunbookList(parent, title, items, runbook, options = {}) {
 
   const section = document.createElement("div");
   section.className = "runbook-detail";
+  if (options.wide) {
+    section.classList.add("wide");
+  }
 
   const heading = document.createElement("div");
   heading.className = "runbook-detail-heading";
@@ -2871,6 +2885,7 @@ function appendRunbookExtraSections(parent, sections, runbook) {
   (sections || []).forEach((section) => {
     appendRunbookList(parent, section.title, section.items, runbook, {
       copyGroups: section.copyGroups || [],
+      wide: section.wide,
     });
   });
 }
