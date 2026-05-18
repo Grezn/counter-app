@@ -475,6 +475,7 @@
       "category": "minio",
       "title": "MinIO SOP",
       "summary": "MinIO Subnet Issue / Panic Alert 操作流程。",
+      "severityLabel": "服務支援",
       "severity": "MinIO SLA 為 5x8, MinIO Support 為 7x24 皆會回應",
       "dutyRules": [],
       "replyRules": [],

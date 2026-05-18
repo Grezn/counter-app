@@ -2624,27 +2624,174 @@ function createRunbookCategoryButton(categoryId, label) {
   return button;
 }
 
-function appendRunbookList(parent, title, items) {
+function getRunbookLinkAliases(runbook) {
+  const aliases = [];
+  const seen = new Set();
+
+  (runbook.links || []).forEach((link) => {
+    const candidates = [link.label];
+
+    if (link.label === "iTop") {
+      candidates.push("ITop", "ITOP");
+    }
+
+    if (link.href && link.href.includes("subnet.min.io")) {
+      candidates.push("MINIO Subnet", "MinIO Subnet", "Subnet 登入頁面", "Subnet");
+    }
+
+    if (link.label === "原 SOP") {
+      candidates.push("原 SOP");
+    }
+
+    candidates.forEach((candidate) => {
+      const alias = String(candidate || "").trim();
+      const key = alias.toLowerCase();
+
+      if (!alias || seen.has(key)) return;
+
+      seen.add(key);
+      aliases.push({
+        alias,
+        aliasLower: key,
+        href: link.href,
+      });
+    });
+  });
+
+  return aliases.sort((a, b) => b.alias.length - a.alias.length);
+}
+
+function appendRunbookLinkedText(parent, text, runbook) {
+  const value = String(text || "");
+  const valueLower = value.toLowerCase();
+  const aliases = getRunbookLinkAliases(runbook);
+  let cursor = 0;
+
+  while (cursor < value.length) {
+    let nextMatch = null;
+
+    aliases.forEach((alias) => {
+      const index = valueLower.indexOf(alias.aliasLower, cursor);
+
+      if (index === -1) return;
+      if (!nextMatch || index < nextMatch.index || (
+        index === nextMatch.index && alias.alias.length > nextMatch.alias.alias.length
+      )) {
+        nextMatch = { alias, index };
+      }
+    });
+
+    if (!nextMatch) {
+      parent.appendChild(document.createTextNode(value.slice(cursor)));
+      break;
+    }
+
+    if (nextMatch.index > cursor) {
+      parent.appendChild(document.createTextNode(value.slice(cursor, nextMatch.index)));
+    }
+
+    const anchor = document.createElement("a");
+    anchor.className = "runbook-inline-link";
+    anchor.href = nextMatch.alias.href;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.textContent = value.slice(
+      nextMatch.index,
+      nextMatch.index + nextMatch.alias.alias.length,
+    );
+    parent.appendChild(anchor);
+
+    cursor = nextMatch.index + nextMatch.alias.alias.length;
+  }
+}
+
+async function copyTextToClipboard(text) {
+  const value = String(text || "");
+
+  if (navigator.clipboard && window.isSecureContext !== false) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    document.execCommand("copy");
+  } finally {
+    textarea.remove();
+  }
+}
+
+function setTemporaryButtonText(button, text, duration = 1400) {
+  const originalText = button.dataset.originalText || button.textContent;
+  button.dataset.originalText = originalText;
+  button.textContent = text;
+  window.clearTimeout(Number(button.dataset.resetTimer || 0));
+
+  const timer = window.setTimeout(() => {
+    button.textContent = originalText;
+    button.dataset.resetTimer = "";
+  }, duration);
+  button.dataset.resetTimer = String(timer);
+}
+
+function createRunbookCopyButton(items, label = "複製") {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "runbook-copy-button";
+  button.textContent = label;
+  button.setAttribute("aria-label", "複製此段內容");
+
+  button.addEventListener("click", async () => {
+    try {
+      await copyTextToClipboard((items || []).join("\n"));
+      setTemporaryButtonText(button, "已複製");
+    } catch (err) {
+      setTemporaryButtonText(button, "複製失敗");
+    }
+  });
+
+  return button;
+}
+
+function appendRunbookList(parent, title, items, runbook) {
   if (!items || items.length === 0) return;
 
   const section = document.createElement("div");
   section.className = "runbook-detail";
-  section.appendChild(createTextElement("h4", "", title));
+
+  const heading = document.createElement("div");
+  heading.className = "runbook-detail-heading";
+  heading.appendChild(createTextElement("h4", "", title));
+
+  if (/聯絡資訊|信件收件人/.test(title)) {
+    heading.appendChild(createRunbookCopyButton(items, "複製"));
+  }
+
+  section.appendChild(heading);
 
   const list = document.createElement("ul");
   items.forEach((item) => {
-    list.appendChild(createTextElement("li", "", item));
+    const listItem = document.createElement("li");
+    appendRunbookLinkedText(listItem, item, runbook);
+    list.appendChild(listItem);
   });
 
   section.appendChild(list);
   parent.appendChild(section);
 }
 
-function appendRunbookExtraSections(parent, sections) {
+function appendRunbookExtraSections(parent, sections, runbook) {
   // 不同產品的 SOP 會有自己的特殊段落。
   // extraSections 讓資料可以自由新增「案件追蹤」「Case 範本」「Q&A」等內容。
   (sections || []).forEach((section) => {
-    appendRunbookList(parent, section.title, section.items);
+    appendRunbookList(parent, section.title, section.items, runbook);
   });
 }
 
@@ -2652,10 +2799,16 @@ function fillIncidentNextStepFromRunbook(runbook) {
   // 讓 SOP 不只可以看，也可以快速帶進事件表單的「下一步」。
   const nextStep = document.getElementById("incidentNextStep");
   if (!nextStep) return;
+  const stepLines = (runbook.steps || []).length
+    ? runbook.steps.map((step, idx) => `${idx + 1}. ${step}`)
+    : (runbook.extraSections || []).flatMap((section) => [
+      section.title,
+      ...(section.items || []),
+    ]);
 
   nextStep.value = [
     `[Runbook] ${runbook.title}`,
-    ...(runbook.steps || []).map((step, idx) => `${idx + 1}. ${step}`),
+    ...stepLines,
   ].join("\n");
 
   markIncidentCheck("查閱對應 SOP");
@@ -2681,20 +2834,21 @@ function createRunbookCard(runbook) {
   header.appendChild(titleBlock);
   header.appendChild(tag);
 
-  const meta = createTextElement("div", "runbook-card-meta", `嚴重度：${runbook.severity || "未分類"}`);
+  const metaLabel = runbook.severityLabel || "嚴重度";
+  const meta = createTextElement("div", "runbook-card-meta", `${metaLabel}：${runbook.severity || "未分類"}`);
 
   const body = document.createElement("div");
   body.className = "runbook-card-body";
-  appendRunbookList(body, "值班規則", runbook.dutyRules);
-  appendRunbookList(body, "信件判斷", runbook.replyRules);
-  appendRunbookList(body, "不需處理", runbook.ignoreRules);
-  appendRunbookList(body, "觸發情境", runbook.triggers);
-  appendRunbookList(body, "先確認", runbook.firstChecks);
-  appendRunbookList(body, "處理步驟", runbook.steps);
-  appendRunbookList(body, "升級條件", runbook.escalateWhen);
-  appendRunbookList(body, "聯絡資訊", runbook.contacts);
-  appendRunbookList(body, "信件收件人", runbook.mailRecipients);
-  appendRunbookExtraSections(body, runbook.extraSections);
+  appendRunbookList(body, "值班規則", runbook.dutyRules, runbook);
+  appendRunbookList(body, "信件判斷", runbook.replyRules, runbook);
+  appendRunbookList(body, "不需處理", runbook.ignoreRules, runbook);
+  appendRunbookList(body, "觸發情境", runbook.triggers, runbook);
+  appendRunbookList(body, "先確認", runbook.firstChecks, runbook);
+  appendRunbookList(body, "處理步驟", runbook.steps, runbook);
+  appendRunbookList(body, "升級條件", runbook.escalateWhen, runbook);
+  appendRunbookList(body, "聯絡資訊", runbook.contacts, runbook);
+  appendRunbookList(body, "信件收件人", runbook.mailRecipients, runbook);
+  appendRunbookExtraSections(body, runbook.extraSections, runbook);
 
   const actions = document.createElement("div");
   actions.className = "runbook-actions";
@@ -2709,17 +2863,29 @@ function createRunbookCard(runbook) {
     actions.appendChild(anchor);
   });
 
+  const relatedLinks = document.createElement("div");
+  relatedLinks.className = "runbook-related-links";
+  relatedLinks.appendChild(createTextElement("h4", "runbook-related-title", "相關連結"));
+  relatedLinks.appendChild(actions);
+
+  const quickActions = document.createElement("div");
+  quickActions.className = "runbook-quick-actions";
+  quickActions.appendChild(createTextElement("h4", "runbook-related-title", "快速操作"));
+
   const fillButton = document.createElement("button");
   fillButton.type = "button";
   fillButton.className = "runbook-fill";
   fillButton.textContent = "帶入下一步";
   fillButton.addEventListener("click", () => fillIncidentNextStepFromRunbook(runbook));
-  actions.appendChild(fillButton);
+  quickActions.appendChild(fillButton);
 
   card.appendChild(header);
   card.appendChild(meta);
   card.appendChild(body);
-  card.appendChild(actions);
+  if ((runbook.links || []).length > 0) {
+    card.appendChild(relatedLinks);
+  }
+  card.appendChild(quickActions);
 
   return card;
 }
