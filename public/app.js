@@ -2590,6 +2590,7 @@ function getFilteredRunbooks() {
         ...(section.items || []),
         ...((section.copyGroups || []).flatMap((group) => [
           group.label,
+          group.copyLabel,
           group.text,
         ])),
       ])),
@@ -2765,6 +2766,9 @@ function createRunbookCopyButton(items, label = "複製") {
 }
 
 function getRunbookCopyGroupButtonLabel(group) {
+  const copyLabel = String(group && group.copyLabel ? group.copyLabel : "").trim();
+  if (copyLabel) return copyLabel;
+
   const label = String(group && group.label ? group.label : "").trim();
   const shortLabel = label.replace(/\s*Team$/i, "");
 
@@ -2778,7 +2782,7 @@ function getRunbookLinkButtonLabel(link) {
   if (/^開啟/.test(label)) return label;
   if (label === "Subnet 登入頁面") return "開啟 Subnet";
 
-  return `開啟 ${label}`;
+  return /^[A-Za-z0-9]/.test(label) ? `開啟 ${label}` : `開啟${label}`;
 }
 
 function getRunbookListItemClass(item) {

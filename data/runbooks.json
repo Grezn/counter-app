@@ -99,55 +99,74 @@
     {
       "id": "purestorage-duty-mail",
       "category": "purestorage",
-      "title": "PureStorage 值班信件分類 SOP",
-      "summary": "PureStorage 相關信件需判斷是否為第一封報修、詢問或 Dispatch 表單，並在 SLA 內回覆客戶。",
-      "severity": "SLA 4 小時內回覆",
-      "dutyRules": [
-        "非上班時間 18:00 至次日 09:00、國定假日、假日 7 x 24 都要回報。",
-        "原廠要求 SLA 必須在四小時內回覆客戶。",
-        "若值班電話 Call in 三通未接，則 Call in 主管電話。",
-        "若值班電話與主管電話都未接，則先回應客戶 Mail，並告知已轉告相關工程師。"
-      ],
-      "replyRules": [
-        "Support 之第一封來信。",
-        "經銷商或客戶之第一封來信報修或詢問。",
-        "Support 來信需填寫 Dispatch 表單之信件。"
-      ],
-      "ignoreRules": [
-        "設備 Alert，例如 Info、Warning、Critical。",
-        "Support 與客戶後續回應。"
-      ],
-      "triggers": [
-        "PureStorage Support 第一封來信。",
-        "經銷商或客戶第一封報修或詢問。",
-        "Support 要求填寫 Dispatch 表單。"
-      ],
-      "firstChecks": [
-        "確認是否屬於主要需應對之信件。",
-        "確認是否為設備 Alert 或後續回應；若是則不需理會。",
-        "確認距離來信時間是否仍在四小時 SLA 內。"
-      ],
-      "steps": [
-        "依信件分類規則判斷是否需回覆。",
-        "若需回覆，先整理客戶、問題、產品或設備資訊。",
-        "撥打 PureStorage 值班人員手機。",
-        "若值班電話三通未接，改撥 PureStorage 主管手機。",
-        "若兩者都未接，先回應客戶 Mail，並告知已轉告相關工程師。"
-      ],
-      "escalateWhen": [
-        "四小時 SLA 快到期但尚未有人接手。",
-        "值班電話與主管電話都未接。",
-        "客戶或經銷商第一封來信內容顯示服務受影響。"
-      ],
-      "contacts": [
-        "PureStorage 值班人員手機：0917157536",
-        "PureStorage 主管 Libraer 手機：0953779897"
-      ],
+      "title": "PureStorage SOP",
+      "summary": "PureStorage 值班回報與信件分類規則。",
+      "severityLabel": "回覆時限",
+      "severity": "SLA 四小時內回覆客戶",
+      "dutyRules": [],
+      "replyRules": [],
+      "ignoreRules": [],
+      "triggers": [],
+      "firstChecks": [],
+      "steps": [],
+      "escalateWhen": [],
+      "contacts": [],
       "mailRecipients": [],
+      "extraSections": [
+        {
+          "title": "值班規則",
+          "items": [
+            "非上班時間 (1800 – 次日 0900)，國定假日、假日 7 x 24 都要回報",
+            "原廠要求 SLA 必須在四小時內回覆客戶",
+            "若值班電話 Call in 三通未接則 Call in 主管電話",
+            "若兩個都未接則先回應客戶 Mail，並告知已轉告相關工程師"
+          ]
+        },
+        {
+          "title": "PureStorage 值班聯絡電話",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "值班人員手機",
+              "copyLabel": "複製值班手機",
+              "text": "0917157536"
+            },
+            {
+              "label": "主管(Libraer)手機",
+              "copyLabel": "複製主管手機",
+              "text": "0953779897"
+            }
+          ]
+        },
+        {
+          "title": "主要需應對之信件",
+          "items": [
+            "Support 之第一封來信",
+            "經銷商或客戶之第一封來信報修或詢問",
+            "Support 來信需填寫 Dispatch 表單之信件"
+          ]
+        },
+        {
+          "title": "不需理會",
+          "items": [
+            "設備 Alert (Info、Warning、Critical)",
+            "Support & 客戶後續回應"
+          ]
+        },
+        {
+          "title": "信件規則解讀",
+          "items": [
+            "要處理：有人主動開新問題，或原廠要求填寫 Dispatch 表單。",
+            "不用處理：設備自動 Alert，或同一案件中 Support / 客戶的後續往返信件。",
+            "「第一封來信」可理解為新事件的起點；若只是同一串案件的補充回覆，依 SOP 不需值班重新通知。",
+            "判斷不確定時，先看主旨與信件串是否已有前一次處理紀錄；若像新報修或新詢問，就依主要需應對信件處理。"
+          ]
+        }
+      ],
       "links": [
         {
           "label": "原 SOP",
-          "href": "https://dtimis.sharepoint.com/sites/P400-P400/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2FPureStorage%5FSOP%2F4%20%2D%20Pure%20Storage%20ASP%20%5F%20AWS%20MSP%20%E5%80%BC%E7%8F%AD%E5%90%88%E4%BD%9C%E5%85%A7%E5%AE%B9%2Epdf&parent=%2Fsites%2FP400%2DP400%2FShared%20Documents%2FP400%2FMSP%E5%80%BC%E7%8F%AD%E4%BA%BA%E5%93%A1%E7%9B%B8%E9%97%9C%E6%96%87%E4%BB%B6%2F06%2E%20%E5%85%B6%E4%BB%96%E7%94%A2%E5%93%81%E7%B7%9ASOP%EF%BC%8F%E6%96%87%E4%BB%B6%E5%AD%98%E6%94%BE%E5%8D%80%2FPureStorage%5FSOP&p=true&ga=1"
+          "href": "https://dtimis.sharepoint.com/:b:/s/P400-P400/Eb1iHFVdpTdEnJDsLYUClnEBnELzFFl7Dyga-Cs4yNANlA?e=mVlf31"
         },
         {
           "label": "信件分類規則",
