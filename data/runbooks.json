@@ -147,6 +147,35 @@
           ]
         },
         {
+          "title": "需回覆的信件 - 客戶信件",
+          "items": [
+            "信件規則篩選：符合任一項，勾選停止查驗其他規則",
+            "收件人包含：pure_asp@metaage.com.tw",
+            "收件人包含：pure_asp@sysage.com.tw",
+            "通常信件開頭是 Dear sir、Dear Support、Dear Team 等",
+            "這邊客戶來信和 Pure Support 第一封需向上回報"
+          ]
+        },
+        {
+          "title": "需回覆的信件 - Support 第一封：Case Created",
+          "items": [
+            "信件規則篩選：全部包含，勾選停止查驗其他規則",
+            "標題包含：has been created",
+            "寄件人：support@purestorage.com",
+            "※ 需要看一下信件內容，若是自己人開立的則不用通知"
+          ]
+        },
+        {
+          "title": "需回覆的信件 - Support 第一封：Dispatch 相關",
+          "items": [
+            "信件規則篩選：全部符合，勾選停止查驗其他規則",
+            "寄件人包含：support@purestorage.com",
+            "標題包含：Customer Verification Required for Dispatch",
+            "通常會有 Dispatch 表格",
+            "※ 要看 PD00XXXXX 的第一封，有回覆過的都會是相同單號"
+          ]
+        },
+        {
           "title": "不需理會",
           "items": [
             "設備 Alert (Info、Warning、Critical)",
@@ -156,10 +185,11 @@
         {
           "title": "信件規則解讀",
           "items": [
-            "要處理：有人主動開新問題，或原廠要求填寫 Dispatch 表單。",
-            "不用處理：設備自動 Alert，或同一案件中 Support / 客戶的後續往返信件。",
-            "「第一封來信」可理解為新事件的起點；若只是同一串案件的補充回覆，依 SOP 不需值班重新通知。",
-            "判斷不確定時，先看主旨與信件串是否已有前一次處理紀錄；若像新報修或新詢問，就依主要需應對信件處理。"
+            "先判斷是不是新事件的第一封：客戶 / 經銷商第一封報修或詢問、Support Case Created、Dispatch 驗證信，都要回報。",
+            "客戶信件看收件人：只要寄到 pure_asp@metaage.com.tw 或 pure_asp@sysage.com.tw，且內容像新問題，就依需回覆處理。",
+            "Support Case Created 要再看內文：若是自己人開立的 Case，則不用通知；若是客戶或原廠新案，需回報。",
+            "Dispatch 相關看 PD 單號：同一個 PD00XXXXX 已回覆過的後續信件不算第一封；新的 PD 單號第一封要處理。",
+            "不用處理：設備自動 Alert，或同一案件中 Support / 客戶的後續往返信件。"
           ]
         }
       ],
