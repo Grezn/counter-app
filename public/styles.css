@@ -1977,6 +1977,10 @@ button:disabled {
   gap: 12px;
 }
 
+.runbook-detail ul + .runbook-copy-groups {
+  margin-top: 14px;
+}
+
 .runbook-copy-group {
   display: grid;
   gap: 8px;
