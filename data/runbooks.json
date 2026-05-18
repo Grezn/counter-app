@@ -147,13 +147,13 @@
           ]
         },
         {
-          "title": "需回覆的信件 - 客戶信件",
+          "title": "需回覆的信件 - Support 第一封：Dispatch 相關",
           "items": [
-            "信件規則篩選：符合任一項，勾選停止查驗其他規則",
-            "收件人包含：pure_asp@metaage.com.tw",
-            "收件人包含：pure_asp@sysage.com.tw",
-            "通常信件開頭是 Dear sir、Dear Support、Dear Team 等",
-            "這邊客戶來信和 Pure Support 第一封需向上回報"
+            "信件規則篩選：全部符合，勾選停止查驗其他規則",
+            "寄件人包含：support@purestorage.com",
+            "標題包含：Customer Verification Required for Dispatch",
+            "通常會有 Dispatch 表格",
+            "※ 要看 PD00XXXXX 的第一封，有回覆過的都會是相同單號"
           ]
         },
         {
@@ -166,13 +166,13 @@
           ]
         },
         {
-          "title": "需回覆的信件 - Support 第一封：Dispatch 相關",
+          "title": "需回覆的信件 - 客戶信件",
           "items": [
-            "信件規則篩選：全部符合，勾選停止查驗其他規則",
-            "寄件人包含：support@purestorage.com",
-            "標題包含：Customer Verification Required for Dispatch",
-            "通常會有 Dispatch 表格",
-            "※ 要看 PD00XXXXX 的第一封，有回覆過的都會是相同單號"
+            "信件規則篩選：符合任一項，勾選停止查驗其他規則",
+            "收件者地址包含：pure_asp@metaage.com.tw",
+            "收件者地址包含：pure_asp@sysage.com.tw",
+            "通常信件開頭是 Dear sir、Dear Support、Dear Team 等",
+            "這邊客戶來信和 Pure Support 第一封需向上回報"
           ]
         },
         {
@@ -185,11 +185,21 @@
         {
           "title": "信件規則解讀",
           "items": [
-            "先判斷是不是新事件的第一封：客戶 / 經銷商第一封報修或詢問、Support Case Created、Dispatch 驗證信，都要回報。",
-            "客戶信件看收件人：只要寄到 pure_asp@metaage.com.tw 或 pure_asp@sysage.com.tw，且內容像新問題，就依需回覆處理。",
-            "Support Case Created 要再看內文：若是自己人開立的 Case，則不用通知；若是客戶或原廠新案，需回報。",
+            "Outlook 規則由上往下執行；因為有勾選停止處理其他規則，較精準的 Dispatch 與 Case Created 需排在客戶信件前面。",
             "Dispatch 相關看 PD 單號：同一個 PD00XXXXX 已回覆過的後續信件不算第一封；新的 PD 單號第一封要處理。",
+            "Support Case Created 要再看內文：若是自己人開立的 Case，則不用通知；若是客戶或原廠新案，需回報。",
+            "客戶信件看收件者地址：只要寄到 pure_asp@metaage.com.tw 或 pure_asp@sysage.com.tw，且內容像新問題，就依需回覆處理。",
             "不用處理：設備自動 Alert，或同一案件中 Support / 客戶的後續往返信件。"
+          ]
+        },
+        {
+          "title": "Outlook 規則排序建議",
+          "items": [
+            "1. 需要回應 - Dispatch 相關",
+            "2. 需要回應 - Case Created",
+            "3. 需要回應 - 客戶信件",
+            "4. 已回覆 Case、Loop Case、Upgrade、Survey、原廠工程師不在、已關閉 Case、已解決 Case、一般通知",
+            "5. 設備 Alert、Alert、Case 等較廣的不需回應規則放最後"
           ]
         }
       ],
