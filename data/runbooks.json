@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-04",
+  "version": "2026-05-19",
   "note": "這裡會透過 /api/runbooks 顯示到前端。請只放允許值班人員在此系統查看的 SOP 資訊；更詳細或敏感的正式文件仍建議放在 SharePoint / KB / ITOP。",
   "categories": [
     {
@@ -474,60 +474,65 @@
       "id": "minio-subnet-issue",
       "category": "minio",
       "title": "MinIO Subnet Issue / Panic SOP",
-      "summary": "在 iTop 收到 MinIO 客戶 Case 後，翻譯成英文並於 MinIO Subnet 建立 Issue；緊急狀況才建立 Panic Alert。",
-      "severity": "MinIO SLA 5x8；MinIO Support 7x24 皆會回應",
+      "summary": "在 iTop 收到 MinIO 客戶 Case 後，將問題翻譯成英文並於 MinIO Subnet 建立 Issue；只有客戶明確表示緊急時才建立 Panic Alert。",
+      "severity": "MinIO SLA：5x8；MinIO Support：7x24 皆會回應",
       "dutyRules": [
         "目前客戶：林口長庚、MOMO、新光人壽、華泰電子。",
         "MinIO SLA 為 5x8。",
         "MinIO Support 為 7x24 皆會回應。",
-        "5x8 以外時間可先轉至 MinIO，待 5x8 時間再回應到 iTop。"
+        "5x8 以外時間可先轉至 MinIO，待 5x8 服務時間內再回覆處理進度至 iTop。"
       ],
       "replyRules": [
-        "一般情況使用 Issues 建立 New Issue。",
-        "緊急情況才使用 Panic；非緊急情況請勿使用。",
-        "建立完畢後需發信告知 PM 及技術單位。"
+        "一般非緊急事件使用 Issues 建立 New Issue。",
+        "緊急狀況才使用 Panic Alert；非緊急情況請勿使用。",
+        "Issue 或 Panic Alert 建立完成後，需發信通知 PM Team 與 SE Team。"
       ],
       "triggers": [
-        "在 iTop 看見客戶開立 Case，或收到信件通知。",
-        "客戶說明 MinIO 問題需轉 MinIO Support。",
-        "客戶明確表示是緊急狀況。"
+        "在 iTop 看見客戶開立 MinIO Case，或收到信件通知。",
+        "客戶問題需轉交 MinIO Support 協助。",
+        "客戶明確表示案件為緊急狀況。"
       ],
       "firstChecks": [
         "確認客戶是否為目前 MinIO 客戶。",
-        "確認是否為緊急情況。",
-        "將客戶問題內容複製並翻譯成英文。",
-        "確認是否有附件或 Cluster 需要一併提供。"
+        "確認案件是否為緊急狀況。",
+        "將客戶問題內容複製，並翻譯成英文。",
+        "確認是否有附件需要上傳，或是否需連結客戶 Cluster。"
       ],
       "steps": [
-        "一般情況：登入 MinIO Subnet。",
-        "點選左側 Issues，在上方搜尋欄輸入 Issue 名稱。",
-        "點選 New Issue。注意：送出後就會建立且無法刪除。",
-        "貼上翻譯好的英文問題內容，右側可上傳檔案及連結客戶 Cluster。",
-        "建立完畢後發信告知 PM 及技術單位。"
+        "於 iTop 查看客戶開立的 Case。通常會有 Email 通知。",
+        "將客戶問題內容複製，並翻譯成英文。",
+        "登入 MinIO Subnet。",
+        "點選左側選單 Issues。",
+        "於上方搜尋欄輸入 Issue 名稱，確認是否已有相關 Issue。",
+        "點選 New Issue。注意：送出後即會建立 Issue，且無法刪除。",
+        "於 Issue 內容欄位貼上翻譯後的客戶問題內容。右側可上傳檔案，也可連結客戶 Cluster。",
+        "Issue 建立完成後，發信通知 PM Team 與 SE Team。"
       ],
       "escalateWhen": [
-        "客戶明確說明是緊急狀況。",
-        "需建立 Panic Alert。",
-        "5x8 外已先轉 MinIO，待上班時段需回覆 iTop。"
+        "客戶明確表示為緊急狀況。",
+        "需要建立 Panic Alert。",
+        "5x8 以外時間已先轉至 MinIO，待 5x8 服務時間內需回覆 iTop。"
       ],
       "contacts": [
-        "PM Team：williamtzeng@metaage.com.tw; ericaliu@metaage.com.tw; melodylin@metaage.com.tw; harrywang@metaage.com.tw",
-        "SE Team：seanlee@metaage.com.tw; henryhuang@metaage.com.tw"
+        "PM Team：minio@metaage.com.tw",
+        "SE Team：seanlee@metaage.com.tw; henryhuang@metaage.com.tw; emmachen@metaage.com.tw"
       ],
       "mailRecipients": [
-        "PM Team：williamtzeng@metaage.com.tw; ericaliu@metaage.com.tw; melodylin@metaage.com.tw; harrywang@metaage.com.tw",
-        "SE Team：seanlee@metaage.com.tw; henryhuang@metaage.com.tw"
+        "PM Team：minio@metaage.com.tw",
+        "SE Team：seanlee@metaage.com.tw; henryhuang@metaage.com.tw; emmachen@metaage.com.tw"
       ],
       "extraSections": [
         {
-          "title": "緊急情況 Panic Alert",
+          "title": "緊急 Case 處理流程",
           "items": [
-            "非緊急情況請勿使用 Panic。",
-            "在 iTop 看見客戶開立 Case 且客戶說明是緊急狀況。",
-            "將內容複製翻譯成英文。",
-            "登入 MinIO Subnet，點選左側 Panic。",
-            "點擊 Create Panic Alert，貼上翻譯好的英文問題內容。",
-            "建立完畢後發信告知 PM 及技術單位。"
+            "僅限客戶明確表示為緊急狀況時使用；非緊急情況請勿使用 Panic Alert。",
+            "於 iTop 查看客戶開立的 Case，確認客戶說明為緊急狀況。",
+            "將客戶問題內容複製，並翻譯成英文。",
+            "登入 MinIO Subnet。",
+            "點選左側選單 Panic。",
+            "點擊 Create Panic Alert。",
+            "貼上翻譯後的客戶問題內容。",
+            "Panic Alert 建立完成後，發信通知 PM Team 與 SE Team。"
           ]
         }
       ],
