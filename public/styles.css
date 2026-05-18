@@ -1924,6 +1924,21 @@ button:disabled {
   line-height: 1.55;
 }
 
+.runbook-detail li {
+  margin-bottom: 3px;
+}
+
+.runbook-detail li:last-child {
+  margin-bottom: 0;
+}
+
+.runbook-detail li.runbook-note-line {
+  margin-left: -18px;
+  list-style: none;
+  color: #0369a1;
+  font-weight: 800;
+}
+
 .runbook-inline-link {
   color: #1d4ed8;
   font-weight: 800;
@@ -1941,6 +1956,40 @@ button:disabled {
   color: #075985;
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.runbook-copy-groups {
+  display: grid;
+  gap: 10px;
+}
+
+.runbook-copy-group {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #d8dee8;
+}
+
+.runbook-copy-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.runbook-copy-group-label {
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.runbook-copy-group-value {
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  user-select: text;
 }
 
 .runbook-related-links,
@@ -2702,6 +2751,23 @@ html[data-theme="dark"] .runbook-category.active {
 html[data-theme="dark"] .check-item,
 html[data-theme="dark"] .choice-item,
 html[data-theme="dark"] .runbook-detail ul {
+  color: #cbd5e1;
+}
+
+html[data-theme="dark"] .runbook-detail li.runbook-note-line {
+  color: #7dd3fc;
+}
+
+html[data-theme="dark"] .runbook-copy-group {
+  background: #111827;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .runbook-copy-group-label {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .runbook-copy-group-value {
   color: #cbd5e1;
 }
 

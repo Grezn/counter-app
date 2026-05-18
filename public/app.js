@@ -2588,6 +2588,10 @@ function getFilteredRunbooks() {
       ...((runbook.extraSections || []).flatMap((section) => [
         section.title,
         ...(section.items || []),
+        ...((section.copyGroups || []).flatMap((group) => [
+          group.label,
+          group.text,
+        ])),
       ])),
     ].join(" ").toLowerCase();
 
@@ -2760,8 +2764,36 @@ function createRunbookCopyButton(items, label = "複製") {
   return button;
 }
 
-function appendRunbookList(parent, title, items, runbook) {
-  if (!items || items.length === 0) return;
+function appendRunbookCopyGroups(parent, copyGroups, runbook) {
+  if (!copyGroups || copyGroups.length === 0) return;
+
+  const groups = document.createElement("div");
+  groups.className = "runbook-copy-groups";
+
+  copyGroups.forEach((group) => {
+    const row = document.createElement("div");
+    row.className = "runbook-copy-group";
+
+    const header = document.createElement("div");
+    header.className = "runbook-copy-group-header";
+    header.appendChild(createTextElement("strong", "runbook-copy-group-label", group.label));
+    header.appendChild(createRunbookCopyButton([group.text], "複製"));
+
+    const value = document.createElement("div");
+    value.className = "runbook-copy-group-value";
+    appendRunbookLinkedText(value, group.text, runbook);
+
+    row.appendChild(header);
+    row.appendChild(value);
+    groups.appendChild(row);
+  });
+
+  parent.appendChild(groups);
+}
+
+function appendRunbookList(parent, title, items, runbook, options = {}) {
+  const copyGroups = options.copyGroups || [];
+  if ((!items || items.length === 0) && copyGroups.length === 0) return;
 
   const section = document.createElement("div");
   section.className = "runbook-detail";
@@ -2770,20 +2802,30 @@ function appendRunbookList(parent, title, items, runbook) {
   heading.className = "runbook-detail-heading";
   heading.appendChild(createTextElement("h4", "", title));
 
-  if (/聯絡資訊|信件收件人/.test(title)) {
+  if (/聯絡資訊|信件收件人/.test(title) && items && items.length > 0 && copyGroups.length === 0) {
     heading.appendChild(createRunbookCopyButton(items, "複製"));
   }
 
   section.appendChild(heading);
 
-  const list = document.createElement("ul");
-  items.forEach((item) => {
-    const listItem = document.createElement("li");
-    appendRunbookLinkedText(listItem, item, runbook);
-    list.appendChild(listItem);
-  });
+  if (items && items.length > 0) {
+    const list = document.createElement("ul");
+    items.forEach((item) => {
+      const listItem = document.createElement("li");
+      const normalizedItem = String(item || "").trim();
 
-  section.appendChild(list);
+      if (normalizedItem.startsWith("※")) {
+        listItem.className = "runbook-note-line";
+      }
+
+      appendRunbookLinkedText(listItem, item, runbook);
+      list.appendChild(listItem);
+    });
+
+    section.appendChild(list);
+  }
+
+  appendRunbookCopyGroups(section, copyGroups, runbook);
   parent.appendChild(section);
 }
 
@@ -2791,7 +2833,9 @@ function appendRunbookExtraSections(parent, sections, runbook) {
   // 不同產品的 SOP 會有自己的特殊段落。
   // extraSections 讓資料可以自由新增「案件追蹤」「Case 範本」「Q&A」等內容。
   (sections || []).forEach((section) => {
-    appendRunbookList(parent, section.title, section.items, runbook);
+    appendRunbookList(parent, section.title, section.items, runbook, {
+      copyGroups: section.copyGroups || [],
+    });
   });
 }
 
@@ -2804,6 +2848,10 @@ function fillIncidentNextStepFromRunbook(runbook) {
     : (runbook.extraSections || []).flatMap((section) => [
       section.title,
       ...(section.items || []),
+      ...((section.copyGroups || []).flatMap((group) => [
+        group.label,
+        group.text,
+      ])),
     ]);
 
   nextStep.value = [

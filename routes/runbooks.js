@@ -31,6 +31,10 @@ function hasKeyword(runbook, keyword) {
     ...((runbook.extraSections || []).flatMap((section) => [
       section.title,
       ...(section.items || []),
+      ...((section.copyGroups || []).flatMap((group) => [
+        group.label,
+        group.text,
+      ])),
     ])),
   ].join(" ").toLowerCase();
 

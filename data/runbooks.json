@@ -489,13 +489,19 @@
         {
           "title": "目前客戶",
           "items": [
-            "林口長庚 & MOMO & 新光人壽 & 華泰電子"
+            "林口長庚",
+            "MOMO",
+            "新光人壽",
+            "華泰電子"
           ]
         },
         {
           "title": "服務支援說明",
           "items": [
-            "MinIO SLA 為 5x8, MinIO Support 為 7x24 皆會回應, 5x8以外時間可先轉至 MinIO, 待 5x8 時間再回應到 iTop 上"
+            "MinIO SLA 為 5x8",
+            "MinIO Support 為 7x24 皆會回應",
+            "5x8以外時間可先轉至 MinIO",
+            "待 5x8 時間再回應到 iTop 上"
           ]
         },
         {
@@ -527,11 +533,16 @@
         },
         {
           "title": "PM 及 技術單位聯絡資訊",
-          "items": [
-            "PM Team",
-            "minio@metaage.com.tw <minio@metaage.com.tw>",
-            "SE Team",
-            "seanlee@metaage.com.tw <seanlee@metaage.com.tw>; henryhuang@metaage.com.tw <henryhuang@metaage.com.tw>; emmachen@metaage.com.tw <emmachen@metaage.com.tw>;"
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "PM Team",
+              "text": "minio@metaage.com.tw <minio@metaage.com.tw>"
+            },
+            {
+              "label": "SE Team",
+              "text": "seanlee@metaage.com.tw <seanlee@metaage.com.tw>; henryhuang@metaage.com.tw <henryhuang@metaage.com.tw>; emmachen@metaage.com.tw <emmachen@metaage.com.tw>;"
+            }
           ]
         }
       ],
