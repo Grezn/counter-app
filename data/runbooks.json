@@ -32,58 +32,133 @@
     {
       "id": "dell-server-storage-mail-call",
       "category": "dell-server-storage",
-      "title": "Dell Server/Storage 值班 SOP",
-      "summary": "Dell Server/Storage 非上班時間收到需回覆的客戶報修信件時，撥打值班電話、轉寄信件並完成通話紀錄。",
-      "severity": "依信件內容判斷",
-      "dutyRules": [
-        "非上班時間 18:00 至次日 09:00、國定假日、假日 7 x 24 都要回報。",
-        "若值班電話 Call in 三通未接，則 Call in 主管電話。",
-        "每月需紀錄撥打通數。"
-      ],
-      "replyRules": [
-        "客戶產品類別非 Client 端，例如非 NB / Desktop / Monitor 之報修信件。",
-        "客戶來信詢問原廠未回應之信件。",
-        "客戶反應值班手機撥打無回應等。"
-      ],
-      "triggers": [
-        "收到客戶報修信件。",
-        "收到客戶詢問原廠未回應的信件。",
-        "收到客戶反應值班手機無回應的信件。"
-      ],
-      "firstChecks": [
-        "先依信件判斷規則確認是否需要回覆。",
-        "確認客戶問題與產品類別。",
-        "確認是否需要撥打值班電話。"
-      ],
-      "steps": [
-        "收到客戶報修信件後，先依判斷規則確認是否需回覆。",
-        "撥打值班電話，簡述客戶問題及產品類別，並詢問當前值班人員姓名。",
-        "將客戶信件使用「轉寄」，收件人為值班人員信箱，CC 給指定信箱。",
-        "完成通話記錄用表格，即完成處理。"
-      ],
-      "escalateWhen": [
-        "值班電話 Call in 三通未接。",
-        "客戶明確反應值班手機撥打無回應。",
-        "事件看起來影響服務可用性或客戶急迫處理。"
-      ],
-      "contacts": [
-        "值班手機：0936030276",
-        "主管手機 Ice：0972797257",
-        "主管手機 Gary：0917156071"
-      ],
-      "mailRecipients": [
-        "CC：slm@ginnet.com.tw",
-        "CC：support@ginnet.com.tw",
-        "ST230 Ice Chang 張有為：icechang@ginnet.com.tw",
-        "ST230 Kevin Hsieh 謝孟諭：kevinhsieh@ginnet.com.tw",
-        "ST230 Kai Lei 雷愷豐：kailei@ginnet.com.tw",
-        "ST230 William Hsu 許維麟：williamhsu@ginnet.com.tw",
-        "ST240 Jay Chang 張嘉傑：jaychang@ginnet.com.tw",
-        "ST240 Steven Sung 宋信賢：stevensung@ginnet.com.tw",
-        "ST250 Clark Cheng 鄭弘彬：clarkcheng@ginnet.com.tw",
-        "ST250 Mike Hsu 徐順義：mikehsu@ginnet.com.tw",
-        "ST250 Sam Huang 黃彥智：samhuang@ginnet.com.tw",
-        "ST250 Toma Tseng 曾翊欽：tomatseng@ginnet.com.tw"
+      "title": "Dell Server/Storage SOP",
+      "summary": "Dell Server/Storage 值班信件判斷、電話通知、轉寄與通話紀錄流程。",
+      "severityLabel": "回報時段",
+      "severity": "非上班時間、國定假日、假日 7 x 24 都要回報",
+      "dutyRules": [],
+      "replyRules": [],
+      "triggers": [],
+      "firstChecks": [],
+      "steps": [],
+      "escalateWhen": [],
+      "contacts": [],
+      "mailRecipients": [],
+      "extraSections": [
+        {
+          "title": "值班規則",
+          "items": [
+            "非上班時間 (1800 – 次日 0900)，國定假日、假日 7 x 24 都要回報",
+            "若值班電話 Call in 三通未接則 Call in 主管電話",
+            "每月需紀錄撥打通數"
+          ]
+        },
+        {
+          "title": "值班聯絡電話",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "值班手機",
+              "copyLabel": "複製值班手機",
+              "text": "0936030276"
+            },
+            {
+              "label": "主管手機 Ice",
+              "copyLabel": "複製 Ice 手機",
+              "text": "0972797257"
+            },
+            {
+              "label": "主管手機 Gary",
+              "copyLabel": "複製 Gary 手機",
+              "text": "0917156071"
+            }
+          ]
+        },
+        {
+          "title": "信件判斷 - 需回覆",
+          "items": [
+            "客戶產品類別 非 Clinet 端 (NB/ Desktop/ Monitor) 之報修信件",
+            "客戶來信詢問原廠未回應之信件",
+            "客戶反應值班手機撥打無回應等",
+            "台新銀行設備 Alert (有 Faild, Critical, Error 字眼)"
+          ]
+        },
+        {
+          "title": "值班步驟",
+          "items": [
+            "1. 收到客戶報修信件並依照上述判別信件",
+            "2. 撥打值班電話, 簡述客戶問題及產品類別, 並詢問當前值班人員姓名",
+            "3. 將客戶信件使用「轉寄」, 收件人為值班人員信箱, CC：slm@ginnet.com.tw <slm@ginnet.com.tw>; support@ginnet.com.tw <support@ginnet.com.tw>",
+            "4. 紀錄表單 即完成"
+          ]
+        },
+        {
+          "title": "轉寄 CC",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "CC",
+              "copyLabel": "複製 CC",
+              "text": "slm@ginnet.com.tw <slm@ginnet.com.tw>; support@ginnet.com.tw <support@ginnet.com.tw>"
+            }
+          ]
+        },
+        {
+          "title": "值班人員信箱",
+          "items": [],
+          "copyGroups": [
+            {
+              "label": "ST230 Ice Chang 張有為",
+              "copyLabel": "複製 Ice 信箱",
+              "text": "icechang@ginnet.com.tw <icechang@ginnet.com.tw>"
+            },
+            {
+              "label": "ST230 Kevin Hsieh 謝孟諭",
+              "copyLabel": "複製 Kevin 信箱",
+              "text": "kevinhsieh@ginnet.com.tw <kevinhsieh@ginnet.com.tw>"
+            },
+            {
+              "label": "ST230 Kai Lei 雷愷豐",
+              "copyLabel": "複製 Kai 信箱",
+              "text": "kailei@ginnet.com.tw <kailei@ginnet.com.tw>"
+            },
+            {
+              "label": "ST230 William Hsu 許維麟",
+              "copyLabel": "複製 William 信箱",
+              "text": "williamhsu@ginnet.com.tw <williamhsu@ginnet.com.tw>"
+            },
+            {
+              "label": "ST240 Jay Chang 張嘉傑",
+              "copyLabel": "複製 Jay 信箱",
+              "text": "jaychang@ginnet.com.tw <jaychang@ginnet.com.tw>"
+            },
+            {
+              "label": "ST240 Steven Sung 宋信賢",
+              "copyLabel": "複製 Steven 信箱",
+              "text": "stevensung@ginnet.com.tw <stevensung@ginnet.com.tw>"
+            },
+            {
+              "label": "ST250 Clark Cheng 鄭弘彬",
+              "copyLabel": "複製 Clark 信箱",
+              "text": "clarkcheng@ginnet.com.tw <clarkcheng@ginnet.com.tw>"
+            },
+            {
+              "label": "ST250 Mike Hsu 徐順義",
+              "copyLabel": "複製 Mike 信箱",
+              "text": "mikehsu@ginnet.com.tw <mikehsu@ginnet.com.tw>"
+            },
+            {
+              "label": "ST250 Sam Huang 黃彥智",
+              "copyLabel": "複製 Sam 信箱",
+              "text": "samhuang@ginnet.com.tw <samhuang@ginnet.com.tw>"
+            },
+            {
+              "label": "ST250 Toma Tseng 曾翊欽",
+              "copyLabel": "複製 Toma 信箱",
+              "text": "tomatseng@ginnet.com.tw <tomatseng@ginnet.com.tw>"
+            }
+          ]
+        }
       ],
       "links": [
         {
