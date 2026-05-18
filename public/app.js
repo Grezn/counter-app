@@ -2652,6 +2652,14 @@ function getRunbookLinkAliases(runbook) {
       candidates.push("通話記錄用表格", "通話記錄表格", "紀錄表單", "記錄表單");
     }
 
+    if (link.label === "Akamai SE 分工表 & 合約表") {
+      candidates.push("Akamai SE 分工表", "SE 分工表", "SE分工表", "Akamai 合約表", "合約表");
+    }
+
+    if (link.label === "Akamai 流程問題意見回覆表") {
+      candidates.push("流程問題意見回覆表", "MSP 維運問題紀錄");
+    }
+
     candidates.forEach((candidate) => {
       const alias = String(candidate || "").trim();
       const key = alias.toLowerCase();
@@ -2798,7 +2806,7 @@ function getRunbookListItemClass(item) {
 
   if (
     /^\d+\.\s/.test(normalizedItem)
-    || /^Step\s+\d+\./i.test(normalizedItem)
+    || /^Step\s*\d+\./i.test(normalizedItem)
     || /^[①②③✔✘✓ＯＸX→•]/.test(normalizedItem)
     || /^[是否]\s*->/.test(normalizedItem)
   ) {

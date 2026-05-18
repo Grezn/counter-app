@@ -295,7 +295,7 @@
       "title": "Akamai SOP",
       "summary": "Akamai 進線、開 Case、案件追蹤、Portal 帳號、EAA 與 Prolexic 流程。",
       "severityLabel": "Case Severity",
-      "severity": "固定選擇 3-Low Impact",
+      "severity": "依原廠案件等級判斷；無法判定則選擇 3-Low Impact",
       "dutyRules": [],
       "replyRules": [],
       "ignoreRules": [],
@@ -396,7 +396,7 @@
             "Problem：不知道則選擇 Other",
             "Subject：客戶 Account Name - 問題標題",
             "Description：填入客戶問題",
-            "Severity：固定選擇 3-Low Impact",
+            "Severity：請參考原廠案件等級定義；如無法判定則選擇 3-Low Impact",
             "Upload File：客戶的附件 (若有)"
           ],
           "copyGroups": [
@@ -416,6 +416,97 @@
               "text": "akamai-support@metaage.com.tw"
             }
           ]
+        },
+        {
+          "title": "原廠案件等級定義與初次回覆 SLA",
+          "items": [
+            "1 - Major impact：Akamai 系統或主要應用程式停擺或嚴重受影響，且目前沒有可行的解決方案；初次回覆時間 < 2 hours",
+            "2 - Moderate impact：Akamai 系統或應用程式部分受影響，或回報單一故障事件，目前沒有解決方案或解決方案執行上有困難；初次回覆時間 < 4 hours",
+            "3 - Low impact：例行維護、配置變更請求、關於您的帳戶或合約的問題、協助您管理線上服務、資訊查詢、以及一般意見回饋；初次回覆時間 < 2 business day",
+            "※ 如無法判定 Severity，請選擇 3-Low Impact"
+          ],
+          "wide": true
+        },
+        {
+          "title": "一般 Case - 新版開 Case 介面",
+          "items": [
+            "舊版開立 Case 介面將於 2025/08/18 下線；以下流程為新版開立 Case 介面的 SOP。",
+            "如新介面操作上有遇到任何問題，可至 Akamai 流程問題意見回覆表登記。",
+            "Step1. Account 選擇 Metaage Corporation 下的 Tier 1 Reseller",
+            "Step2. 點選 Support",
+            "Step3. 點選 Open a support case",
+            "Step4. 紅框處為新的開 Case 位置",
+            "Step5. Account 依照客戶回填的 Account",
+            "Step6. Category 選擇 Technical Support Issue",
+            "Step7. Product 依照客戶回填的產品類別選取；如無法確認請選最下方 Other",
+            "Step8. Problem 依照客戶回填的問題敘述選取；如無法確認請選最下方 Other",
+            "Step9. Subject 填寫格式：客戶Account – xxxx標題；客戶 Account 如果太長則填寫可識別名稱即可",
+            "Step10. Description 最後請補上客戶 Account；Severity 等級請參考原廠案件等級定義；Upload File 上傳附件",
+            "Step11. Contact Information 依照 User 自動帶入；Also Notify 填入需 CC 的 mail，請參考需 CC 人員",
+            "Step12. 確認前面步驟均完成填寫，最後點擊右下角 Create 完成開立 Case"
+          ],
+          "copyGroups": [
+            {
+              "label": "Subject 範例",
+              "copyLabel": "複製 Subject",
+              "text": "Metaage - Unable to Access Service via EAA Web-based RDP"
+            },
+            {
+              "label": "長 Account Subject 範例",
+              "copyLabel": "複製長 Account 範例",
+              "text": "BRAVESTONE - Unable to Access Service via EAA Web-based RDP"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "需 CC 人員 / Also Notify",
+          "items": [
+            "開立 Case 頁面最下方的 Also Notify 欄位，由 MSP 添加以下人員 Mail，並在 Case 開立完成後請 MSP 同步於報修群組 / Mail 中回報 Case ID。",
+            "1. 該案負責業務",
+            "2. akamai-support@metaage.com.tw",
+            "3. 窗口 Mail（僅 SI 的部分需要 CC 進 Case，End User 不需要）",
+            "請透過合約表內 C 欄 User(英文) 來比對正確的業務與 SI。",
+            "SI 群組請透過 SE 分工表內 F 欄與 H 欄來確認 Case 需副本 Email 清單。"
+          ],
+          "copyGroups": [
+            {
+              "label": "Akamai Support",
+              "copyLabel": "複製 Support",
+              "text": "akamai-support@metaage.com.tw"
+            }
+          ],
+          "wide": true
+        },
+        {
+          "title": "SI 群組需 CC 的 Email 清單",
+          "items": [
+            "歐米：-",
+            "點上雲：-"
+          ],
+          "copyGroups": [
+            {
+              "label": "蓋亞",
+              "copyLabel": "複製蓋亞",
+              "text": "support@gaia.net"
+            },
+            {
+              "label": "智雲",
+              "copyLabel": "複製智雲",
+              "text": "twop@myserver.asia\nwebber@myserver.asia"
+            },
+            {
+              "label": "摩速",
+              "copyLabel": "複製摩速",
+              "text": "gary.chen@mlytics.com\nfrancis.lien@mlytics.com\nwesley.tsai@mlytics.com\nsimon.shaw@mlytics.com\nvictor.chen@mlytics.com\nwilly.hong@mlytics.com"
+            },
+            {
+              "label": "AJ",
+              "copyLabel": "複製 AJ",
+              "text": "akamai-support@ajinfotech.com.tw"
+            }
+          ],
+          "wide": true
         },
         {
           "title": "回報 Akamai 值班群組 & 客戶",
