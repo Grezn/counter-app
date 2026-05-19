@@ -295,7 +295,7 @@
       "title": "Akamai SOP",
       "summary": "Akamai 進線、開 Case、案件追蹤、Portal 帳號、EAA 與 Prolexic 流程。",
       "severityLabel": "Case Severity",
-      "severity": "依原廠案件等級判斷；無法判定則選擇 3-Low Impact",
+      "severity": "固定選擇 3-Low Impact",
       "dutyRules": [],
       "replyRules": [],
       "ignoreRules": [],
@@ -324,14 +324,20 @@
             "→ 提供客戶資訊範本",
             "→ 開立 Case",
             "→ 回報值班群組"
-          ]
+          ],
+          "wide": true
         },
         {
           "title": "進線方式處理規則",
           "items": [
             "① Line 群組聯繫規則",
-            "5x8 時段：15 分鐘無回應 → @主要SE、@次要SE",
-            "若 5x8 時段內 30 分鐘仍無回覆：→ 啟動升級順序 → 主要 SE → 次要 SE → Kevin → Alvin",
+            "5x8 時段",
+            "15 分鐘無回應 →",
+            "@主要SE",
+            "@次要SE",
+            "若 5x8 時段內 30 分鐘仍無回覆：",
+            "→ 啟動升級順序",
+            "→ 主要 SE → 次要 SE → Kevin → Alvin",
             "非 5x8 時段",
             "15 分鐘無回應 →",
             "與客戶確認是否需立即介入",
@@ -387,7 +393,7 @@
             "Problem：不知道則選擇 Other",
             "Subject：客戶 Account Name - 問題標題",
             "Description：填入客戶問題",
-            "Severity：請參考原廠案件等級定義；如無法判定則選擇 3-Low Impact",
+            "Severity：固定選擇 3-Low Impact",
             "Upload File：客戶的附件 (若有)"
           ],
           "copyGroups": [
@@ -407,97 +413,6 @@
               "text": "akamai-support@metaage.com.tw"
             }
           ]
-        },
-        {
-          "title": "原廠案件等級定義與初次回覆 SLA",
-          "items": [
-            "1 - Major impact：Akamai 系統或主要應用程式停擺或嚴重受影響，且目前沒有可行的解決方案；初次回覆時間 < 2 hours",
-            "2 - Moderate impact：Akamai 系統或應用程式部分受影響，或回報單一故障事件，目前沒有解決方案或解決方案執行上有困難；初次回覆時間 < 4 hours",
-            "3 - Low impact：例行維護、配置變更請求、關於您的帳戶或合約的問題、協助您管理線上服務、資訊查詢、以及一般意見回饋；初次回覆時間 < 2 business day",
-            "※ 如無法判定 Severity，請選擇 3-Low Impact"
-          ],
-          "wide": true
-        },
-        {
-          "title": "一般 Case - 新版開 Case 介面",
-          "items": [
-            "舊版開立 Case 介面將於 2025/08/18 下線；以下流程為新版開立 Case 介面的 SOP。",
-            "如新介面操作上有遇到任何問題，可至 Akamai 流程問題意見回覆表登記。",
-            "Step1. Account 選擇 Metaage Corporation 下的 Tier 1 Reseller",
-            "Step2. 點選 Support",
-            "Step3. 點選 Open a support case",
-            "Step4. 紅框處為新的開 Case 位置",
-            "Step5. Account 依照客戶回填的 Account",
-            "Step6. Category 選擇 Technical Support Issue",
-            "Step7. Product 依照客戶回填的產品類別選取；如無法確認請選最下方 Other",
-            "Step8. Problem 依照客戶回填的問題敘述選取；如無法確認請選最下方 Other",
-            "Step9. Subject 填寫格式：客戶Account – xxxx標題；客戶 Account 如果太長則填寫可識別名稱即可",
-            "Step10. Description 最後請補上客戶 Account；Severity 等級請參考原廠案件等級定義；Upload File 上傳附件",
-            "Step11. Contact Information 依照 User 自動帶入；Also Notify 填入需 CC 的 mail，請參考需 CC 人員",
-            "Step12. 確認前面步驟均完成填寫，最後點擊右下角 Create 完成開立 Case"
-          ],
-          "copyGroups": [
-            {
-              "label": "Subject 範例",
-              "copyLabel": "複製 Subject",
-              "text": "Metaage - Unable to Access Service via EAA Web-based RDP"
-            },
-            {
-              "label": "長 Account Subject 範例",
-              "copyLabel": "複製長 Account 範例",
-              "text": "BRAVESTONE - Unable to Access Service via EAA Web-based RDP"
-            }
-          ],
-          "wide": true
-        },
-        {
-          "title": "需 CC 人員 / Also Notify",
-          "items": [
-            "開立 Case 頁面最下方的 Also Notify 欄位，由 MSP 添加以下人員 Mail，並在 Case 開立完成後請 MSP 同步於報修群組 / Mail 中回報 Case ID。",
-            "1. 該案負責業務",
-            "2. akamai-support@metaage.com.tw",
-            "3. 窗口 Mail（僅 SI 的部分需要 CC 進 Case，End User 不需要）",
-            "請透過合約表內 C 欄 User(英文) 來比對正確的業務與 SI。",
-            "SI 群組請透過 SE 分工表內 F 欄與 H 欄來確認 Case 需副本 Email 清單。"
-          ],
-          "copyGroups": [
-            {
-              "label": "Akamai Support",
-              "copyLabel": "複製 Support",
-              "text": "akamai-support@metaage.com.tw"
-            }
-          ],
-          "wide": true
-        },
-        {
-          "title": "SI 群組需 CC 的 Email 清單",
-          "items": [
-            "歐米：-",
-            "點上雲：-"
-          ],
-          "copyGroups": [
-            {
-              "label": "蓋亞",
-              "copyLabel": "複製蓋亞",
-              "text": "support@gaia.net"
-            },
-            {
-              "label": "智雲",
-              "copyLabel": "複製智雲",
-              "text": "twop@myserver.asia\nwebber@myserver.asia"
-            },
-            {
-              "label": "摩速",
-              "copyLabel": "複製摩速",
-              "text": "gary.chen@mlytics.com\nfrancis.lien@mlytics.com\nwesley.tsai@mlytics.com\nsimon.shaw@mlytics.com\nvictor.chen@mlytics.com\nwilly.hong@mlytics.com"
-            },
-            {
-              "label": "AJ",
-              "copyLabel": "複製 AJ",
-              "text": "akamai-support@ajinfotech.com.tw"
-            }
-          ],
-          "wide": true
         },
         {
           "title": "回報 Akamai 值班群組 & 客戶",
@@ -595,8 +510,8 @@
             "1. 填寫以下資訊：",
             "信件主旨：標題必須帶客戶名稱 Ex: GCIC Please Cleaning Flow",
             "※ 信件內容只能使用英文",
-            "要用對應的 Case Email 發信，會幫每個客戶獨立建立一個 Metaage 信箱。",
-            "客戶會有一份 Runbook，裡面有 Authorized Contacts list，CC 客戶的 Email 必須在清單內。"
+            "要用對應的 Case Email 發信，會幫每個客戶獨立建立一個 Metaage 信箱",
+            "客戶會有一份 Runbook，裡面有 Authorized Contacts list， CC 客戶的 Email 必須在清單內"
           ],
           "copyGroups": [
             {
@@ -630,7 +545,7 @@
         {
           "title": "Prolexic 開立完成後回覆 Akamai",
           "items": [
-            "2. 開立完成後會收到 Akamai 回信，複製內文中的 Case 編號並回覆 Akamai：",
+            "2. 開立完成後會收到 Akamai 回信, 複製內文中的 Case 編號並回覆 Akamai：",
             "信件主旨：※ 請自行更改為複製的 Case ID",
             "信件內容：※ 內容中日期與時間請更改為當下時間",
             "3. 待 Akamai 回覆開始執行即完成"
@@ -691,8 +606,8 @@
           ],
           "copyGroups": [
             {
-              "label": "Webex 詢問範本",
-              "copyLabel": "複製 Webex 範本",
+              "label": "群組詢問範本",
+              "copyLabel": "複製詢問範本",
               "text": "Hi Team,\n請協助追蹤確認一下 Case [貼上 CaseID] 目前的案件處理進度\n謝謝"
             },
             {
@@ -722,12 +637,12 @@
           "copyGroups": [
             {
               "label": "Short Description",
-              "copyLabel": "複製 Short",
+              "copyLabel": "複製 Short Description",
               "text": "This case [貼上CaseID] has not received any response so far"
             },
             {
               "label": "Full Description",
-              "copyLabel": "複製 Full",
+              "copyLabel": "複製 Full Description",
               "text": "This case (Case ID) has not received any response so far. From [開立 Case 時間] to [Support 最後回覆時間], no further replies have been received. We kindly request your assistance in checking the current status of this case. Thank you."
             },
             {
@@ -739,27 +654,9 @@
           "wide": true
         },
         {
-          "title": "Portal 新增帳號 SOP - 客戶填寫格式",
+          "title": "Portal 新增帳號 SOP",
           "items": [
-            "1. 請客戶依照以下格式填寫"
-          ],
-          "copyGroups": [
-            {
-              "label": "填寫格式",
-              "copyLabel": "複製格式",
-              "text": "1. Account Name : [Console 頁面右上角顯示的名稱]\n2. Email : \n3. First Name : \n4. Last Name : \n5. Contract : \n6. Group（沒有Sub Group可不填）：\n7. Role(Admin、Editor、Viewer or Other Role Name) :"
-            },
-            {
-              "label": "範例",
-              "copyLabel": "複製範例",
-              "text": "1. Account Name : Metaage Inc. Corp\n2. Email : demolin@gmail.com\n3. First Name : demo\n4. Last Name : lin\n5. Contract : W-NKF57L\n6. Group(i&#Sub Group • Kth) : Ginnet\n7. Role(Admin、Editor、Viewer or Other Role Name) : Viewer"
-            }
-          ],
-          "wide": true
-        },
-        {
-          "title": "Portal 新增帳號 SOP - 操作步驟",
-          "items": [
+            "1. 請客戶依照以下格式填寫",
             "2. 切換到客戶的 Account (參考客戶給的 Account Name)",
             "3. 左上角「 ≡ 」展開選擇「Identity & Access」",
             "4. 選擇「 Settings」",
@@ -778,6 +675,18 @@
             "根據客戶給予的 Account + Contract 在後面選擇 Role",
             "確認無誤點選 「Submit」 即完成帳號新增"
           ],
+          "copyGroups": [
+            {
+              "label": "客戶填寫格式",
+              "copyLabel": "複製格式",
+              "text": "1. Account Name : [Console 頁面右上角顯示的名稱]\n2. Email : \n3. First Name : \n4. Last Name : \n5. Contract : \n6. Group（沒有Sub Group可不填）：\n7. Role(Admin、Editor、Viewer or Other Role Name) :"
+            },
+            {
+              "label": "範例",
+              "copyLabel": "複製範例",
+              "text": "1. Account Name : Metaage Inc. Corp\n2. Email : demolin@gmail.com\n3. First Name : demo\n4. Last Name : lin\n5. Contract : W-NKF57L\n6. Group(i&#Sub Group • Kth) : Ginnet\n7. Role(Admin、Editor、Viewer or Other Role Name) : Viewer"
+            }
+          ],
           "wide": true
         },
         {
@@ -795,60 +704,67 @@
         },
         {
           "title": "Case 範本",
-          "items": [],
+          "items": [
+            "中文：",
+            "英文："
+          ],
           "copyGroups": [
             {
-              "label": "中文",
-              "copyLabel": "複製中文",
+              "label": "中文 Case 範本",
+              "copyLabel": "複製中文範本",
               "text": "您好，請幫我填寫以下資料以利於後續處理\n\n1. 案件類型(開立Case or 問題諮詢)：\n2. Account Name：\n3. 聯絡窗口姓名：\n4. 聯絡窗口 Mail：\n5. 產品類別：\n6. 案件標題：\n7. 問題描述(包含文字敘述、畫面截圖、附件)："
             },
             {
-              "label": "英文",
-              "copyLabel": "複製英文",
+              "label": "英文 Case 範本",
+              "copyLabel": "複製英文範本",
               "text": "Hello, please help provide the following information to facilitate further processing:\n1. Case Type (Open a Case or Inquiry):\n2. Account Name:\n3. Contact Person Name:\n4. Contact Person Email:\n5. Product Category:\n6. Case Title:\n7. Issue Description (including written description, screenshots, and attachments):"
             }
           ],
           "wide": true
         },
         {
-          "title": "EAA 資訊範本",
-          "items": [],
+          "title": "資訊範本",
+          "items": [
+            "中文：",
+            "英文："
+          ],
           "copyGroups": [
             {
-              "label": "中文",
-              "copyLabel": "複製中文",
+              "label": "中文資訊範本",
+              "copyLabel": "複製中文資訊範本",
               "text": "請提供使用資訊(only use for EAA):\n1. 問題發生時間: \n2. 地區與Public IP:\n3. User Name:\n4. 裝置OS:\n5. 預設使用的瀏覽器:\n6. 訪問的Application:\n7. 先前是否有成功訪問過的紀錄: 是/否，如填寫”是”則接續填寫7-1\n  1) 請問裝置是否有任何變動(請簡述):\n8. 連線方式: Web/Client access，如填寫”Client access”則接續填寫8-1、8-2、8-3\n  1) 是否為首次安裝GPA:\n  2) 當前安裝版本:\n  3) 關閉再重啟GPA或重新安裝GPA後，是否還會遇到相同錯誤:"
             },
             {
-              "label": "英文",
-              "copyLabel": "複製英文",
+              "label": "英文資訊範本",
+              "copyLabel": "複製英文資訊範本",
               "text": "Please provide the following usage information (for EAA use only):\n1. Time when the issue occurred:\n2. Region and Public IP:\n3. User Name:\n4. Device Operating System:\n5. Default Browser:\n6. Application being accessed:\n7. Has the user previously accessed the application successfully? (Yes/No)\nIf “Yes”, please continue with 7-1:\n  1. Have there been any changes to the device? (Please briefly describe):\n8. Connection Method: Web / Client Access\nIf “Client Access”, please continue with 8-1, 8-2, and 8-3:\n  1. Is this the first time installing GPA?\n  2. Current installed version:\n  3. After closing and reopening GPA or reinstalling GPA, does the same issue still occur?"
             }
           ],
           "wide": true
         },
         {
-          "title": "EAA 資訊範本填寫範例",
-          "items": [],
+          "title": "資訊範本填寫範例",
+          "items": [
+            "請提供使用資訊:"
+          ],
           "copyGroups": [
             {
-              "label": "範例",
-              "copyLabel": "複製範例",
+              "label": "填寫範例",
+              "copyLabel": "複製填寫範例",
               "text": "請提供使用資訊:\n1. 問題發生時間: 2024/01/01 12:34 PM GTM+8\n2. 地區與Public IP: 台灣， 60.250.1.1\n3. User Name: test888@metaage.com.tw or AD User\n4. 裝置OS: Windows 11 / macOS 26 (Tahoe) / Linux Ubuntu 22.04\n5. 預設使用的瀏覽器: Chrome / FireFox / Edge等\n6. 訪問的Application: hostname.metaage.com.tw:443 or 10.1.2.3:3389\n7. 先前是否有成功訪問過的紀錄: 是/否，如填寫”是”則接續填寫7-1\n1) 請問裝置是否有任何變動(請簡述): 系統更新、使用不同的網路環境、安裝或更新防毒、同時使用其他VPN agent等等\n8. 連線方式: Web/Client access，如填寫”Client access”則接續填寫8-1、8-2、8-3\n1) 是否為首次安裝GPA: 是/否\n2) 當前安裝版本: v7.1.3\n3) 關閉再重啟GPA或重新安裝GPA後，是否還會遇到相同錯誤: 是"
             }
           ],
           "wide": true
         },
         {
-          "title": "EAA 注意事項",
+          "title": "注意事項",
           "items": [
             "1. 電話與 Line 群組報修方式都統一詢問客戶能聯繫的窗口 Mail, 並以 Mail 的方式回覆資訊範本請客戶回填",
             "2. Mail 的報修方式除非客戶已經以我方範本格式, 否則一律回覆範本給客戶回填",
             "3. 如果客戶來信為英文, 則提供英文範本給客戶填寫",
-            "⚠️ 若資訊未齊全，不可開立 Case。",
-            "⚠️ 不得以「客戶口述」直接開單。"
-          ],
-          "wide": true
+            "⚠️ 若資訊未齊全，不可開立 Case",
+            "⚠️ 不得以「客戶口述」直接開單"
+          ]
         },
         {
           "title": "判斷問題類型是否能開 Case",
@@ -863,8 +779,7 @@
             "Report無法查到User的連線紀錄",
             "X 不可開Case :",
             "新配置且尚未使用中的設定除錯相關"
-          ],
-          "wide": true
+          ]
         },
         {
           "title": "寄信用信件",
@@ -888,7 +803,7 @@
             {
               "label": "摩速",
               "copyLabel": "複製摩速",
-              "text": "gary.chen@mlytics.com; francis.lien@mlytics.com; wesley.tsai@mlytics.com; simon.shaw@mlytics.com; victor.chen@mlytics.com; willy.hong@mlytics.com; nimoliang@metaage.com.tw; gary.chen@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw"
+              "text": "gary.chen@mlytics.com; francis.lien@mlytics.com; wesley.tsai@mlytics.com; simon.shaw@mlytics.com; victor.chen@mlytics.com; willy.hong@mlytics.com;\nnimoliang@metaage.com.tw; gary.chen@metaage.com.tw; yanglin@metaage.com.tw; bowiehsieh@metaage.com.tw"
             },
             {
               "label": "AJ",
@@ -901,7 +816,7 @@
         {
           "title": "流程問題",
           "items": [
-            "MSP 有流程上的問題 找 Bowie。"
+            "MSP 有流程上的問題 找 Bowie"
           ]
         }
       ],
