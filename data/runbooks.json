@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-19",
+  "version": "2026-05-21",
   "note": "這裡會透過 /api/runbooks 顯示到前端。請只放允許值班人員在此系統查看的 SOP 資訊；更詳細或敏感的正式文件仍建議放在 SharePoint / KB / ITOP。",
   "categories": [
     {
@@ -884,6 +884,7 @@
         "確認客戶是否授權 isolate。",
         "若授權，將工單狀態修改為 Confirmed，並執行 isolate Endpoint。",
         "若不授權，暫緩隔離，留下 Note 並告知風險。",
+        "在 Xcockpit 留下 Note，記錄授權內容、處置原因與風險告知。",
         "三天後再與客戶確認是否 release 端點或 close 案件。"
       ],
       "escalateWhen": [
@@ -904,7 +905,8 @@
         "瑞盟行銷主聯絡人 朱俊翰 Hank：0903-569-959，hankchu@bramen.com.tw；次聯絡人 張宛琪 Skylar：0927-028-001，skylar@bramen.com.tw",
         "佳世達主聯絡人 林亨緯：0910-395-493，ivan.hw.lin@qisda.com",
         "薩摩亞商新茂環球有限公司：Arvin 0922-645-897 arvin.kuan@oppo-aed.tw；Leo 0912-282-166 leo.hsu@oppo-aed.tw；Mark 0916-911-230 mark.yeh@oppo-aed.tw",
-        "怡進工業 POC：Chuck 0939-875-158，chuck@transpak.com.tw；Kelly 0933-160-540。Chuck 有開勿擾，請務必打三通以上打到通。"
+        "怡進工業 POC：Chuck 0939-875-158，chuck@transpak.com.tw；Kelly 0933-160-540。Chuck 有開勿擾，請務必打三通以上打到通。",
+        "龍德造船主要聯絡人 莊幃復：0911-076-173，weifu.zhuang@lungteh.com；次要 謝益明：0911-388-339，james.hsieh@lungteh.com；次次要 蔡明宏：0972-242-535，min.tsai@lungteh.com"
       ],
       "mailRecipients": [],
       "extraSections": [
@@ -912,19 +914,32 @@
           "title": "信件主旨與主架構",
           "items": [
             "主旨：XENSOR - 告警端點 [端點名稱] [公司名稱] [高風險/可疑活動行為]事件。",
+            "To：客戶主要聯絡人；Cc：客戶指定窗口、邁達特 MSSP 團隊、邁達特工程師、業務、cycraft-support@metaage.com.tw; silviachu@metaage.com.tw; yipingyang@metaage.com.tw",
             "內容需包含案件名稱、案件狀態 confirmed / closed、告警端點、處置說明、後續確認事項。",
-            "需明確表示邁達特 MSSP 團隊經客戶授權後，於奧義智慧 MDR 平台執行處置。"
+            "需明確表示邁達特 MSSP 團隊經客戶授權後，於奧義智慧 MDR 平台執行處置。",
+            "工程師寄信時使用主架構範本，依案件狀態選擇對應處置段落，並補齊日期、端點名稱、原因說明。"
+          ],
+          "wide": true,
+          "copyGroups": [
+            {
+              "label": "主架構範本",
+              "copyLabel": "複製範本",
+              "text": "［客戶公司名稱］ 您好：\n\n如電話通報所述，經奧義智慧 MDR 平台偵測，貴公司場域中有端點發生高風險資安事件，說明如下：\n\n【案件資訊】\n案件名稱：［日期-案件編號-類型］\n案件狀態：［confirmed / closed］（［啟動追蹤中／已關閉案件］）\n告警端點：［Hostname］\n\n【處置說明】\n［依 a～h 情境貼上對應段落］\n\n【後續確認事項】\n邁達特 MSSP 團隊將於［日期／天數］後，與您確認後續資安應變措施，以決定是否［維持隔離／解除隔離／關閉案件］。\n\n上述處置內容，邁達特 MSSP 團隊經貴公司授權後，於奧義智慧 MDR 平台上所執行。\n\n如有任何疑問，歡迎隨時與我們聯繫，謝謝。"
+            }
           ]
         },
         {
           "title": "處置段落範本",
           "items": [
-            "已隔離、持續追蹤：取得授權後在 Xensor 平台執行網路隔離 Isolate，案件狀態 confirmed。",
-            "未隔離、採取 Quarantine：客戶授權仍在內部調查，暫緩 Isolate，透過 MPM Quarantine 偵測與阻擋可疑行為。",
-            "已隔離、暫不 Release：客戶調查及授權後，目前暫緩 Release 或 Close。",
-            "已 Release 並關閉案件：完成 Release，並正式關閉本次告警案件，案件狀態 closed。",
-            "未隔離、直接關閉：客戶評估暫無實際風險，未 Isolate 並關閉案件。"
-          ]
+            "a. 已隔離、持續追蹤：取得授權後在 Xensor 平台執行網路隔離 Isolate，目前已封鎖該端點所有進出流量；案件狀態 confirmed，已啟動持續追蹤。",
+            "b. 未隔離、採取 Quarantine：經客戶授權仍在內部調查，暫緩 Isolate；已透過 MPM 模組 Quarantine 機制即時偵測與阻擋可疑行為；案件狀態 confirmed。",
+            "c / d. 已隔離、暫不 Release：端點已於 [隔離日期] 完成 Isolate，經客戶調查及授權，目前暫緩 Release 或 Close；案件狀態 confirmed。",
+            "h. 已隔離但案件仍調查中：端點已取得授權後 Isolate 並封鎖所有進出流量；後續依客戶資安應變措施確認是否 Release 或 Close。",
+            "e. 已 Release 並關閉案件：端點於 [隔離日期] 完成 Isolate，經客戶完成調查並授權後已 Release，並正式關閉本次告警案件；案件狀態 closed。",
+            "f. 關閉案件（內部原因）：端點於 [隔離日期] 完成 Isolate，經客戶調查及內部調整（[原因簡述]）確認風險排除，故關閉本次告警事件；案件狀態 closed。",
+            "g. 未隔離、直接關閉：經客戶調查及內部調整（[原因簡述]）評估暫無實際風險，未執行 Isolate，並關閉本次告警事件；案件狀態 closed。"
+          ],
+          "wide": true
         },
         {
           "title": "Isolate 端點步驟",
@@ -932,8 +947,9 @@
             "登入 Xensor，點選 EndPoint。",
             "依告警信件群組點擊，避免全主機搜尋太久。",
             "搜尋端點名稱並進入端點，切到 REMEDIATION。",
-            "Create New Command，Description 填 isolate，Expire 選 in 1 hours，Action 選 isolate Endpoint。",
-            "Send and Execute，確認 Status 為 Closed；Execute Status 顯示 OK 代表隔離成功。"
+            "Create New Command，Description 填 isolate，Expire 選 in 1 hours，Action 選 isolate Endpoint；Mode 與 IP/Domain List 保持預設。",
+            "Send and Execute，確認 isolate 的 Status 為 Closed；若為 Sent / Executing 表示尚未完成隔離。",
+            "點擊該條命令，Execute Status 顯示 OK 代表隔離成功。"
           ]
         },
         {
@@ -942,7 +958,8 @@
             "登入 Xensor，進入 EndPoint 搜尋端點並確認狀態為 isolated。",
             "REMEDIATION > Create New Command。",
             "Description 填 release endpoint，Expire 選 in 1 hours，Action 選 Release Endpoint。",
-            "Send and Execute，確認 Status 為 Closed；Execute Status 顯示 OK 代表成功。"
+            "Send and Execute，確認 Status 為 Closed；若為 Sent / Executing 表示尚未完成。",
+            "點擊該條命令，Execute Status 顯示 OK 代表 Release 成功。"
           ]
         },
         {
@@ -964,16 +981,19 @@
         {
           "title": "Remediation 指令",
           "items": [
-            "Delete File：端點存在可疑或不符規範檔案，可用 Path 或 MD5。",
-            "Terminate Process：可疑檔案正在執行導致 Delete File 無法成功時使用。",
-            "Restore Quarantined File：客戶確認檔案沒問題，需要解除 Agent 隔離檔案。",
-            "解除隔離前務必提醒客戶，該檔案會被加入高階白名單，需由原廠協助才能解除。"
-          ]
+            "Delete File：適用於端點存在可疑或不符規範檔案；Action 選 Delete File，輸入 Path 或 MD5（可從 Threat Activity 複製），Expire 預設 1 小時、最長 5 天，Send and Execute。",
+            "Terminate Process：適用於可疑檔案正在執行導致 Delete File 無法成功；Action 選 Terminate Process，Description 可用預設或自訂，Expire 預設 1 小時、最長 5 天，name 輸入程序名稱，例如 hfs.exe。",
+            "Restore Quarantined File 方法一：Action 選 Restore Quarantined File，輸入 Path 與 md5，Expire 預設 1 小時，Send and Execute 後確認 Status 為 Closed。",
+            "Restore Quarantined File 方法二：Action 選 Query Quarantined，Send and Execute 後在下方清單勾選需解除隔離的檔案，點選 Restore，確認 Status 為 Closed。",
+            "狀態判斷：Status = Closed 代表指令已完成；必要時再點擊命令確認 Execute Status 為 OK。",
+            "注意事項：操作前務必提醒客戶，每台端點解除隔離檔案成功後，該檔案會被加入高階白名單，後續需由原廠協助才能解除。"
+          ],
+          "wide": true
         },
         {
           "title": "Q&A",
           "items": [
-            "MPM 模組 Quarantine：奧義內建防禦功能，quarantine 會主動查殺檔案並告警，detect 只告警不查殺。",
+            "MPM 模組 Quarantine：奧義內建防禦功能，MPM 是防禦核心模組；quarantine 會主動查殺檔案並告警，detect 只告警不查殺。可至 Xensor 平台查看該端點所屬群組設定，確認目前是 quarantine 或 detect 模式。",
             "結案通報可用 Line 客戶群組、電話或信件，但必須保留 Email 作為文字證明。"
           ]
         }
