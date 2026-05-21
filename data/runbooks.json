@@ -922,6 +922,21 @@
           "wide": true,
           "copyGroups": [
             {
+              "label": "主旨格式",
+              "copyLabel": "複製主旨",
+              "text": "XENSOR - 告警端點 [端點名稱] [公司名稱] [高風險/可疑活動行為]事件"
+            },
+            {
+              "label": "固定 CC",
+              "copyLabel": "複製 CC",
+              "text": "cycraft-support@metaage.com.tw; silviachu@metaage.com.tw; yipingyang@metaage.com.tw"
+            },
+            {
+              "label": "授權聲明",
+              "copyLabel": "複製聲明",
+              "text": "上述處置內容，邁達特 MSSP 團隊經貴公司授權後，於奧義智慧 MDR 平台上所執行。"
+            },
+            {
               "label": "主架構範本",
               "copyLabel": "複製範本",
               "text": "［客戶公司名稱］ 您好：\n\n如電話通報所述，經奧義智慧 MDR 平台偵測，貴公司場域中有端點發生高風險資安事件，說明如下：\n\n【案件資訊】\n案件名稱：［日期-案件編號-類型］\n案件狀態：［confirmed / closed］（［啟動追蹤中／已關閉案件］）\n告警端點：［Hostname］\n\n【處置說明】\n［依 a～h 情境貼上對應段落］\n\n【後續確認事項】\n邁達特 MSSP 團隊將於［日期／天數］後，與您確認後續資安應變措施，以決定是否［維持隔離／解除隔離／關閉案件］。\n\n上述處置內容，邁達特 MSSP 團隊經貴公司授權後，於奧義智慧 MDR 平台上所執行。\n\n如有任何疑問，歡迎隨時與我們聯繫，謝謝。"
@@ -939,7 +954,44 @@
             "f. 關閉案件（內部原因）：端點於 [隔離日期] 完成 Isolate，經客戶調查及內部調整（[原因簡述]）確認風險排除，故關閉本次告警事件；案件狀態 closed。",
             "g. 未隔離、直接關閉：經客戶調查及內部調整（[原因簡述]）評估暫無實際風險，未執行 Isolate，並關閉本次告警事件；案件狀態 closed。"
           ],
-          "wide": true
+          "wide": true,
+          "copyGroups": [
+            {
+              "label": "a. 已隔離、持續追蹤",
+              "copyLabel": "複製 a",
+              "text": "告警端點 ［Hostname］\n已於取得貴公司授權後，\n在 Xensor 平台執行網路隔離（Isolate），\n目前已封鎖該端點所有進出流量。\n\n案件狀態為 confirmed，已啟動持續追蹤。"
+            },
+            {
+              "label": "b. 未隔離、採取 Quarantine",
+              "copyLabel": "複製 b",
+              "text": "告警端點 ［Hostname］\n經貴公司授權，目前仍在內部調查中，\n暫緩執行端點隔離（Isolate）。\n\n現階段已透過 MPM 模組 Quarantine 機制，\n進行即時偵測與阻擋可疑行為。\n\n案件狀態為 confirmed，持續追蹤中。"
+            },
+            {
+              "label": "c / d. 已隔離、暫不 Release",
+              "copyLabel": "複製 c/d",
+              "text": "告警端點 ［Hostname］\n已於［隔離日期］完成網路隔離（Isolate），\n經貴公司調查及授權，\n目前暫緩解除隔離（Release）或關閉案件。\n\n案件狀態為 confirmed，調查中。"
+            },
+            {
+              "label": "h. 已隔離但案件仍調查中",
+              "copyLabel": "複製 h",
+              "text": "告警端點 ［Hostname］\n已於取得貴公司授權後，\n在 Xensor 平台執行網路隔離（Isolate），\n並封鎖所有進出流量。\n\n案件目前狀態為 confirmed，調查中。\n後續將依貴公司資安應變措施，\n與您確認是否解除端點隔離（Release）\n或關閉本次案件。"
+            },
+            {
+              "label": "e. 已 Release 並關閉案件",
+              "copyLabel": "複製 e",
+              "text": "告警端點 ［Hostname］\n於［隔離日期］完成隔離（Isolate），\n經貴公司完成調查並授權後，\n已解除端點隔離（Release），\n並正式關閉本次告警案件。\n\n案件狀態：closed。"
+            },
+            {
+              "label": "f. 關閉案件（內部原因）",
+              "copyLabel": "複製 f",
+              "text": "告警端點 ［Hostname］\n於［隔離日期］完成隔離（Isolate），\n經貴公司調查及內部調整（［原因簡述］），\n已確認風險排除，\n故將本次告警事件關閉。\n\n案件狀態：closed。"
+            },
+            {
+              "label": "g. 未隔離、直接關閉",
+              "copyLabel": "複製 g",
+              "text": "告警端點 ［Hostname］\n經貴公司調查及內部調整（［原因簡述］），\n評估暫無實際風險，\n故未執行端點隔離（Isolate），\n並將本次告警事件關閉。\n\n案件狀態：closed。"
+            }
+          ]
         },
         {
           "title": "Isolate 端點步驟",
@@ -950,6 +1002,23 @@
             "Create New Command，Description 填 isolate，Expire 選 in 1 hours，Action 選 isolate Endpoint；Mode 與 IP/Domain List 保持預設。",
             "Send and Execute，確認 isolate 的 Status 為 Closed；若為 Sent / Executing 表示尚未完成隔離。",
             "點擊該條命令，Execute Status 顯示 OK 代表隔離成功。"
+          ],
+          "copyGroups": [
+            {
+              "label": "Description",
+              "copyLabel": "複製",
+              "text": "isolate"
+            },
+            {
+              "label": "Expire",
+              "copyLabel": "複製",
+              "text": "in 1 hours"
+            },
+            {
+              "label": "Action",
+              "copyLabel": "複製",
+              "text": "isolate Endpoint"
+            }
           ]
         },
         {
@@ -960,6 +1029,23 @@
             "Description 填 release endpoint，Expire 選 in 1 hours，Action 選 Release Endpoint。",
             "Send and Execute，確認 Status 為 Closed；若為 Sent / Executing 表示尚未完成。",
             "點擊該條命令，Execute Status 顯示 OK 代表 Release 成功。"
+          ],
+          "copyGroups": [
+            {
+              "label": "Description",
+              "copyLabel": "複製",
+              "text": "release endpoint"
+            },
+            {
+              "label": "Expire",
+              "copyLabel": "複製",
+              "text": "in 1 hours"
+            },
+            {
+              "label": "Action",
+              "copyLabel": "複製",
+              "text": "Release Endpoint"
+            }
           ]
         },
         {
@@ -969,6 +1055,28 @@
             "Reason 可填：已通報，尚未 isolate 端點；已通報，已 isolate 端點；已追蹤，已 isolate 端點。",
             "Rename the Incident 格式：YYYY-MMDD-流水編號-事件類型，例如 2025-0510-001-Malware。",
             "Note 需記錄客戶授權內容、客戶處置與原因、稽核依據、結案原因。"
+          ],
+          "copyGroups": [
+            {
+              "label": "Reason：尚未 isolate",
+              "copyLabel": "複製",
+              "text": "已通報，尚未 isolate 端點"
+            },
+            {
+              "label": "Reason：已 isolate",
+              "copyLabel": "複製",
+              "text": "已通報，已 isolate 端點"
+            },
+            {
+              "label": "Reason：已追蹤",
+              "copyLabel": "複製",
+              "text": "已追蹤，已 isolate 端點"
+            },
+            {
+              "label": "工單命名格式",
+              "copyLabel": "複製格式",
+              "text": "YYYY-MMDD-流水編號-事件類型"
+            }
           ]
         },
         {
