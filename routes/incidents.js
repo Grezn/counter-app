@@ -6,6 +6,9 @@ const redisSvc = require("../services/redis");
 const router = express.Router();
 
 const INCIDENT_LIST_KEY = "incidents:recent";
+const INCIDENT_HASH_KEY = "incidents:items";
+const INCIDENT_ORDER_KEY = "incidents:order";
+const INCIDENT_MIGRATION_KEY = "incidents:migrated:v2";
 const MAX_STORED_INCIDENTS = 50;
 const DEFAULT_LIST_LIMIT = 20;
 const MAX_LIST_LIMIT = 50;
@@ -125,18 +128,107 @@ function safeParseIncident(raw) {
   }
 }
 
-async function readIncidentRecords(redis) {
-  return (await redis.lRange(INCIDENT_LIST_KEY, 0, MAX_STORED_INCIDENTS - 1))
-    .map(safeParseIncident)
-    .filter(Boolean);
+function getIncidentScore(record, fallbackScore = Date.now()) {
+  const timestamp = Date.parse(record && (record.updatedAt || record.createdAt));
+  return Number.isFinite(timestamp) ? timestamp : fallbackScore;
 }
 
-async function writeIncidentRecords(redis, records) {
-  await redis.del(INCIDENT_LIST_KEY);
+async function readLegacyIncidentRecords(redis) {
+  return (await redis.lRange(INCIDENT_LIST_KEY, 0, MAX_STORED_INCIDENTS - 1))
+    .map(safeParseIncident)
+    .filter((item) => item && item.id);
+}
 
-  for (let index = Math.min(records.length, MAX_STORED_INCIDENTS) - 1; index >= 0; index -= 1) {
-    await redis.lPush(INCIDENT_LIST_KEY, JSON.stringify(records[index]));
+async function migrateLegacyIncidentRecords(redis) {
+  const migrated = await redis.get(INCIDENT_MIGRATION_KEY);
+  if (migrated) return;
+
+  const existingCount = await redis.zCard(INCIDENT_ORDER_KEY);
+  if (existingCount > 0) {
+    await redis.set(INCIDENT_MIGRATION_KEY, new Date().toISOString());
+    return;
   }
+
+  const legacyRecords = await readLegacyIncidentRecords(redis);
+  const multi = redis.multi();
+  const now = Date.now();
+
+  legacyRecords.forEach((record, index) => {
+    const score = getIncidentScore(record, now - index);
+    multi.hSet(INCIDENT_HASH_KEY, record.id, JSON.stringify(record));
+    multi.zAdd(INCIDENT_ORDER_KEY, [{ score, value: record.id }]);
+  });
+
+  multi.set(INCIDENT_MIGRATION_KEY, new Date().toISOString());
+  await multi.exec();
+}
+
+async function trimIncidentRecords(redis) {
+  const count = await redis.zCard(INCIDENT_ORDER_KEY);
+  if (count <= MAX_STORED_INCIDENTS) return;
+
+  const staleIds = await redis.zRange(INCIDENT_ORDER_KEY, 0, count - MAX_STORED_INCIDENTS - 1);
+  if (!staleIds.length) return;
+
+  await redis.multi()
+    .zRem(INCIDENT_ORDER_KEY, staleIds)
+    .hDel(INCIDENT_HASH_KEY, staleIds)
+    .exec();
+}
+
+async function readIncidentRecords(redis, limit = MAX_STORED_INCIDENTS) {
+  await migrateLegacyIncidentRecords(redis);
+
+  const ids = await redis.zRange(INCIDENT_ORDER_KEY, 0, limit - 1, { REV: true });
+  if (!ids.length) return [];
+
+  const values = await redis.hmGet(INCIDENT_HASH_KEY, ids);
+  const missingIds = [];
+  const records = values
+    .map((raw, index) => {
+      const record = raw ? safeParseIncident(raw) : null;
+      if (!record) missingIds.push(ids[index]);
+      return record;
+    })
+    .filter(Boolean);
+
+  if (missingIds.length) {
+    await redis.zRem(INCIDENT_ORDER_KEY, missingIds);
+  }
+
+  return records;
+}
+
+async function readIncidentRecord(redis, id) {
+  await migrateLegacyIncidentRecords(redis);
+
+  const raw = await redis.hGet(INCIDENT_HASH_KEY, id);
+  return raw ? safeParseIncident(raw) : null;
+}
+
+async function writeIncidentRecord(redis, record) {
+  await migrateLegacyIncidentRecords(redis);
+
+  await redis.multi()
+    .hSet(INCIDENT_HASH_KEY, record.id, JSON.stringify(record))
+    .zAdd(INCIDENT_ORDER_KEY, [{ score: getIncidentScore(record), value: record.id }])
+    .exec();
+
+  await trimIncidentRecords(redis);
+}
+
+async function deleteIncidentRecord(redis, id) {
+  await migrateLegacyIncidentRecords(redis);
+
+  const record = await readIncidentRecord(redis, id);
+  if (!record) return null;
+
+  await redis.multi()
+    .hDel(INCIDENT_HASH_KEY, id)
+    .zRem(INCIDENT_ORDER_KEY, id)
+    .exec();
+
+  return record;
 }
 
 function getIncidentRecordView(value) {
@@ -199,8 +291,7 @@ router.post("/api/incidents", async (req, res) => {
     const now = new Date().toISOString();
     const item = buildIncidentItem(incident, handoverSummary);
 
-    await redis.lPush(INCIDENT_LIST_KEY, JSON.stringify(item));
-    await redis.lTrim(INCIDENT_LIST_KEY, 0, MAX_STORED_INCIDENTS - 1);
+    await writeIncidentRecord(redis, item);
 
     console.log(JSON.stringify({
       type: "incident",
@@ -247,17 +338,13 @@ router.put("/api/incidents/:id", async (req, res) => {
       });
     }
 
-    const records = await readIncidentRecords(redis);
-    const recordIndex = records.findIndex((item) => item.id === id);
-
-    if (recordIndex === -1) {
+    const existingRecord = await readIncidentRecord(redis, id);
+    if (!existingRecord) {
       return res.status(404).json({ error: "incident not found" });
     }
 
-    const item = buildIncidentItem(incident, handoverSummary, records[recordIndex]);
-    records.splice(recordIndex, 1);
-    records.unshift(item);
-    await writeIncidentRecords(redis, records);
+    const item = buildIncidentItem(incident, handoverSummary, existingRecord);
+    await writeIncidentRecord(redis, item);
 
     console.log(JSON.stringify({
       type: "incident",
@@ -295,15 +382,12 @@ router.patch("/api/incidents/:id/resolve", async (req, res) => {
       return res.status(400).json({ error: "incident id is required" });
     }
 
-    const records = await readIncidentRecords(redis);
-    const recordIndex = records.findIndex((item) => item.id === id);
-
-    if (recordIndex === -1) {
+    const item = await readIncidentRecord(redis, id);
+    if (!item) {
       return res.status(404).json({ error: "incident not found" });
     }
 
     const now = new Date().toISOString();
-    const item = records[recordIndex];
     const fields = item.incident && item.incident.fields ? item.incident.fields : {};
     const nextFields = {
       ...fields,
@@ -321,8 +405,7 @@ router.patch("/api/incidents/:id/resolve", async (req, res) => {
       },
     };
 
-    records.splice(recordIndex, 1, nextItem);
-    await writeIncidentRecords(redis, records);
+    await writeIncidentRecord(redis, nextItem);
 
     console.log(JSON.stringify({
       type: "incident",
@@ -360,15 +443,10 @@ router.delete("/api/incidents/:id", async (req, res) => {
       return res.status(400).json({ error: "incident id is required" });
     }
 
-    const records = await readIncidentRecords(redis);
-    const recordIndex = records.findIndex((item) => item.id === id);
-
-    if (recordIndex === -1) {
+    const deleted = await deleteIncidentRecord(redis, id);
+    if (!deleted) {
       return res.status(404).json({ error: "incident not found" });
     }
-
-    const [deleted] = records.splice(recordIndex, 1);
-    await writeIncidentRecords(redis, records);
 
     console.log(JSON.stringify({
       type: "incident",

@@ -3,8 +3,12 @@ const { createClient } = require("redis");
 // client 是整個 app 共用的 Redis 連線。
 // 先在 connectRedis() 建立，其他檔案再透過 getRedisClient() 取得。
 let client;
+let reconnectTimer;
+let connectInProgress = false;
+let shuttingDown = false;
 const REDIS_CONNECT_TIMEOUT_MS = Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 3000);
 const REDIS_CONNECT_MAX_RETRIES = Number(process.env.REDIS_CONNECT_MAX_RETRIES || 5);
+const REDIS_RECONNECT_DELAY_MS = Number(process.env.REDIS_RECONNECT_DELAY_MS || 5000);
 
 function getRedisUrl() {
   // 正式環境可以直接設定 REDIS_URL。
@@ -29,33 +33,62 @@ function getRedisLogLabel(redisUrl) {
   }
 }
 
+function scheduleReconnect() {
+  if (shuttingDown || reconnectTimer) return;
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connectRedis();
+  }, REDIS_RECONNECT_DELAY_MS);
+}
+
+function createRedisClient(redisUrl) {
+  const nextClient = createClient({
+    url: redisUrl,
+    socket: {
+      connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
+      // 每次連線嘗試仍有限制；失敗後由 scheduleReconnect() 開新的嘗試。
+      reconnectStrategy: (retries) => (
+        retries > REDIS_CONNECT_MAX_RETRIES ? false : Math.min(retries * 100, 3000)
+      ),
+    },
+  });
+
+  // error event 一定要監聽，否則 Redis 連線錯誤可能讓 Node process 掛掉。
+  nextClient.on("error", (err) => {
+    console.error("Redis error:", err.message);
+  });
+
+  nextClient.on("end", () => {
+    if (!shuttingDown && client === nextClient) {
+      client = null;
+      scheduleReconnect();
+    }
+  });
+
+  return nextClient;
+}
+
 async function connectRedis() {
+  if (connectInProgress || (client && client.isReady)) return;
+
+  connectInProgress = true;
+
   try {
     const redisUrl = getRedisUrl();
 
     // createClient 只是建立 client 物件，真正連線要等下面的 client.connect()。
-    client = createClient({
-      url: redisUrl,
-      socket: {
-        connectTimeout: REDIS_CONNECT_TIMEOUT_MS,
-        // 開機時 Redis 不通，仍要讓 HTTP server 起來回傳可診斷的錯誤。
-        reconnectStrategy: (retries) => (
-          retries > REDIS_CONNECT_MAX_RETRIES ? false : Math.min(retries * 100, 3000)
-        ),
-      },
-    });
-
-    // error event 一定要監聽，否則 Redis 連線錯誤可能讓 Node process 掛掉。
-    client.on("error", (err) => {
-      console.error("Redis error:", err.message);
-    });
-
-    await client.connect();
+    const nextClient = createRedisClient(redisUrl);
+    await nextClient.connect();
+    client = nextClient;
 
     console.log("Redis connected:", getRedisLogLabel(redisUrl));
   } catch (err) {
     client = null;
     console.error("Redis connect failed:", err.message);
+    scheduleReconnect();
+  } finally {
+    connectInProgress = false;
   }
 }
 
@@ -65,7 +98,17 @@ function getRedisClient() {
   return client;
 }
 
+function stopRedisReconnect() {
+  shuttingDown = true;
+
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
+
 module.exports = {
   connectRedis,
   getRedisClient,
+  stopRedisReconnect,
 };

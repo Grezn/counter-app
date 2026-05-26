@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 
 const redisSvc = require("../services/redis");
+const { requestHasToken } = require("../services/auth");
 
 // router 是 Express 的小型路由器。
 // 你可以把這個檔案想成「計數器和統計 API 的清單」。
@@ -38,7 +39,8 @@ function isResetAuthorized(req) {
   if (!expected) return false;
 
   const provided = req.headers["x-reset-token"];
-  return typeof provided === "string" && provided === expected;
+  return (typeof provided === "string" && provided === expected)
+    || requestHasToken(req, expected);
 }
 
 function logCounter(event, extra = {}) {
@@ -76,7 +78,7 @@ function getVisitorId(req) {
   }
 
   const raw = [
-    req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown-ip",
+    req.ip || req.socket.remoteAddress || "unknown-ip",
     req.headers["user-agent"] || "unknown-agent",
   ].join("|");
 

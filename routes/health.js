@@ -15,8 +15,8 @@ router.get("/ready", async (req, res) => {
   try {
     const client = getRedisClient();
 
-    // isOpen 代表 socket 已經開啟；如果沒有 Redis 連線，就不能算 ready。
-    if (!client || !client.isOpen) {
+    // isReady 代表 Redis client 已完成握手且可收命令。
+    if (!client || !client.isReady) {
       throw new Error("Redis not connected");
     }
 

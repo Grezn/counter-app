@@ -12,7 +12,8 @@ const jiraRoutes = require("./routes/jira");
 const runbookRoutes = require("./routes/runbooks");
 const weatherRoutes = require("./routes/weather");
 const incidentRoutes = require("./routes/incidents");
-const { connectRedis } = require("./services/redis");
+const { connectRedis, getRedisClient, stopRedisReconnect } = require("./services/redis");
+const { authMiddleware } = require("./services/auth");
 
 // 建立 Express app。你可以把 app 想成「網站伺服器本體」。
 const app = express();
@@ -21,15 +22,16 @@ const app = express();
 // Docker / EC2 user data 會設定 PORT 和 APP_VERSION。
 const PORT = process.env.PORT || 3000;
 const APP_VERSION = process.env.APP_VERSION || "v6";
+const TRUST_PROXY_HOPS = Number(process.env.TRUST_PROXY_HOPS || 1);
 
 // os.hostname() 在 container 裡通常會是 container id。
 // 放進 /whoami 和 log 裡，可以看出目前是哪台 instance/container 回應。
 const INSTANCE_ID = os.hostname();
 let server;
 
-// 這個服務跑在 AWS ALB 後面，所以要信任 ALB 轉來的 proxy headers。
-// 例如 X-Forwarded-For 可以幫我們看見原始使用者 IP。
-app.set("trust proxy", true);
+// 這個服務跑在 AWS ALB 後面，所以預設只信任最靠近 app 的一層 proxy。
+// 這樣可以避免任意 client 自己塞 X-Forwarded-For 污染 log/統計。
+app.set("trust proxy", Number.isFinite(TRUST_PROXY_HOPS) ? TRUST_PROXY_HOPS : 1);
 app.disable("x-powered-by");
 
 // 基本安全 header。
@@ -41,9 +43,6 @@ app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
   next();
 });
-
-// 事件摘要會送到 Jira API；限制大小仍可避免被亂塞大 payload。
-app.use(express.json({ limit: "64kb" }));
 
 function writeLog(payload) {
   // 這裡把 log 統一輸出成 JSON，CloudWatch / docker logs 會比較好搜尋。
@@ -58,16 +57,7 @@ function writeLog(payload) {
 }
 
 function getClientIp(req) {
-  // 使用者先打到 ALB，再由 ALB 轉給 EC2。
-  // 真正的使用者 IP 會放在 x-forwarded-for header 裡。
-  const xForwardedFor = req.headers["x-forwarded-for"];
-
-  if (xForwardedFor) {
-    // x-forwarded-for 可能是一串 IP，第一個通常是最原始的 client IP。
-    return xForwardedFor.split(",")[0].trim();
-  }
-
-  return req.socket.remoteAddress || "unknown";
+  return req.ip || req.socket.remoteAddress || "unknown";
 }
 
 // 這是一個 Express middleware。
@@ -101,6 +91,13 @@ app.use((req, res, next) => {
 
   next();
 });
+
+// 正式環境會用 APP_ACCESS_TOKEN 或 RESET_TOKEN 保護整個值班中控台。
+// /health、/ready、/whoami 會在 auth middleware 裡保留給部署健康檢查。
+app.use(authMiddleware);
+
+// 事件摘要會送到 Jira API；限制大小仍可避免被亂塞大 payload。
+app.use(express.json({ limit: "64kb" }));
 
 // public/ 是靜態檔案資料夾。
 // 例如 /favicon.svg 會直接從 public/favicon.svg 回傳。
@@ -141,8 +138,6 @@ async function startServer() {
 
 startServer();
 
-const { getRedisClient } = require("./services/redis");
-
 async function shutdown(signal) {
   // Docker stop / ASG instance refresh 通常會送 SIGTERM。
   // Ctrl+C 本機停止通常會送 SIGINT。
@@ -154,6 +149,7 @@ async function shutdown(signal) {
   });
 
   const client = getRedisClient();
+  stopRedisReconnect();
 
   try {
     // ASG instance refresh 會送 SIGTERM。
