@@ -23,7 +23,6 @@ GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 contain
 
 - `IMAGE_URI`：ECR image，例如 `123456789012.dkr.ecr.us-east-1.amazonaws.com/docker-demo:latest`
 - `APP_VERSION`：顯示在 `/whoami` 的版本字串。
-- `APP_BASIC_AUTH_USER` / `APP_ACCESS_TOKEN`：保護整個值班中控台的 Basic Auth 帳號與 token；`APP_ACCESS_TOKEN` 留空時會 fallback 到 `RESET_TOKEN`。
 - `TRUST_PROXY_HOPS`：Express 信任的上游 proxy hop 數；ALB 直連 app 時維持 `1`。
 - `REDIS_URL`：完整 Redis URL，優先使用這個。
 - `REDIS_HOST` / `REDIS_PORT`：如果沒有設定 `REDIS_URL`，程式會用這兩個組成 Redis URL。
@@ -38,12 +37,6 @@ GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 contain
 - `JIRA_DEFAULT_PRIORITY`：可選；若留空會依嚴重度帶入 High / Medium / Low。
 - `CWA_API_KEY`：中央氣象署氣象資料開放平台授權碼，只放後端環境變數或 SSM。
 - `CWA_LOCATION_NAME` / `CWA_CITY_DATASET_ID` / `CWA_TOWNSHIP_DATASET_ID` / `CWA_OBSERVATION_DATASET_ID` / `CWA_CACHE_TTL_MS`：本地即時氣象顯示設定；使用者允許定位時會找最近觀測站並搭配鄉鎮預報，否則退回預設地區。
-
-正式環境可額外建立獨立的中控台登入 token；沒建立時會先沿用既有的 reset token：
-
-```bash
-aws ssm put-parameter --region us-east-1 --name /counter-app/prod/app-access-token --type SecureString --value "你的長隨機token" --overwrite
-```
 
 ## 氣象 API 授權碼
 

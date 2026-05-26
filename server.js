@@ -13,7 +13,6 @@ const runbookRoutes = require("./routes/runbooks");
 const weatherRoutes = require("./routes/weather");
 const incidentRoutes = require("./routes/incidents");
 const { connectRedis, getRedisClient, stopRedisReconnect } = require("./services/redis");
-const { authMiddleware } = require("./services/auth");
 
 // 建立 Express app。你可以把 app 想成「網站伺服器本體」。
 const app = express();
@@ -91,10 +90,6 @@ app.use((req, res, next) => {
 
   next();
 });
-
-// 正式環境會用 APP_ACCESS_TOKEN 或 RESET_TOKEN 保護整個值班中控台。
-// /health、/ready、/whoami 會在 auth middleware 裡保留給部署健康檢查。
-app.use(authMiddleware);
 
 // 事件摘要會送到 Jira API；限制大小仍可避免被亂塞大 payload。
 app.use(express.json({ limit: "64kb" }));

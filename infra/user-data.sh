@@ -29,7 +29,6 @@ REDIS_URL="redis://${REDIS_ENDPOINT}:${REDIS_PORT}"
 CONTAINER_NAME="counter-app"
 APP_PORT="3000"
 HOST_PORT="80"
-APP_BASIC_AUTH_USER="admin"
 TRUST_PROXY_HOPS="1"
 
 # ===== Jira =====
@@ -55,7 +54,6 @@ CWA_CACHE_TTL_MS="180000"
 # 建議先在 SSM 建立 SecureString：
 # aws ssm put-parameter --name /counter-app/prod/reset-token --type SecureString --value "你的長隨機token"
 RESET_TOKEN_PARAM_NAME="/counter-app/prod/reset-token"
-APP_ACCESS_TOKEN_PARAM_NAME="/counter-app/prod/app-access-token"
 JIRA_EMAIL_PARAM_NAME="/counter-app/prod/jira-email"
 JIRA_API_TOKEN_PARAM_NAME="/counter-app/prod/jira-api-token"
 CWA_API_KEY_PARAM_NAME="/counter-app/prod/cwa-api-key"
@@ -130,12 +128,6 @@ if [ -z "$RESET_TOKEN" ] || [ "$RESET_TOKEN" = "None" ]; then
   exit 1
 fi
 
-# APP_ACCESS_TOKEN 保護整個值班中控台；未建立新 SSM 參數時先沿用 RESET_TOKEN。
-APP_ACCESS_TOKEN="$(read_optional_parameter "$APP_ACCESS_TOKEN_PARAM_NAME")"
-if [ -z "$APP_ACCESS_TOKEN" ] || [ "$APP_ACCESS_TOKEN" = "None" ]; then
-  APP_ACCESS_TOKEN="$RESET_TOKEN"
-fi
-
 # ===== 讀取 Jira 設定 =====
 # Jira 是事件留存功能；沒設定時 app 仍會啟動，但建立小卡會顯示未設定。
 JIRA_EMAIL="$(read_optional_parameter "$JIRA_EMAIL_PARAM_NAME")"
@@ -184,8 +176,6 @@ docker run -d \
   -p "${HOST_PORT}:${APP_PORT}" \
   -e "PORT=${APP_PORT}" \
   -e "APP_VERSION=${APP_VERSION}" \
-  -e "APP_BASIC_AUTH_USER=${APP_BASIC_AUTH_USER}" \
-  -e "APP_ACCESS_TOKEN=${APP_ACCESS_TOKEN}" \
   -e "TRUST_PROXY_HOPS=${TRUST_PROXY_HOPS}" \
   -e "REDIS_HOST=${REDIS_ENDPOINT}" \
   -e "REDIS_PORT=${REDIS_PORT}" \
