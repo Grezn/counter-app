@@ -2,6 +2,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -9,6 +10,8 @@ import { z } from "zod/v4";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
+const { buildHandoverSummary } = require("../public/handover-summary.js");
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_APP_BASE_URL = process.env.COUNTER_APP_BASE_URL || process.env.APP_BASE_URL || "http://127.0.0.1:3000";
 const DEFAULT_TIMEOUT_MS = Number(process.env.MCP_APP_TIMEOUT_MS || 6000);
@@ -203,35 +206,6 @@ async function appRequest(endpoint, options = {}) {
   }
 }
 
-function buildHandoverSummary(fields) {
-  const valueOrDash = (value) => normalizeText(value, "-");
-  const line = (label, value) => `${label}: ${valueOrDash(value)}`;
-  const headline = `[${valueOrDash(fields.severity)} / ${valueOrDash(fields.status)}] ${valueOrDash(fields.title)}`;
-
-  return [
-    "【接手重點】",
-    headline,
-    line("事件時間", fields.startedAt),
-    line("客戶 / 單位", fields.customer),
-    line("系統 / 設備", fields.system),
-    line("來源", fields.source),
-    "",
-    "【問題 / 影響】",
-    line("問題描述", fields.problemDescription),
-    line("影響範圍", fields.impact),
-    "",
-    "【接手動作】",
-    line("下一步", fields.nextStep),
-    line("追蹤狀態", fields.trackingStatus),
-    line("下次確認", fields.nextCheckAt),
-    line("接手人員", fields.handoverOwner),
-    line("已通知", fields.notified),
-    "",
-    "【處理紀錄】",
-    valueOrDash(fields.notes),
-  ].join("\n");
-}
-
 function buildIncidentPayload(args) {
   const fields = {
     title: normalizeText(args.title),
@@ -260,7 +234,7 @@ function buildIncidentPayload(args) {
 
   return {
     incident,
-    handoverSummary: normalizeText(args.handoverSummary) || buildHandoverSummary(fields),
+    handoverSummary: normalizeText(args.handoverSummary) || buildHandoverSummary(incident),
   };
 }
 

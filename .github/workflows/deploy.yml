@@ -41,6 +41,7 @@ jobs:
       - name: Run pre-deploy smoke checks
         run: |
           node --check server.js
+          node --check public/handover-summary.js
           node --check mcp/server.mjs
           node --check mcp/smoke-test.mjs
           npm run mcp:smoke

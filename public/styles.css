@@ -1578,6 +1578,79 @@ button:disabled {
   line-height: 1.45;
 }
 
+.incident-focus-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 12px;
+  padding: 8px;
+  border-radius: 8px;
+  background: #101418;
+  border: 1px solid #2b3340;
+}
+
+.incident-focus-summary {
+  flex: 0 0 auto;
+  color: #d8dde6;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.incident-focus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-width: 0;
+  min-height: 30px;
+  margin: 0;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: #151922;
+  border: 1px solid #344052;
+  color: #d8dde6;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.incident-focus-chip.active {
+  background: #1e3a8a;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.incident-focus-label {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.incident-focus-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.18);
+  color: inherit;
+  text-align: center;
+  font-size: 0.76rem;
+}
+
+.incident-focus-clear {
+  width: auto;
+  min-height: 30px;
+  margin: 0 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: transparent;
+  border: 1px solid #344052;
+  color: #a4adba;
+  font-size: 0.78rem;
+}
+
+.incident-focus-clear:not(.visible) {
+  display: none;
+}
+
 .incident-history-list {
   display: grid;
   border-top: 1px solid #2b3340;
@@ -2212,6 +2285,36 @@ body {
 
 html[data-theme="light"] .incident-history-filter {
   border-color: #aebaca;
+}
+
+html[data-theme="light"] .incident-focus-bar {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .incident-focus-summary {
+  color: #172033;
+}
+
+html[data-theme="light"] .incident-focus-chip {
+  background: #edf1f5;
+  border-color: #aebaca;
+  color: #334155;
+}
+
+html[data-theme="light"] .incident-focus-chip.active {
+  background: #0f766e;
+  border-color: #0d9488;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .incident-focus-count {
+  background: rgba(15, 118, 110, 0.12);
+}
+
+html[data-theme="light"] .incident-focus-clear {
+  border-color: #aebaca;
+  color: #64748b;
 }
 
 html[data-theme="light"] .incident-filter-button {

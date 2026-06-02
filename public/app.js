@@ -762,6 +762,7 @@ let incidentHistoryFilters = {
   keyword: "",
   customer: "",
   system: "",
+  focus: "",
 };
 
 function getIncidentFields() {
@@ -1118,10 +1119,6 @@ function formatLocalTimeMinute(date = new Date()) {
   return [pad(date.getHours()), pad(date.getMinutes())].join(":");
 }
 
-function formatDisplayDateTime(value) {
-  return value ? value.replace("T", " ") : "-";
-}
-
 function setIncidentNow() {
   const startedAt = document.getElementById("incidentStartedAt");
   startedAt.value = formatLocalDateTime(new Date());
@@ -1152,179 +1149,16 @@ function updateIncidentNextCheckAvailability() {
   nextCheckAt.title = shouldDisable ? "目前追蹤狀態不需要下次確認" : "";
 }
 
-function getLatestIncidentNoteText(notes) {
-  const entries = parseIncidentNotesTimeline(notes);
-  const latestEntry = entries.length ? entries[entries.length - 1] : null;
-  if (!latestEntry) return "";
-
-  return latestEntry.hasTime
-    ? `${latestEntry.time} ${latestEntry.text}`.trim()
-    : latestEntry.text;
-}
-
-function formatSummaryFieldValue(fieldName, value) {
-  if (fieldName === "nextCheckAt") return formatDisplayDateTime(value);
-  return value;
-}
-
-function getHandoverSummaryChangeLines(fields, previousFields, line) {
-  if (!previousFields) return [];
-
-  return [
-    ["status", "目前狀態"],
-    ["impact", "影響範圍"],
-    ["nextStep", "下一步"],
-    ["trackingStatus", "追蹤狀態"],
-    ["nextCheckAt", "下次確認"],
-    ["notified", "已通知"],
-    ["notes", "處理紀錄"],
-  ]
-    .filter(([fieldName]) => {
-      const currentValue = String(fields[fieldName] || "").trim();
-      const previousValue = String(previousFields[fieldName] || "").trim();
-      return currentValue !== previousValue;
-    })
-    .map(([fieldName, label]) => {
-      if (fieldName === "notes") {
-        return line(label, getLatestIncidentNoteText(fields.notes) || fields.notes);
-      }
-      if (fieldName === "nextCheckAt" && canTrackingStatusSkipNextCheck(fields.trackingStatus)) {
-        return line(label, "不需設定");
-      }
-      return line(label, formatSummaryFieldValue(fieldName, fields[fieldName]));
-    });
-}
-
 function getActiveIncidentRecordFields() {
   const record = getActiveIncidentRecord();
   return record ? getIncidentRecordFields(record) : null;
 }
 
 function buildHandoverSummary(mode = handoverSummaryMode) {
-  const state = readIncidentStateFromPage();
-  const fields = state.fields;
-  const radios = state.radios;
-  const valueOrDash = (value) => {
-    const normalized = typeof value === "string" ? value.trim() : value;
-    return normalized || "-";
-  };
-  const hasValue = (value) => valueOrDash(value) !== "-";
-  const line = (label, value) => `${label}：${valueOrDash(value)}`;
-  const serviceType = radios.serviceType === "其他" && fields.serviceTypeOther
-    ? `其他：${fields.serviceTypeOther}`
-    : (radios.serviceType || "-");
-  const followupLines = getIncidentFollowups()
-    .filter((followup) => followup.checked)
-    .map((followup) => {
-      if (followup.dataset.incidentFollowup === "其他" && fields.followupOther) {
-        return `其他：${fields.followupOther}`;
-      }
-
-      return followup.dataset.incidentFollowup;
-    });
-  const followupText = followupLines.length ? followupLines.join("、") : "-";
-  const nextCheckText = canTrackingStatusSkipNextCheck(fields.trackingStatus)
-    ? "不需設定"
-    : formatDisplayDateTime(fields.nextCheckAt);
-  const doneChecks = getIncidentChecks()
-    .filter((check) => check.checked)
-    .map((check) => check.dataset.incidentCheck);
-  const serviceMode = getServiceTypeDisplayMode(radios.serviceType);
-  const supplementByServiceMode = {
-    repair: [
-      ["產品名稱", fields.productName],
-      ["合約編號", fields.contractId],
-      ["產品型號", fields.model],
-      ["產品序號", fields.serial],
-      ["經銷商名稱", fields.dealer],
-      ["報修對象", fields.repairTarget],
-      ["負責業務 / 工程師", fields.owner],
-      ["聯繫方式 / 稱呼", fields.contactMethod],
-      ["是否為客戶", radios.isCustomer],
-    ],
-    aws: [
-      ["產品名稱", fields.productName],
-      ["負責業務 / 工程師", fields.owner],
-      ["聯繫方式 / 稱呼", fields.contactMethod],
-      ["是否為客戶", radios.isCustomer],
-    ],
-    other: [
-      ["負責業務 / 工程師", fields.owner],
-      ["聯繫方式 / 稱呼", fields.contactMethod],
-      ["是否為客戶", radios.isCustomer],
-    ],
-    general: [],
-    empty: [],
-  };
-  const reportLines = [
-    ...(supplementByServiceMode[serviceMode] || []),
-    ["後續處理方式", followupText],
-    ["其他補充", fields.extraInfo],
-  ]
-    .filter(([, value]) => hasValue(value))
-    .map(([label, value]) => line(label, value));
-  const headline = `[${valueOrDash(fields.severity)} / ${valueOrDash(fields.status)}] ${valueOrDash(fields.title)}`;
-
-  if (mode === "compact") {
-    return [
-      "【交班摘要】",
-      line("主旨", fields.title),
-      line("狀態", fields.status),
-      line("影響", fields.impact),
-      line("下一步", fields.nextStep),
-      line("追蹤狀態", fields.trackingStatus),
-      line("下次確認", nextCheckText),
-    ].join("\n");
-  }
-
-  if (mode === "update") {
-    const previousFields = getActiveIncidentRecordFields();
-    const changeLines = getHandoverSummaryChangeLines(fields, previousFields, line);
-    const updateLines = changeLines.length
-      ? changeLines
-      : [
-        line("最新處理", getLatestIncidentNoteText(fields.notes) || fields.notes),
-        line("下一步", fields.nextStep),
-        line("追蹤狀態", fields.trackingStatus),
-        line("下次確認", nextCheckText),
-      ];
-
-    return [
-      "【事件更新】",
-      headline,
-      ...updateLines,
-    ].join("\n");
-  }
-
-  return [
-    "【接手重點】",
-    headline,
-    line("事件時間", formatDisplayDateTime(fields.startedAt)),
-    line("客戶 / 單位", fields.customer),
-    line("系統 / 設備", fields.system),
-    line("來源", fields.source),
-    line("服務類型", serviceType),
-    "",
-    "【問題 / 影響】",
-    line("問題描述", fields.problemDescription),
-    line("影響範圍", fields.impact),
-    "",
-    "【接手動作】",
-    line("下一步", fields.nextStep),
-    line("追蹤狀態", fields.trackingStatus),
-    line("下次確認", nextCheckText),
-    line("接手人員", fields.handoverOwner),
-    line("已通知", fields.notified),
-    "",
-    "【處理紀錄】",
-    valueOrDash(fields.notes),
-    "",
-    "【已完成檢查】",
-    doneChecks.length ? doneChecks.join("、") : "-",
-    "",
-    "【報修補充】",
-    reportLines.length ? reportLines.join("\n") : "-",
-  ].join("\n");
+  return window.CounterAppHandoverSummary.buildHandoverSummary(readIncidentStateFromPage(), {
+    mode,
+    previousFields: getActiveIncidentRecordFields(),
+  });
 }
 
 function updateHandoverSummary() {
@@ -1483,6 +1317,7 @@ function clearIncidentHistoryFilters() {
     keyword: "",
     customer: "",
     system: "",
+    focus: "",
   };
 
   const search = document.getElementById("incidentHistorySearch");
@@ -1507,11 +1342,12 @@ function getOpenIncidentRecords(records = incidentRecordsCache) {
 }
 
 function getRecordsMissingNextStep(records = incidentRecordsCache) {
-  return getOpenIncidentRecords(records).filter((record) => {
-    const fields = getIncidentRecordFields(record);
-    return !canTrackingStatusSkipNextStep(fields.trackingStatus)
-      && !String(fields.nextStep || "").trim();
-  });
+  return getOpenIncidentRecords(records).filter(isIncidentRecordMissingNextStep);
+}
+
+function setIncidentHistoryFocus(focusName) {
+  incidentHistoryFilters.focus = incidentHistoryFilters.focus === focusName ? "" : focusName;
+  setIncidentHistoryView("open");
 }
 
 function renderHandoverReadiness(state = readIncidentStateFromPage()) {
@@ -1928,12 +1764,107 @@ function isIncidentRecordDue(record) {
     && nextCheckAt.getTime() <= Date.now());
 }
 
+function isIncidentRecordUpcoming(record, windowMs = 2 * 60 * 60 * 1000) {
+  const nextCheckAt = parseIncidentDateTime(getIncidentRecordNextCheckValue(record));
+  if (!nextCheckAt || !shouldIncidentRecordHonorNextCheck(record) || isIncidentRecordResolved(record)) {
+    return false;
+  }
+
+  const nextCheckTime = nextCheckAt.getTime();
+  const now = Date.now();
+  return nextCheckTime > now && nextCheckTime <= now + windowMs;
+}
+
+function isIncidentRecordWaiting(record) {
+  const trackingStatus = getIncidentRecordTrackingStatus(record);
+  return trackingStatus === "等客戶回覆" || trackingStatus === "等二線回覆";
+}
+
+function isIncidentRecordMissingNextStep(record) {
+  const fields = getIncidentRecordFields(record);
+  return !isIncidentRecordResolved(record)
+    && !canTrackingStatusSkipNextStep(fields.trackingStatus)
+    && !String(fields.nextStep || "").trim();
+}
+
 function getIncidentRecordNextCheckLabel(record) {
   const nextCheckValue = getIncidentRecordNextCheckValue(record);
   if (!nextCheckValue || !shouldIncidentRecordHonorNextCheck(record)) return "";
 
   const label = isIncidentRecordDue(record) ? "待確認" : "下次確認";
   return `${label} ${formatIncidentRecordTime(nextCheckValue)}`;
+}
+
+function getIncidentFocusCounts(records = incidentRecordsCache) {
+  const openRecords = getOpenIncidentRecords(records);
+
+  return {
+    open: openRecords.length,
+    due: openRecords.filter(isIncidentRecordDue).length,
+    upcoming: openRecords.filter(isIncidentRecordUpcoming).length,
+    missingNextStep: openRecords.filter(isIncidentRecordMissingNextStep).length,
+    waiting: openRecords.filter(isIncidentRecordWaiting).length,
+    readyToResolve: openRecords.filter(isIncidentRecordReadyToResolve).length,
+  };
+}
+
+function matchesIncidentHistoryFocus(record) {
+  switch (incidentHistoryFilters.focus) {
+    case "due":
+      return isIncidentRecordDue(record);
+    case "upcoming":
+      return isIncidentRecordUpcoming(record);
+    case "missingNextStep":
+      return isIncidentRecordMissingNextStep(record);
+    case "waiting":
+      return !isIncidentRecordResolved(record) && isIncidentRecordWaiting(record);
+    case "readyToResolve":
+      return isIncidentRecordReadyToResolve(record);
+    default:
+      return true;
+  }
+}
+
+function createIncidentFocusButton(config, counts) {
+  const button = document.createElement("button");
+  const isActive = incidentHistoryFilters.focus === config.key;
+  const count = counts[config.key] || 0;
+
+  button.type = "button";
+  button.className = isActive ? "incident-focus-chip active" : "incident-focus-chip";
+  button.setAttribute("aria-pressed", String(isActive));
+  button.title = config.title || config.label;
+
+  const label = createTextElement("span", "incident-focus-label", config.label);
+  const value = createTextElement("strong", "incident-focus-count", String(count));
+  button.replaceChildren(label, value);
+  button.addEventListener("click", () => setIncidentHistoryFocus(config.key));
+
+  return button;
+}
+
+function renderIncidentFocusBar(records = incidentRecordsCache) {
+  const bar = document.getElementById("incidentFocusBar");
+  if (!bar) return;
+
+  const counts = getIncidentFocusCounts(records);
+  const summary = createTextElement("div", "incident-focus-summary", `未結案 ${counts.open} 件`);
+  const buttons = [
+    { key: "due", label: "待確認", title: "下次確認時間已到或逾期" },
+    { key: "upcoming", label: "2 小時內", title: "下次確認時間在 2 小時內" },
+    { key: "missingNextStep", label: "缺下一步", title: "仍需追蹤但未填下一步" },
+    { key: "waiting", label: "等回覆", title: "正在等待客戶或二線回覆" },
+    { key: "readyToResolve", label: "可結案", title: "追蹤狀態已標成可結案" },
+  ].map((config) => createIncidentFocusButton(config, counts));
+
+  const clearButton = document.createElement("button");
+  clearButton.type = "button";
+  clearButton.className = incidentHistoryFilters.focus ? "incident-focus-clear visible" : "incident-focus-clear";
+  clearButton.textContent = "清除焦點";
+  clearButton.disabled = !incidentHistoryFilters.focus;
+  clearButton.addEventListener("click", () => setIncidentHistoryFocus(incidentHistoryFilters.focus));
+
+  bar.replaceChildren(summary, ...buttons, clearButton);
 }
 
 function getIncidentRecordSortTime(record) {
@@ -2275,6 +2206,8 @@ function getFilteredIncidentRecords(records) {
   const keywords = keyword ? keyword.split(/\s+/).filter(Boolean) : [];
 
   return (records || []).filter((record) => {
+    if (!matchesIncidentHistoryFocus(record)) return false;
+
     const fields = getIncidentRecordFields(record);
     const customer = String(record.customer || fields.customer || "").trim();
     const system = String(record.system || fields.system || "").trim();
@@ -2320,6 +2253,7 @@ function renderIncidentRecords(records) {
 
   incidentRecordsCache = Array.isArray(records) ? records : [];
   renderIncidentHistoryFilterOptions(incidentRecordsCache);
+  renderIncidentFocusBar(incidentRecordsCache);
 
   if (!records || records.length === 0) {
     const emptyText = incidentHistoryView === "all"
@@ -2368,6 +2302,9 @@ function updateIncidentHistoryViewButtons() {
 
 function setIncidentHistoryView(view) {
   incidentHistoryView = view === "all" ? "all" : "open";
+  if (incidentHistoryView === "all") {
+    incidentHistoryFilters.focus = "";
+  }
   updateIncidentHistoryViewButtons();
   loadIncidentRecords();
 }
