@@ -1,0 +1,12 @@
+interface:
+  display_name: "Counter App"
+  short_description: "MSP 值班中控台開發與維運指南"
+  default_prompt: "Use $counter-app to safely extend the MSP on-call dashboard."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "counter-app"
+      description: "Project MCP server exposing runbooks, incidents, status checks, weather, and docs."
+      transport: "stdio"
+policy:
+  allow_implicit_invocation: true

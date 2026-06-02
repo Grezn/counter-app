@@ -4,10 +4,14 @@
   "description": "Counter app with Express and Redis/Valkey",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "mcp": "node mcp/server.mjs",
+    "mcp:smoke": "node mcp/smoke-test.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "express": "^4.19.2",
-    "redis": "^4.7.0"
+    "redis": "^4.7.0",
+    "zod": "^4.4.3"
   }
 }

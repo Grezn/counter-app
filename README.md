@@ -38,6 +38,30 @@ GitHub push -> GitHub Actions build image -> ECR -> SSM 更新現有 EC2 contain
 - `CWA_API_KEY`：中央氣象署氣象資料開放平台授權碼，只放後端環境變數或 SSM。
 - `CWA_LOCATION_NAME` / `CWA_CITY_DATASET_ID` / `CWA_TOWNSHIP_DATASET_ID` / `CWA_OBSERVATION_DATASET_ID` / `CWA_CACHE_TTL_MS`：本地即時氣象顯示設定；使用者允許定位時會找最近觀測站並搭配鄉鎮預報，否則退回預設地區。
 
+## MCP + Skills
+
+目前版本已加入專案用 MCP stdio server 與 project skill：
+
+- `mcp/server.mjs`：提供 `app_status`、`search_runbooks`、`get_runbook`、`list_incidents`、`save_incident`、`get_weather_snapshot` 工具。
+- `counter-app://docs/readme`、`counter-app://docs/operations`、`counter-app://docs/code-walkthrough`、`counter-app://docs/project-inventory`、`counter-app://data/runbooks`、`counter-app://mcp/config-example` 是 MCP resources。
+- `draft_handover` 與 `develop_dashboard_change` 是 MCP prompts。
+- `.mcp.example.json` 是本機 MCP client 設定範例。
+- `skills/counter-app/SKILL.md` 是此 repo 的開發/維運 skill。
+
+本機驗證：
+
+```bash
+npm run mcp:smoke
+```
+
+啟動 MCP server：
+
+```bash
+npm run mcp
+```
+
+MCP 預設透過 `COUNTER_APP_BASE_URL` 連到 `http://127.0.0.1:3000`。讀取 docs / runbooks 不需要 app 正在執行；查 incidents、weather、health 或 Jira status 時需要先啟動 Express app。
+
 ## 氣象 API 授權碼
 
 不要把中央氣象署授權碼 commit 到 repo。正式環境可放到既有 user data 會讀取的 SSM SecureString：
