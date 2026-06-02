@@ -483,13 +483,23 @@
           </div>
         </details>
 
-        <div class="oncall-checklist">
-          <strong>值班小 checklist：</strong>
-          <ul>
-            <li>先確認告警影響範圍，再通知相關窗口。</li>
-            <li>若影響服務可用性，優先做止血處置。</li>
-            <li>正式 SOP、電話、信箱與客戶資料請放在公司授權系統。</li>
-          </ul>
+        <div class="oncall-checklist" aria-label="每日值班檢查">
+          <div class="oncall-checklist-header">
+            <div>
+              <strong>每日值班檢查</strong>
+              <span id="oncallChecklistMeta" class="oncall-checklist-meta">0 / 0</span>
+            </div>
+            <button class="oncall-checklist-reset" type="button" onclick="resetOncallChecklist()">重置今日</button>
+          </div>
+          <div id="oncallChecklistItems" class="oncall-checklist-items">
+            <label class="oncall-check-item"><input type="checkbox" data-oncall-check="open-core" />開啟每日值班入口</label>
+            <label class="oncall-check-item"><input type="checkbox" data-oncall-check="phone-test" />完成話機通話測試</label>
+            <label class="oncall-check-item"><input type="checkbox" data-oncall-check="rota" />確認輪班表與值班手機</label>
+            <label class="oncall-check-item"><input type="checkbox" data-oncall-check="equipment" />更新設備檢查表</label>
+            <label class="oncall-check-item"><input type="checkbox" data-oncall-check="alerts" />確認 Jira / MinIO / 重要告警</label>
+            <label class="oncall-check-item"><input type="checkbox" data-oncall-check="handover" />交班前整理未結案事件</label>
+          </div>
+          <div id="oncallChecklistStatus" class="oncall-checklist-status" role="status" aria-live="polite"></div>
         </div>
       </div>
     </section>

@@ -748,6 +748,7 @@ const SERVICE_TYPE_HINTS = {
 };
 const PHONE_TEST_NUMBER = "+886800008669";
 const PHONE_TEST_POST_CONNECT_KEY = "3";
+const ONCALL_CHECKLIST_STORAGE_PREFIX = "msp_oncall_checklist:";
 const HANDOVER_SUMMARY_MODES = {
   full: "完整",
   compact: "精簡",
@@ -758,6 +759,7 @@ let activeIncidentRecordId = "";
 let activeIncidentSavedSnapshot = null;
 let incidentHistoryView = "open";
 let handoverSummaryMode = "full";
+let oncallChecklistStatusTimer = null;
 let incidentHistoryFilters = {
   keyword: "",
   customer: "",
@@ -1537,6 +1539,7 @@ function startPhoneTestCall() {
   const phone = PHONE_TEST_NUMBER.replace(/\s+/g, "");
   const dialUrl = `tel:${phone}`;
 
+  markOncallChecklistItem("phone-test", false);
   setPhoneCallStatus(
     `撥號中：${phone}，接通後按 ${PHONE_TEST_POST_CONNECT_KEY}。`,
     dialUrl,
@@ -3105,6 +3108,125 @@ function initRunbookPanel() {
   loadRunbooks();
 }
 
+function getOncallChecklistDateKey(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join("-");
+}
+
+function getOncallChecklistStorageKey() {
+  return `${ONCALL_CHECKLIST_STORAGE_PREFIX}${getOncallChecklistDateKey()}`;
+}
+
+function getOncallChecklistInputs() {
+  return Array.from(document.querySelectorAll("[data-oncall-check]"));
+}
+
+function setOncallChecklistStatus(message, type) {
+  const status = document.getElementById("oncallChecklistStatus");
+  if (!status) return;
+
+  window.clearTimeout(oncallChecklistStatusTimer);
+  status.className = type ? `oncall-checklist-status ${type}` : "oncall-checklist-status";
+  status.textContent = message || "";
+
+  if (message) {
+    oncallChecklistStatusTimer = window.setTimeout(() => {
+      status.textContent = "";
+      status.className = "oncall-checklist-status";
+    }, 2600);
+  }
+}
+
+function readOncallChecklistState() {
+  try {
+    const raw = localStorage.getItem(getOncallChecklistStorageKey());
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveOncallChecklistState(showStatus = false) {
+  const checked = getOncallChecklistInputs().reduce((result, input) => {
+    result[input.dataset.oncallCheck] = input.checked;
+    return result;
+  }, {});
+
+  try {
+    localStorage.setItem(getOncallChecklistStorageKey(), JSON.stringify({
+      date: getOncallChecklistDateKey(),
+      checked,
+      updatedAt: new Date().toISOString(),
+    }));
+  } catch (err) {
+    setOncallChecklistStatus("今日檢查儲存失敗：" + err.message, "error");
+    return;
+  }
+
+  updateOncallChecklistProgress();
+  if (showStatus) {
+    setOncallChecklistStatus("已更新今日值班檢查。", "success");
+  }
+}
+
+function updateOncallChecklistProgress() {
+  const inputs = getOncallChecklistInputs();
+  const meta = document.getElementById("oncallChecklistMeta");
+  const panel = document.querySelector(".oncall-checklist");
+  const done = inputs.filter((input) => input.checked).length;
+  const total = inputs.length;
+
+  if (meta) {
+    meta.textContent = total ? `${done} / ${total}` : "0 / 0";
+  }
+
+  if (panel) {
+    panel.classList.toggle("complete", total > 0 && done === total);
+  }
+}
+
+function loadOncallChecklistState() {
+  const state = readOncallChecklistState();
+  const checked = state && state.checked ? state.checked : {};
+
+  getOncallChecklistInputs().forEach((input) => {
+    input.checked = Boolean(checked[input.dataset.oncallCheck]);
+  });
+
+  updateOncallChecklistProgress();
+}
+
+function markOncallChecklistItem(itemId, showStatus = false) {
+  const input = getOncallChecklistInputs()
+    .find((item) => item.dataset.oncallCheck === itemId);
+  if (!input || input.checked) return false;
+
+  input.checked = true;
+  saveOncallChecklistState(showStatus);
+  return true;
+}
+
+function resetOncallChecklist() {
+  getOncallChecklistInputs().forEach((input) => {
+    input.checked = false;
+  });
+
+  saveOncallChecklistState(false);
+  setOncallChecklistStatus("已重置今日值班檢查。", "pending");
+}
+
+function initOncallChecklist() {
+  getOncallChecklistInputs().forEach((input) => {
+    input.addEventListener("change", () => saveOncallChecklistState(true));
+  });
+
+  loadOncallChecklistState();
+}
+
 function openLinkElements(selector) {
   const links = Array.from(document.querySelectorAll(selector))
     .map((link) => link.href)
@@ -3112,20 +3234,26 @@ function openLinkElements(selector) {
 
   if (!links.length) {
     alert("沒有可開啟的連結");
-    return;
+    return 0;
   }
 
   links.forEach((url, idx) => {
     setTimeout(() => window.open(url, "_blank", "noopener,noreferrer"), idx * 120);
   });
+
+  return links.length;
 }
 
 function openLinkGroup(groupId) {
-  openLinkElements(`#${groupId} a.quick-link`);
+  return openLinkElements(`#${groupId} a.quick-link`);
 }
 
 function openCoreLinks() {
-  openLinkGroup("coreLinksGrid");
+  const openedCount = openLinkGroup("coreLinksGrid");
+  if (openedCount) {
+    markOncallChecklistItem("open-core", false);
+    setOncallChecklistStatus(`已開啟 ${openedCount} 個每日值班入口。`, "success");
+  }
 }
 
 function updateCoreLinksCount() {
@@ -3166,6 +3294,7 @@ function toggleLinksPanel(forceOpen) {
 
 function initLinksPanel() {
   updateCoreLinksCount();
+  initOncallChecklist();
 
   document.addEventListener("click", (event) => {
     const panel = document.getElementById("linksPanel");

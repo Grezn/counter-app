@@ -104,6 +104,7 @@
 | `visitor_id` | localStorage | 訪客統計 ID | 非帳號身分 |
 | `noc_incident_state` | localStorage | 值班事件暫存 | 個人瀏覽器資料，不送後端保存 |
 | `noc_incident_active_record_id` | localStorage | 目前載入的事件紀錄 ID | 讓再次儲存時更新同一筆 Redis 紀錄 |
+| `msp_oncall_checklist:<yyyy-mm-dd>` | localStorage | 每日值班檢查勾選狀態 | 以本地日期分日保存，隔天自動使用新 key |
 | `reset_token` | sessionStorage | reset token 暫存 | 關閉分頁後消失 |
 
 ## 前端功能
@@ -115,7 +116,7 @@
 - 事件留存與交班：表單資料存在 localStorage，可產生完整/精簡/更新版交班摘要、追蹤狀態、交班前檢查、事件搜尋篩選與處理紀錄時間軸。
 - Jira 小卡：把事件與交班摘要送到後端，再由後端建立 Jira issue。
 - SOP 速查：從 `/api/runbooks` 讀取 `data/runbooks.json`。
-- 值班入口側邊欄：常用外部系統連結。
+- 值班入口側邊欄：常用外部系統連結、每日值班檢查與今日進度。
 - 話機通話測試：前端組 tel link，號碼目前是 `+886800008669`，接通後按 `3`。
 
 ## 外部入口連結
