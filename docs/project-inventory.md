@@ -128,6 +128,7 @@
 | --- | --- |
 | Jira | `https://metaage-corp-p400.atlassian.net/jira/core/projects/PMP/board?filter=&groupBy=status` |
 | Outlook 郵件 | `https://outlook.cloud.microsoft/mail/` |
+| Teams | `https://teams.cloud.microsoft/` |
 | 官方 LINE | `https://chat.line.biz/U8c283f2c2fa0a4a60807e86a9474e802/` |
 | 設備檢查表 | `https://forms.office.com/Pages/ResponsePage.aspx?id=fJowoSKEfk2DKqRqO2dIXDL92xpZgdhAoa8oJTt9h7dURDZNTkpMQkRCT0RBSVpRMzk4REhIOUFUMy4u` |
 | 輪班表 | `https://dtimis.sharepoint.com/:x:/s/P400-P400/EbAHuKozowhItY7fzhOxlGgB-wwGX7D12r36wpLXbQUD4g?e=q3ZKNA` |

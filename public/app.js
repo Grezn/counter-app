@@ -2976,6 +2976,14 @@ function openCoreLinks() {
   openLinkGroup("coreLinksGrid");
 }
 
+function updateCoreLinksCount() {
+  const count = document.querySelectorAll("#coreLinksGrid a.quick-link").length;
+  const label = document.getElementById("coreLinksCount");
+  if (!label) return;
+
+  label.textContent = `${count} links`;
+}
+
 function setLinksPanelOpen(isOpen) {
   const panel = document.getElementById("linksPanel");
   const toggle = document.getElementById("linksPanelToggle");
@@ -3005,6 +3013,8 @@ function toggleLinksPanel(forceOpen) {
 }
 
 function initLinksPanel() {
+  updateCoreLinksCount();
+
   document.addEventListener("click", (event) => {
     const panel = document.getElementById("linksPanel");
     if (!panel || !panel.classList.contains("open")) return;
