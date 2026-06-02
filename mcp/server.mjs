@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_APP_BASE_URL = process.env.COUNTER_APP_BASE_URL || process.env.APP_BASE_URL || "http://127.0.0.1:3000";
 const DEFAULT_TIMEOUT_MS = Number(process.env.MCP_APP_TIMEOUT_MS || 6000);
+const MCP_WRITES_ALLOWED = process.env.MCP_ALLOW_WRITES === "1";
 
 const DOC_RESOURCES = [
   {
@@ -410,9 +411,23 @@ server.registerTool("save_incident", {
   if (args.dryRun !== false) {
     return textResult({
       dryRun: true,
+      writesAllowed: MCP_WRITES_ALLOWED,
       endpoint: args.updateId ? `/api/incidents/${args.updateId}` : "/api/incidents",
       payload,
     });
+  }
+
+  if (!MCP_WRITES_ALLOWED) {
+    return {
+      ...textResult({
+        error: "MCP writes are disabled. Set MCP_ALLOW_WRITES=1 to permit save_incident writes.",
+        dryRun: false,
+        writesAllowed: false,
+        endpoint: args.updateId ? `/api/incidents/${args.updateId}` : "/api/incidents",
+        payload,
+      }),
+      isError: true,
+    };
   }
 
   const endpoint = args.updateId ? `/api/incidents/${encodeURIComponent(args.updateId)}` : "/api/incidents";

@@ -2,6 +2,11 @@
 .git
 .github
 
+# MCP / Skills 是本機與 agent 開發工具，不需要放進 runtime image。
+.mcp.example.json
+mcp/
+skills/
+
 # 本機 dependencies/logs 不要複製進 image，dependencies 會在 image 裡重新安裝。
 node_modules
 npm-debug.log*

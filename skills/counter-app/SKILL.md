@@ -15,6 +15,7 @@ npm run mcp
 ```
 
 Use `COUNTER_APP_BASE_URL` to point MCP tools at a running app; it defaults to `http://127.0.0.1:3000`.
+Keep `MCP_ALLOW_WRITES` unset or `0` unless the user explicitly wants MCP to create or update incident records.
 
 ## Architecture
 
@@ -34,6 +35,7 @@ Read nearby code before changing behavior. Keep changes scoped to the feature an
 Do not place secrets in frontend code, `data/runbooks.json`, README examples, or committed env files. Jira, reset token, AWS, and CWA credentials belong in environment variables, SSM Parameter Store, or Secrets Manager.
 
 For incident changes, preserve the backend sanitization path in `routes/incidents.js`. If MCP needs to create or update incidents, route it through the existing app API instead of writing Redis directly.
+Do not set `MCP_ALLOW_WRITES=1` for exploratory reads, smoke tests, or production-oriented checks.
 
 For frontend changes, keep the first screen as the operational dashboard. Use compact controls, stable dimensions, and the existing light/dark theme conventions.
 

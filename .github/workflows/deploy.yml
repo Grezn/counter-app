@@ -29,6 +29,22 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run pre-deploy smoke checks
+        run: |
+          node --check server.js
+          node --check mcp/server.mjs
+          node --check mcp/smoke-test.mjs
+          npm run mcp:smoke
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

@@ -9,9 +9,11 @@
     "mcp:smoke": "node mcp/smoke-test.mjs"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
     "express": "^4.19.2",
-    "redis": "^4.7.0",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.4.3"
   }
 }

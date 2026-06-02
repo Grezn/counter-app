@@ -62,6 +62,8 @@ npm run mcp
 
 MCP 預設透過 `COUNTER_APP_BASE_URL` 連到 `http://127.0.0.1:3000`。讀取 docs / runbooks 不需要 app 正在執行；查 incidents、weather、health 或 Jira status 時需要先啟動 Express app。
 
+`save_incident` 預設 `dryRun=true`，且即使傳入 `dryRun=false` 也需要設定 `MCP_ALLOW_WRITES=1` 才會真的寫入事件紀錄，避免 MCP client 誤指到正式環境時產生資料。
+
 ## 氣象 API 授權碼
 
 不要把中央氣象署授權碼 commit 到 repo。正式環境可放到既有 user data 會讀取的 SSM SecureString：
