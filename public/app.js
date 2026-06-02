@@ -1608,9 +1608,10 @@ function setSaveIncidentButtonLoading(isLoading) {
 
 function markIncidentCheck(label) {
   const check = getIncidentChecks().find((item) => item.dataset.incidentCheck === label);
-  if (check) {
-    check.checked = true;
-  }
+  if (!check || check.checked) return false;
+
+  check.checked = true;
+  return true;
 }
 
 function formatJiraCreateError(data) {
@@ -2835,6 +2836,150 @@ function appendRunbookExtraSections(parent, sections, runbook) {
   });
 }
 
+function normalizeRunbookDraftText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function stripRunbookStepPrefix(value) {
+  return normalizeRunbookDraftText(value)
+    .replace(/^\d+\s*[.、)]\s*/, "")
+    .trim();
+}
+
+function truncateRunbookDraftText(value, maxLength = 120) {
+  const text = normalizeRunbookDraftText(value);
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1)}…`;
+}
+
+function getRunbookExtraSectionItems(runbook, titleKeywords) {
+  const keywords = titleKeywords.map((keyword) => String(keyword || "").toLowerCase());
+
+  return (runbook.extraSections || [])
+    .filter((section) => {
+      const title = String(section.title || "").toLowerCase();
+      return keywords.some((keyword) => title.includes(keyword));
+    })
+    .flatMap((section) => section.items || []);
+}
+
+function getRunbookDraftActionItem(runbook) {
+  const candidates = [
+    ...(runbook.firstChecks || []),
+    ...getRunbookExtraSectionItems(runbook, ["先確認", "值班步驟", "處理步驟"]),
+    ...(runbook.steps || []),
+    ...getRunbookExtraSectionItems(runbook, ["需回覆", "信件判斷", "觸發情境"]),
+    ...(runbook.triggers || []),
+    runbook.summary,
+  ];
+
+  return candidates
+    .map(stripRunbookStepPrefix)
+    .find(Boolean) || "";
+}
+
+function inferRunbookIncidentSeverity(runbook) {
+  const text = [
+    runbook.title,
+    runbook.summary,
+    runbook.severity,
+    ...(runbook.triggers || []),
+    ...(runbook.escalateWhen || []),
+  ].join(" ").toLowerCase();
+
+  if (/critical|panic|p1|重大|中斷|不可用|服務影響/.test(text)) {
+    return "Service Impact / 服務影響";
+  }
+
+  if (/info|資訊|不需處理|參考/.test(text)) {
+    return "Info / 資訊";
+  }
+
+  return "Warning / 警告";
+}
+
+function getRunbookDraftNextStep(runbook) {
+  const actionItem = truncateRunbookDraftText(getRunbookDraftActionItem(runbook));
+
+  return actionItem
+    ? `依 SOP 先確認：${actionItem}`
+    : "依 SOP 完成初步檢查，補上影響範圍並視情況通知二線或窗口。";
+}
+
+function getRunbookDraftNotes(runbook) {
+  const lines = [`${formatLocalTimeMinute()} 已查閱 SOP：${runbook.title || "未命名 SOP"}`];
+  const categoryName = getRunbookCategoryName(runbook.category);
+  const summary = truncateRunbookDraftText(runbook.summary, 180);
+  const actionItem = truncateRunbookDraftText(getRunbookDraftActionItem(runbook), 160);
+
+  if (categoryName) lines.push(`分類：${categoryName}`);
+  if (summary) lines.push(`摘要：${summary}`);
+  if (actionItem) lines.push(`初步依據：${actionItem}`);
+
+  return lines.join("\n");
+}
+
+function buildRunbookIncidentDraftFields(runbook) {
+  const title = runbook.title || "SOP";
+  const categoryName = getRunbookCategoryName(runbook.category);
+  const summary = truncateRunbookDraftText(runbook.summary, 180);
+
+  return {
+    startedAt: formatLocalDateTime(new Date()),
+    severity: inferRunbookIncidentSeverity(runbook),
+    status: "Triage / 初步判斷",
+    title: `${title} 待確認`,
+    problemDescription: [
+      `已查閱 SOP：${title}`,
+      summary ? `摘要：${summary}` : "",
+      categoryName ? `分類：${categoryName}` : "",
+    ].filter(Boolean).join("\n"),
+    impact: "待確認實際影響範圍、受影響對象與是否已有 workaround。",
+    nextStep: getRunbookDraftNextStep(runbook),
+    trackingStatus: "需追蹤",
+    notes: getRunbookDraftNotes(runbook),
+  };
+}
+
+function focusIncidentDraft() {
+  const title = document.getElementById("incidentTitle");
+
+  setActiveView("dashboard", { scrollTop: false });
+
+  if (title) {
+    title.scrollIntoView({ behavior: "smooth", block: "center" });
+    title.focus();
+  }
+}
+
+function applyRunbookToIncidentDraft(runbook) {
+  if (!runbook) return;
+
+  const hadDraftContent = hasIncidentContent(readIncidentStateFromPage());
+  const appliedFields = Object.entries(buildRunbookIncidentDraftFields(runbook))
+    .filter(([fieldName, value]) => applyIncidentTemplateField(fieldName, value)).length;
+  const appliedChecklist = markIncidentCheck("查閱對應 SOP") ? 1 : 0;
+  const appliedCount = appliedFields + appliedChecklist;
+
+  updateIncidentNextCheckAvailability();
+  updateServiceTypeFieldVisibility();
+  saveIncidentState();
+  updateHandoverSummary();
+  focusIncidentDraft();
+
+  if (appliedCount) {
+    setHandoverSummaryStatus(
+      hadDraftContent
+        ? `已從 SOP 補入事件草稿空白欄位：${runbook.title}`
+        : `已從 SOP 建立事件草稿：${runbook.title}`,
+      "success",
+    );
+    return;
+  }
+
+  setHandoverSummaryStatus("目前事件欄位已有內容；Runbook 未覆蓋既有草稿。", "pending");
+}
+
 function createRunbookCard(runbook) {
   const card = document.createElement("article");
   card.className = "runbook-card";
@@ -2869,6 +3014,13 @@ function createRunbookCard(runbook) {
   const actions = document.createElement("div");
   actions.className = "runbook-actions";
 
+  const draftButton = document.createElement("button");
+  draftButton.type = "button";
+  draftButton.className = "runbook-link runbook-draft-button";
+  draftButton.textContent = "帶入事件草稿";
+  draftButton.addEventListener("click", () => applyRunbookToIncidentDraft(runbook));
+  actions.appendChild(draftButton);
+
   (runbook.links || []).forEach((link) => {
     const anchor = document.createElement("a");
     anchor.className = "runbook-link";
@@ -2881,12 +3033,12 @@ function createRunbookCard(runbook) {
 
   const relatedLinks = document.createElement("div");
   relatedLinks.className = "runbook-related-links";
-  relatedLinks.appendChild(createTextElement("h4", "runbook-related-title", "相關連結"));
+  relatedLinks.appendChild(createTextElement("h4", "runbook-related-title", "快速動作"));
   relatedLinks.appendChild(actions);
 
   card.appendChild(header);
   card.appendChild(meta);
-  if ((runbook.links || []).length > 0) {
+  if (actions.children.length > 0) {
     card.appendChild(relatedLinks);
   }
   card.appendChild(body);

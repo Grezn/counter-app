@@ -2159,6 +2159,18 @@ button:disabled {
   border: 1px solid #bfdbfe;
 }
 
+.runbook-draft-button {
+  color: #ffffff;
+  background: #0f766e;
+  border-color: #0f766e;
+}
+
+.runbook-draft-button:hover,
+.runbook-draft-button:focus-visible {
+  background: #0d9488;
+  border-color: #0d9488;
+}
+
 .runbook-empty {
   padding: 14px;
   border-radius: 8px;
@@ -2948,6 +2960,19 @@ html[data-theme="dark"] .runbook-copy-button {
   background: #12333b;
   border-color: #14b8a6;
   color: #99f6e4;
+}
+
+html[data-theme="dark"] .runbook-draft-button {
+  background: #14b8a6;
+  border-color: #2dd4bf;
+  color: #042f2e;
+}
+
+html[data-theme="dark"] .runbook-draft-button:hover,
+html[data-theme="dark"] .runbook-draft-button:focus-visible {
+  background: #5eead4;
+  border-color: #5eead4;
+  color: #042f2e;
 }
 
 html[data-theme="dark"] .badge.ok {
