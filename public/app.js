@@ -1068,6 +1068,189 @@ function applySelectedIncidentTemplate() {
   );
 }
 
+function getQuickIncidentInputText() {
+  const input = document.getElementById("incidentQuickIntake");
+  return input ? String(input.value || "").trim() : "";
+}
+
+function clearQuickIncidentInput() {
+  const input = document.getElementById("incidentQuickIntake");
+  if (input) input.value = "";
+  setHandoverSummaryStatus("");
+}
+
+function compactQuickIncidentText(value, maxLength = 1600) {
+  const text = String(value || "").replace(/\r\n/g, "\n").trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1)}…`;
+}
+
+function compactQuickIncidentLine(value, maxLength = 96) {
+  const line = String(value || "").replace(/\s+/g, " ").trim();
+  if (line.length <= maxLength) return line;
+  return `${line.slice(0, maxLength - 1)}…`;
+}
+
+function escapeRegExp(value) {
+  return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getQuickIncidentTaggedValue(text, labels) {
+  const labelPattern = labels.map(escapeRegExp).join("|");
+  const pattern = new RegExp(`(?:^|[\\n\\r])\\s*(?:${labelPattern})\\s*[:：]\\s*([^\\n\\r]+)`, "i");
+  const match = String(text || "").match(pattern);
+  return match ? compactQuickIncidentLine(match[1]) : "";
+}
+
+function getQuickIncidentFirstMeaningfulLine(text) {
+  const taggedTitle = getQuickIncidentTaggedValue(text, ["Subject", "主旨", "標題", "Title", "Issue", "事件"]);
+  if (taggedTitle) return taggedTitle;
+
+  const ignoredHeaderPattern = /^(from|to|cc|bcc|date|sent|寄件者|收件者|副本|日期|時間)\s*[:：]/i;
+  return String(text || "")
+    .split(/\n+/)
+    .map(compactQuickIncidentLine)
+    .find((line) => line && !ignoredHeaderPattern.test(line)) || "新事件待確認";
+}
+
+function inferQuickIncidentSource(text) {
+  const value = String(text || "");
+  if (/jira|issue\s*[A-Z]+-\d+|ticket/i.test(value)) return "Jira";
+  if (/line|官方\s*line/i.test(value)) return "LINE";
+  if (/phone|call|電話|來電|撥打/i.test(value)) return "Phone";
+  if (/aws|cloudwatch|guardduty|health event|aws health/i.test(value)) return "AWS";
+  if (/mail|email|outlook|subject|寄件者|來信|信件/i.test(value)) return "Email";
+  if (/customer|客戶/i.test(value)) return "Customer";
+  return "";
+}
+
+function inferQuickIncidentSeverity(text) {
+  const value = String(text || "");
+
+  if (/critical|panic|fatal|sev\s*1|p1|outage|down|重大|當機|中斷|不可用|無法使用|無法連線|服務影響/i.test(value)) {
+    return "Service Impact / 服務影響";
+  }
+
+  if (/resolved|recovered|恢復|已恢復|正常|可結案/i.test(value)) {
+    return "Info / 資訊";
+  }
+
+  if (/warning|alert|alarm|failed|failure|error|threshold|告警|異常|失敗|錯誤|超過|高於/i.test(value)) {
+    return "Warning / 警告";
+  }
+
+  return "Warning / 警告";
+}
+
+function inferQuickIncidentTrackingStatus(text) {
+  const value = String(text || "");
+  if (/resolved|recovered|恢復|已恢復|正常|可結案/i.test(value)) return "可結案";
+  if (/waiting|pending|待回覆|等.*回覆/i.test(value)) return "等客戶回覆";
+  if (/monitor|觀察|監控/i.test(value)) return "持續監控";
+  return "需追蹤";
+}
+
+function inferQuickIncidentSystem(text) {
+  const taggedSystem = getQuickIncidentTaggedValue(text, [
+    "系統",
+    "設備",
+    "主機",
+    "服務",
+    "資源",
+    "System",
+    "Host",
+    "Service",
+    "Instance",
+  ]);
+  if (taggedSystem) return taggedSystem;
+
+  const value = String(text || "");
+  const products = ["MinIO", "AWS", "VPN", "Dell", "PureStorage", "Akamai", "CyCraft", "Xensor", "CloudWatch"];
+  return products.find((product) => new RegExp(escapeRegExp(product), "i").test(value)) || "";
+}
+
+function buildQuickIncidentDraft(text) {
+  const source = inferQuickIncidentSource(text);
+  const severity = inferQuickIncidentSeverity(text);
+  const trackingStatus = inferQuickIncidentTrackingStatus(text);
+  const title = getQuickIncidentFirstMeaningfulLine(text);
+  const customer = getQuickIncidentTaggedValue(text, ["客戶", "客戶名稱", "Customer", "公司", "單位"]);
+  const system = inferQuickIncidentSystem(text);
+  const isServiceImpact = severity === "Service Impact / 服務影響";
+  const noteTitle = compactQuickIncidentLine(title, 120);
+
+  return {
+    startedAt: formatLocalDateTime(new Date()),
+    severity,
+    status: trackingStatus === "可結案" ? "Monitoring / 監控中" : "Triage / 初步判斷",
+    source,
+    customer,
+    system,
+    title: noteTitle,
+    problemDescription: compactQuickIncidentText(text),
+    impact: isServiceImpact
+      ? "可能影響服務可用性，需先確認影響範圍、受影響對象與 workaround。"
+      : "待確認是否影響服務、影響範圍與是否需要通知相關窗口。",
+    nextStep: "先確認告警來源、影響範圍與嚴重度；必要時通知二線或窗口協助處理。",
+    trackingStatus,
+    notes: `${formatLocalTimeMinute()} 收到通報：${noteTitle}`,
+  };
+}
+
+function applyQuickIncidentDraft() {
+  const text = getQuickIncidentInputText();
+  if (!text) {
+    setHandoverSummaryStatus("先貼上告警、客戶訊息或 Jira 摘要。", "pending");
+    return;
+  }
+
+  const hadDraftContent = hasIncidentContent(readIncidentStateFromPage());
+  const draft = buildQuickIncidentDraft(text);
+  const appliedFields = Object.entries(draft)
+    .filter(([, value]) => String(value || "").trim())
+    .filter(([fieldName, value]) => applyIncidentTemplateField(fieldName, value)).length;
+  const appliedChecklist = markIncidentCheck("確認告警時間與來源") ? 1 : 0;
+  const appliedCount = appliedFields + appliedChecklist;
+
+  updateIncidentNextCheckAvailability();
+  updateServiceTypeFieldVisibility();
+  saveIncidentState();
+  updateHandoverSummary();
+
+  const title = document.getElementById("incidentTitle");
+  if (title) {
+    title.scrollIntoView({ block: "center", behavior: "smooth" });
+    title.focus();
+  }
+
+  setHandoverSummaryStatus(
+    appliedCount
+      ? (hadDraftContent ? "已補入快速接案內容，不覆蓋既有欄位。" : "已從快速接案建立事件草稿。")
+      : "目前事件欄位已有內容；快速接案未覆蓋既有草稿。",
+    appliedCount ? "success" : "pending",
+  );
+}
+
+function appendQuickIntakeToIncidentNotes() {
+  const text = getQuickIncidentInputText();
+  const field = getIncidentFieldByName("notes");
+  if (!text || !field) {
+    setHandoverSummaryStatus("先貼上要追加的處理紀錄。", "pending");
+    return;
+  }
+
+  const title = getQuickIncidentFirstMeaningfulLine(text);
+  const detail = compactQuickIncidentText(text, 900);
+  const note = detail === title
+    ? `${formatLocalTimeMinute()} ${title}`
+    : `${formatLocalTimeMinute()} ${title}\n${detail}`;
+
+  insertTextAtFieldEnd(field, note);
+  saveIncidentState();
+  updateHandoverSummary();
+  setHandoverSummaryStatus("已追加快速接案內容到處理紀錄。", "success");
+}
+
 function loadIncidentState() {
   try {
     const raw = localStorage.getItem(INCIDENT_STORAGE_KEY);
@@ -2405,6 +2588,8 @@ function clearIncidentState() {
   if (!confirm("確定要清空目前事件紀錄嗎？")) {
     return;
   }
+
+  clearQuickIncidentInput();
 
   getIncidentFields().forEach((field) => {
     field.value = "";

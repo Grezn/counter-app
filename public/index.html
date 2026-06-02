@@ -95,6 +95,16 @@
       <div class="incident-grid">
         <div class="incident-core-title">接手重點</div>
 
+        <div class="incident-quick-intake field full">
+          <label for="incidentQuickIntake">快速接案</label>
+          <textarea id="incidentQuickIntake" class="incident-quick-input" placeholder="貼上告警信、客戶訊息或 Jira 摘要"></textarea>
+          <div class="incident-quick-actions">
+            <button class="field-mini-action incident-quick-primary" type="button" onclick="applyQuickIncidentDraft()">帶入事件</button>
+            <button class="field-mini-action" type="button" onclick="appendQuickIntakeToIncidentNotes()">追加紀錄</button>
+            <button class="field-mini-action" type="button" onclick="clearQuickIncidentInput()">清除</button>
+          </div>
+        </div>
+
         <div class="field full incident-template-field">
           <label for="incidentTemplateSelect">事件樣板</label>
           <div class="incident-template-control">
