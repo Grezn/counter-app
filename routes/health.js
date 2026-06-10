@@ -9,25 +9,30 @@ router.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// /ready 是比較嚴格的健康檢查。
-// ALB / Docker healthcheck 用這個比較好，因為你的 app 主要功能依賴 Redis。
+// /ready 給 ALB / Docker healthcheck 使用。
+// Redis 目前只影響統計與後端事件紀錄；不可用時前端仍可用本機暫存繼續值班。
 router.get("/ready", async (req, res) => {
+  const client = getRedisClient();
+
+  if (!client || !client.isReady) {
+    return res.status(200).json({
+      status: "ready",
+      redis: "degraded",
+    });
+  }
+
   try {
-    const client = getRedisClient();
-
-    // isReady 代表 Redis client 已完成握手且可收命令。
-    if (!client || !client.isReady) {
-      throw new Error("Redis not connected");
-    }
-
     // ping Redis，確認不是只有 client 物件存在，而是真的能和 Redis 互通。
     await client.ping();
 
-    res.status(200).json({ status: "ready" });
+    res.status(200).json({
+      status: "ready",
+      redis: "ready",
+    });
   } catch (err) {
-    res.status(500).json({
-      status: "not ready",
-      error: "dependency not ready",
+    res.status(200).json({
+      status: "ready",
+      redis: "degraded",
     });
   }
 });

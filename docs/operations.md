@@ -128,40 +128,6 @@ bash infra/setup-ec2-ssm-parameters.sh
 
 注意：p95 latency 目前只放在 dashboard 看趨勢，不做 email 告警，避免小流量時一個慢請求就寄信。
 
-### Reset Token
-
-舊的 reset token 可以不用了。
-
-正式 token 現在放在 SSM Parameter Store：
-
-```text
-/counter-app/prod/reset-token
-```
-
-建立或更新 token：
-
-```bash
-TOKEN="$(openssl rand -hex 32)"
-
-aws ssm put-parameter \
-  --region us-east-1 \
-  --name /counter-app/prod/reset-token \
-  --type SecureString \
-  --value "$TOKEN" \
-  --overwrite
-```
-
-查詢 token：
-
-```bash
-aws ssm get-parameter \
-  --region us-east-1 \
-  --name /counter-app/prod/reset-token \
-  --with-decryption \
-  --query Parameter.Value \
-  --output text
-```
-
 ### Jira API Token
 
 如果 Jira token 曾經貼到聊天、文件或前端程式碼，先到 Atlassian 帳號撤銷舊 token，再建立新 token。正式部署時把 email 和新 token 放到 SSM：
@@ -273,7 +239,7 @@ curl -i http://127.0.0.1/whoami
 
 如果 `docker: command not found`，代表 user data 在安裝 Docker 階段就失敗。
 
-如果 `/health` 正常但 `/ready` 失敗，通常是 Redis/ElastiCache 連線問題。
+如果 `/health` 正常且 `/ready` 回 `redis: degraded`，通常是 Redis/ElastiCache 連線問題；值班台仍會啟動，訪客統計與事件紀錄 API 會暫用 process memory。
 
 如果 GitHub Actions 顯示 `InstanceRefreshInProgress`，代表 AWS 已經有一個 ASG refresh 在跑。新版 workflow 會等待現有 refresh，不會直接失敗。
 
@@ -285,4 +251,4 @@ curl -i http://127.0.0.1/whoami
 2. 限制網站存取來源，例如 ALB Security Group 限定你的 IP，或加登入。
 3. 把 GitHub Actions 從 IAM User key 改成 OIDC assume role。
 4. 把 image 部署從 `latest` 改成固定 SHA tag，方便 rollback。
-5. 把 `public/index.html` 拆成 HTML/CSS/JS，讓前端比較好維護。
+5. 繼續把 `public/app.js` 的既有互動橋接逐步拆成 Vue components；主題/分頁已移到 `frontend/src/composables/useAppShell.js`，訪客統計已移到 `frontend/src/composables/useVisitorStats.js`，本地氣象已移到 `frontend/src/composables/useLocalWeather.js`，值班入口與每日檢查已移到 `frontend/src/composables/useLinksPanel.js`，SOP 速查已移到 `frontend/src/composables/useRunbooks.js`，快速接案輸入已移到 `frontend/src/composables/useIncidentQuickIntake.js`，事件樣板 selector 已移到 `frontend/src/composables/useIncidentTemplates.js`，事件核心欄位與主體 textarea values 已移到 `frontend/src/composables/useIncidentCoreFields.js`，常用句選單已移到 `frontend/src/composables/useIncidentPhrases.js`，處理紀錄 textarea value 與時間軸已移到 `frontend/src/composables/useIncidentNotesTimeline.js`，事件 checklist 狀態已移到 `frontend/src/composables/useIncidentChecklist.js`，事件 snapshot 統一讀取已移到 `frontend/src/composables/useIncidentStateBridge.js`，Jira 狀態訊息已移到 `frontend/src/composables/useJiraStatus.js`，事件儲存按鈕狀態、目前編輯中的事件紀錄 ID localStorage 與已儲存 snapshot 已移到 `frontend/src/composables/useIncidentSaveStatus.js`，事件歷史狀態訊息已移到 `frontend/src/composables/useIncidentHistoryStatus.js`，事件歷史焦點列已移到 `frontend/src/composables/useIncidentHistoryFocus.js`，事件歷史列表已移到 `frontend/src/composables/useIncidentHistoryList.js`，重複事件提示已移到 `frontend/src/composables/useDuplicateIncidentStatus.js`，追蹤狀態 select 與下次確認欄位狀態已移到 `frontend/src/composables/useIncidentNextCheck.js`，交班提醒列已移到 `frontend/src/composables/useHandoverReadiness.js`，摘要徽章已移到 `frontend/src/composables/useHandoverSummaryBadge.js`，摘要文字已移到 `frontend/src/composables/useHandoverSummaryText.js`，摘要狀態訊息已移到 `frontend/src/composables/useHandoverSummaryStatus.js`，服務類型選取、是否為客戶、後續處理方式多選、報修補充欄位 values 與顯示已移到 `frontend/src/composables/useIncidentServiceDetails.js`，交班摘要格式已移到 `frontend/src/composables/useHandoverSummaryMode.js`，事件歷史 view 已移到 `frontend/src/composables/useIncidentHistoryView.js`，事件歷史搜尋/篩選已移到 `frontend/src/composables/useIncidentHistoryFilters.js`。

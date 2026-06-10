@@ -1,34 +1,18 @@
 // 這個檔案是前端互動邏輯。
-// 它會呼叫後端 API，例如 /track-view、/count、/increment、/reset。
-
-let errorHideTimer = null;
+// 它暫時橋接仍未完全 Vue 化的後端 API，例如 /api/incidents、/api/jira。
 
 function setError(message) {
-  // 把錯誤訊息顯示在計數器分頁，並在短暫停留後收掉。
-  const box = document.getElementById("errorBox");
-  if (!box) return;
-
-  window.clearTimeout(errorHideTimer);
-  box.style.display = "block";
-  box.textContent = message;
-
-  errorHideTimer = window.setTimeout(() => {
-    box.style.display = "none";
-    box.textContent = "";
-  }, 4500);
+  // 橋接 API 不可用時不要打斷值班作業；需要排查時仍可看 console。
+  if (message) {
+    console.warn(message);
+  }
 }
 
 function clearError() {
-  // 每次重新執行 API 前，先把舊錯誤清掉。
-  const box = document.getElementById("errorBox");
-  if (!box) return;
-
-  window.clearTimeout(errorHideTimer);
-  box.style.display = "none";
-  box.textContent = "";
+  // 保留給既有流程呼叫；目前不顯示全域錯誤框。
 }
 
-function setTheme(theme) {
+function legacySetTheme(theme) {
   const normalizedTheme = theme === "dark" ? "dark" : "light";
   document.documentElement.dataset.theme = normalizedTheme;
 
@@ -52,7 +36,7 @@ function setTheme(theme) {
   }
 }
 
-function initTheme() {
+function initLegacyTheme() {
   let savedTheme = "";
 
   try {
@@ -61,19 +45,14 @@ function initTheme() {
     savedTheme = "";
   }
 
-  setTheme(savedTheme || document.documentElement.dataset.theme || "light");
+  legacySetTheme(savedTheme || document.documentElement.dataset.theme || "light");
 }
 
-const VIEW_CONFIG = {
+const LEGACY_VIEW_CONFIG = {
   dashboard: {
     hash: "",
     tabId: "dashboardTab",
     viewId: "dashboardView",
-  },
-  counter: {
-    hash: "counter",
-    tabId: "counterTab",
-    viewId: "counterView",
   },
   runbooks: {
     hash: "sop",
@@ -82,17 +61,16 @@ const VIEW_CONFIG = {
   },
 };
 
-function getViewFromHash() {
+function getLegacyViewFromHash() {
   const hash = window.location.hash.replace("#", "").toLowerCase();
   if (hash === "sop" || hash === "runbooks" || hash === "runbook") return "runbooks";
-  if (hash === "counter" || hash === "count") return "counter";
   return "dashboard";
 }
 
-function setActiveView(viewName, options = {}) {
-  const activeViewName = VIEW_CONFIG[viewName] ? viewName : "dashboard";
+function legacySetActiveView(viewName, options = {}) {
+  const activeViewName = LEGACY_VIEW_CONFIG[viewName] ? viewName : "dashboard";
 
-  Object.entries(VIEW_CONFIG).forEach(([name, config]) => {
+  Object.entries(LEGACY_VIEW_CONFIG).forEach(([name, config]) => {
     const isActive = name === activeViewName;
     const view = document.getElementById(config.viewId);
     const tab = document.getElementById(config.tabId);
@@ -109,7 +87,7 @@ function setActiveView(viewName, options = {}) {
   });
 
   if (options.updateHash !== false) {
-    const hash = VIEW_CONFIG[activeViewName].hash;
+    const hash = LEGACY_VIEW_CONFIG[activeViewName].hash;
     const nextUrl = hash
       ? `${window.location.pathname}${window.location.search}#${hash}`
       : `${window.location.pathname}${window.location.search}`;
@@ -128,493 +106,67 @@ function setActiveView(viewName, options = {}) {
   }
 }
 
-function initViewTabs() {
-  setActiveView(getViewFromHash(), {
+function initLegacyViewTabs() {
+  legacySetActiveView(getLegacyViewFromHash(), {
     updateHash: false,
     scrollTop: false,
   });
 
   window.addEventListener("hashchange", () => {
-    setActiveView(getViewFromHash(), {
+    legacySetActiveView(getLegacyViewFromHash(), {
       updateHash: false,
       scrollTop: true,
     });
   });
 
   window.addEventListener("popstate", () => {
-    setActiveView(getViewFromHash(), {
+    legacySetActiveView(getLegacyViewFromHash(), {
       updateHash: false,
       scrollTop: true,
     });
   });
 }
 
-function updateBadge(redisStatus) {
-  // 更新畫面左上角的 Redis 狀態 badge。
-  // redisStatus 來自後端回傳，例如 ready / connected / error。
-  const badge = document.getElementById("redisBadge");
-  const okStatuses = ["connected", "ready", "reconnecting"];
+function initLegacyShellFallback() {
+  if (window.__mspAppShell) return;
 
-  badge.textContent = `Redis: ${redisStatus}`;
-
-  if (okStatuses.includes(redisStatus)) {
-    badge.className = "badge ok";
-  } else {
-    badge.className = "badge error";
-  }
+  window.setTheme = legacySetTheme;
+  window.setActiveView = legacySetActiveView;
+  initLegacyTheme();
+  initLegacyViewTabs();
 }
 
-function getVisitorId() {
-  // localStorage 是瀏覽器提供的小型儲存空間。
-  // visitor_id 存在這裡，關掉瀏覽器再打開也還在。
-  let visitorId = localStorage.getItem("visitor_id");
-
-  if (!visitorId) {
-    // 用瀏覽器產生一個匿名 ID，讓同一台瀏覽器不要被重複算成新訪客。
-    visitorId = window.crypto && window.crypto.randomUUID
-      ? window.crypto.randomUUID()
-      : `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem("visitor_id", visitorId);
+function activateAppView(viewName, options = {}) {
+  if (window.__mspAppShell && typeof window.__mspAppShell.setActiveView === "function") {
+    window.__mspAppShell.setActiveView(viewName, options);
+    return;
   }
 
-  return visitorId;
-}
-
-function getResetToken(promptText = "請輸入 Reset Token") {
-  // sessionStorage 只在目前分頁保存。
-  // 關掉分頁後 token 會消失，比放 localStorage 安全一點。
-  let token = sessionStorage.getItem("reset_token");
-
-  if (!token) {
-    // Reset 是高風險操作，所以 token 由使用者輸入，不寫死在 HTML 裡。
-    token = prompt(promptText);
-
-    if (token) {
-      sessionStorage.setItem("reset_token", token);
-    }
+  if (typeof window.setActiveView === "function") {
+    window.setActiveView(viewName, options);
+    return;
   }
 
-  return token;
-}
-
-function renderStats(data) {
-  // 後端回傳 JSON 後，這裡把數字塞進 HTML 對應的元素。
-  // 例如 id="totalVisitors" 的 <div> 會顯示總訪客數。
-  document.getElementById("totalVisitors").textContent = data.totalVisitors;
-  document.getElementById("todayVisitors").textContent = data.todayVisitors;
-  document.getElementById("activeVisitors").textContent = data.activeVisitors;
-  document.getElementById("today").textContent = formatDateWithWeekday(data.today);
-  updateBadge(data.redis);
-}
-
-function renderActiveVisitors(data) {
-  if (data && data.activeVisitors !== undefined) {
-    document.getElementById("activeVisitors").textContent = data.activeVisitors;
-  }
-
-  if (data && data.redis) {
-    updateBadge(data.redis);
-  }
-}
-
-function formatDateWithWeekday(value) {
-  const text = String(value || "").trim();
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
-  if (!match) return text || "-";
-
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  if (Number.isNaN(date.getTime())) return text;
-
-  const weekdays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
-  return `${text}（${weekdays[date.getDay()]}）`;
-}
-
-const WEATHER_POSITION_OPTIONS = {
-  enableHighAccuracy: true,
-  timeout: 8000,
-  maximumAge: 5 * 60 * 1000,
-};
-const WEATHER_LOCATION_STORAGE_KEY = "msp_weather_location";
-
-let weatherPositionCache = null;
-let weatherPositionUnavailable = false;
-let latestWeatherReportText = "";
-
-function setWeatherText(message, detail) {
-  const meta = document.getElementById("weatherMeta");
-  const content = document.getElementById("weatherContent");
-  if (meta) meta.textContent = detail || "";
-  if (content) {
-    content.replaceChildren(createTextElement("div", "weather-placeholder", message));
-  }
-  latestWeatherReportText = [detail, message].filter(Boolean).join(" / ");
-}
-
-function formatWeatherPeriod(startTime, endTime) {
-  if (!startTime && !endTime) return "最近一段預報";
-  const clean = (value) => String(value || "").replace("T", " ").slice(5, 16);
-  return `${clean(startTime)} - ${clean(endTime)}`;
-}
-
-function formatWeatherTimestamp(value) {
-  if (!value) return "";
-  return String(value).replace("T", " ").slice(5, 16);
-}
-
-function getWeatherPosition(forceRefresh = false) {
-  if (!forceRefresh && weatherPositionCache) {
-    return Promise.resolve(weatherPositionCache);
-  }
-
-  if (!forceRefresh && weatherPositionUnavailable) {
-    return Promise.resolve(null);
-  }
-
-  if (!navigator.geolocation || window.isSecureContext === false) {
-    weatherPositionUnavailable = true;
-    return Promise.resolve(null);
-  }
-
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = Number(position.coords.latitude);
-        const lon = Number(position.coords.longitude);
-
-        if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          weatherPositionCache = { lat, lon };
-          resolve(weatherPositionCache);
-          return;
-        }
-
-        resolve(null);
-      },
-      (error) => {
-        if (error && error.code === error.PERMISSION_DENIED) {
-          weatherPositionUnavailable = true;
-        }
-
-        resolve(null);
-      },
-      WEATHER_POSITION_OPTIONS,
-    );
-  });
-}
-
-function getWeatherLocationOverride() {
-  try {
-    return (localStorage.getItem(WEATHER_LOCATION_STORAGE_KEY) || "").trim();
-  } catch {
-    return "";
-  }
-}
-
-function setWeatherLocationOverride(value) {
-  try {
-    const normalized = String(value || "").trim();
-    if (normalized) {
-      localStorage.setItem(WEATHER_LOCATION_STORAGE_KEY, normalized);
-    } else {
-      localStorage.removeItem(WEATHER_LOCATION_STORAGE_KEY);
-    }
-  } catch {
-    // localStorage 不可用時，維持本次頁面可操作。
-  }
-}
-
-function configureWeatherLocation() {
-  const current = getWeatherLocationOverride();
-  const value = prompt("輸入氣象地區，例如：新北市 蘆洲區。留空可改回瀏覽器定位。", current);
-
-  if (value === null) return;
-
-  setWeatherLocationOverride(value);
-  weatherPositionCache = null;
-  weatherPositionUnavailable = false;
-  loadLocalWeather(true);
-}
-
-function hasWeatherValue(value) {
-  return value !== undefined && value !== null && value !== "";
-}
-
-function formatWeatherValue(value, unit = "") {
-  return hasWeatherValue(value) ? `${value}${unit}` : "-";
-}
-
-function createWeatherChip(label, value) {
-  const item = document.createElement("div");
-  item.className = "weather-chip";
-  item.appendChild(createTextElement("span", "weather-chip-label", label));
-  item.appendChild(createTextElement("strong", "weather-chip-value", value || "-"));
-  return item;
-}
-
-function getWeatherSticker(weatherText) {
-  const text = String(weatherText || "");
-
-  if (text.includes("雷")) return { icon: "⛈️", label: "雷雨" };
-  if (text.includes("雨")) return { icon: "🌧️", label: "雨天" };
-  if (text.includes("雪")) return { icon: "❄️", label: "雪" };
-  if (text.includes("霧") || text.includes("靄")) return { icon: "🌫️", label: "霧" };
-  if (text.includes("晴") && (text.includes("雲") || text.includes("陰"))) {
-    return { icon: "🌤️", label: "晴時多雲" };
-  }
-  if (text.includes("晴")) return { icon: "☀️", label: "晴天" };
-  if (text.includes("陰")) return { icon: "☁️", label: "陰天" };
-  if (text.includes("雲")) return { icon: "⛅", label: "多雲" };
-
-  return { icon: "🌡️", label: "天氣" };
-}
-
-function createWeatherSticker(weatherText) {
-  const sticker = getWeatherSticker(weatherText);
-  const element = createTextElement("span", "weather-sticker", sticker.icon);
-  element.setAttribute("role", "img");
-  element.setAttribute("aria-label", sticker.label);
-  return element;
-}
-
-function formatWeatherLocation(data) {
-  const countyName = String(data.countyName || "").trim();
-  const locationName = String(data.locationName || "").trim();
-
-  if (countyName && locationName && countyName !== locationName) {
-    return `${countyName} ${locationName}`;
-  }
-
-  return locationName || countyName || "本地區";
-}
-
-function renderLocalWeather(data) {
-  const meta = document.getElementById("weatherMeta");
-  const content = document.getElementById("weatherContent");
-  if (!meta || !content) return;
-
-  const current = data.current || {};
-  const temperatureUnit = current.forecastTemperatureUnit || data.temperatureUnit || "C";
-  const forecastRange = current.forecastMinTemperature || current.forecastMaxTemperature
-    ? `${current.forecastMinTemperature || "-"}-${current.forecastMaxTemperature || "-"}°${temperatureUnit}`
-    : "";
-  const temperature = hasWeatherValue(current.temperature)
-    ? `${current.temperature}°${temperatureUnit}`
-    : data.temperature
-      ? `${data.temperature}°${temperatureUnit}`
-      : forecastRange || "-";
-  const rainProbability = current.forecastRainProbability || data.rainProbability;
-  const rainProbabilityUnit = current.forecastRainProbabilityUnit || data.rainProbabilityUnit || "%";
-  const rainText = formatWeatherValue(current.rainMm, "mm");
-  const rainProbabilityText = rainProbability ? `${rainProbability}${rainProbabilityUnit}` : "-";
-  const locationLabel = formatWeatherLocation({
-    countyName: current.countyName || data.countyName,
-    locationName: current.locationName || data.locationName,
-  });
-  const observedTime = formatWeatherTimestamp(current.observedAt);
-  const forecastTime = formatWeatherPeriod(
-    current.forecastStartTime || data.startTime,
-    current.forecastEndTime || data.endTime,
-  );
-  meta.textContent = observedTime
-    ? `${locationLabel} · 觀測 ${observedTime}`
-    : locationLabel;
-
-  const summary = document.createElement("div");
-  summary.className = "weather-summary";
-  summary.appendChild(createTextElement("strong", "weather-temp", temperature));
-
-  const summaryText = document.createElement("div");
-  summaryText.className = "weather-summary-text";
-  const weatherLabel = current.weather || data.weather || data.weatherDescription || "天氣資料";
-  summaryText.appendChild(createTextElement("span", "weather-now", weatherLabel));
-  summaryText.appendChild(createTextElement("span", "weather-forecast-note", `預報 ${forecastTime}`));
-  summary.appendChild(summaryText);
-  summary.appendChild(createWeatherSticker(weatherLabel));
-
-  content.replaceChildren(
-    summary,
-    createWeatherChip("現在雨量", rainText),
-    createWeatherChip("未來降雨", rainProbabilityText),
-  );
-
-  latestWeatherReportText = [
-    locationLabel,
-    weatherLabel,
-    temperature,
-    `現在雨量 ${rainText}`,
-    `未來降雨 ${rainProbabilityText}`,
-    `預報 ${forecastTime}`,
-  ].filter(Boolean).join(" / ");
-}
-
-function getWeatherRequestDetail(position) {
-  const locationOverride = getWeatherLocationOverride();
-  if (locationOverride) {
-    return `手動地區：${locationOverride}`;
-  }
-
-  if (position) {
-    return "使用瀏覽器定位尋找最近測站";
-  }
-
-  return "沒有定位權限時使用預設地區";
-}
-
-function getWeatherLoadingLabel(position) {
-  if (getWeatherLocationOverride()) return "更新手動地區氣象...";
-  return position ? "更新最近測站氣象..." : "更新預設地區氣象...";
-}
-
-function getWeatherUnavailableMessage(data) {
-  if (data && data.configured === false) {
-    return data.hint || `${formatWeatherLocation(data)} · ${data.datasetId || "F-C0032-001"}`;
-  }
-
-  return "";
-}
-
-async function loadLocalWeather(forceRefresh = false) {
-  try {
-    setWeatherText("氣象定位中...", "準備更新最近測站與預報");
-    const locationOverride = getWeatherLocationOverride();
-    const position = locationOverride ? null : await getWeatherPosition(forceRefresh);
-    setWeatherText(getWeatherLoadingLabel(position), getWeatherRequestDetail(position));
-    const params = new URLSearchParams();
-
-    if (forceRefresh) params.set("refresh", "1");
-    if (locationOverride) {
-      params.set("locationName", locationOverride);
-      params.set("manual", "1");
-    }
-    if (position) {
-      params.set("lat", position.lat.toFixed(5));
-      params.set("lon", position.lon.toFixed(5));
-    }
-
-    const query = params.toString() ? `?${params.toString()}` : "";
-    const res = await fetch(`/api/weather/local${query}`, {
-      cache: "no-store",
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      if (data && data.configured === false) {
-        setWeatherText(
-          "部署環境未讀到氣象授權碼",
-          getWeatherUnavailableMessage(data),
-        );
-        return;
-      }
-
-      throw new Error(data.error || "Load weather failed");
-    }
-
-    renderLocalWeather(data);
-  } catch (err) {
-    setWeatherText("氣象資料讀取失敗", err.message);
-  }
-}
-
-async function trackView() {
-  try {
-    clearError();
-
-    // fetch 是瀏覽器呼叫 API 的方法。
-    // POST /track-view 會讓後端記錄一次頁面瀏覽。
-    const res = await fetch("/track-view", {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        visitorId: getVisitorId(),
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Track view failed");
-    }
-
-    renderStats(data);
-  } catch (err) {
-    updateBadge("error");
-    setError("瀏覽統計更新失敗：" + err.message);
-  }
-}
-
-async function loadStats() {
-  try {
-    // GET /stats 只讀統計，不增加瀏覽次數。
-    // setInterval 會每 30 秒呼叫一次，讓 Active Now 自動更新。
-    const res = await fetch("/stats", {
-      cache: "no-store",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Load stats failed");
-    }
-
-    renderStats(data);
-  } catch (err) {
-    updateBadge("error");
-    setError("無法讀取統計資料：" + err.message);
-  }
-}
-
-async function heartbeatActiveVisitor() {
-  try {
-    // 這個 API 只維持「目前在線」，不增加累計/今日訪客。
-    const res = await fetch("/heartbeat", {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        visitorId: getVisitorId(),
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Heartbeat failed");
-    }
-
-    renderActiveVisitors(data);
-  } catch (err) {
-    updateBadge("error");
-  }
-}
-
-async function loadCount() {
-  try {
-    // GET /count 只取得目前 Current Count。
-    const res = await fetch("/count", {
-      cache: "no-store",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Load count failed");
-    }
-
-    document.getElementById("count").textContent = data.count;
-    updateBadge(data.redis);
-  } catch (err) {
-    document.getElementById("count").textContent = "ERR";
-    updateBadge("error");
-    setError("無法讀取目前計數：" + err.message);
-  }
+  legacySetActiveView(viewName, options);
 }
 
 const INCIDENT_STORAGE_KEY = "noc_incident_state";
 const INCIDENT_ACTIVE_RECORD_STORAGE_KEY = "noc_incident_active_record_id";
+const INCIDENT_LOCAL_RECORDS_STORAGE_KEY = "noc_incident_records_local";
+const INCIDENT_CORE_FIELD_NAMES = [
+  "startedAt",
+  "severity",
+  "status",
+  "customer",
+  "system",
+  "source",
+  "title",
+  "problemDescription",
+  "impact",
+  "handoverOwner",
+  "nextStep",
+  "notified",
+];
 const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
   { field: "title", label: "一句話主旨", elementId: "incidentTitle" },
   { field: "status", label: "目前狀態", elementId: "incidentStatus" },
@@ -648,6 +200,15 @@ const INCIDENT_PHRASE_GROUPS = {
     ],
   },
 };
+
+function getIncidentPhraseGroups() {
+  return Object.entries(INCIDENT_PHRASE_GROUPS).map(([name, group]) => ({
+    name,
+    fieldId: group.fieldId,
+    menuId: group.menuId,
+    phrases: group.phrases || [],
+  }));
+}
 const INCIDENT_TEMPLATES = [
   {
     id: "disk",
@@ -746,9 +307,6 @@ const SERVICE_TYPE_HINTS = {
   other: "其他類型只保留窗口與補充欄位，需要的背景請寫在其他補充。",
   empty: "選擇服務類型後，下方只會顯示相關補充欄位。",
 };
-const PHONE_TEST_NUMBER = "+886800008669";
-const PHONE_TEST_POST_CONNECT_KEY = "3";
-const ONCALL_CHECKLIST_STORAGE_PREFIX = "msp_oncall_checklist:";
 const HANDOVER_SUMMARY_MODES = {
   full: "完整",
   compact: "精簡",
@@ -756,10 +314,27 @@ const HANDOVER_SUMMARY_MODES = {
 };
 let incidentRecordsCache = [];
 let activeIncidentRecordId = "";
-let activeIncidentSavedSnapshot = null;
+let activeIncidentSavedSnapshotFallback = null;
+let incidentSaveButtonLoading = false;
 let incidentHistoryView = "open";
 let handoverSummaryMode = "full";
-let oncallChecklistStatusTimer = null;
+const handoverReadinessActions = new Map();
+const handoverSummaryStatusActions = new Map();
+let handoverSummaryStatusState = {
+  fields: [],
+  message: "",
+  type: "",
+};
+let jiraStatusState = {
+  linkUrl: "",
+  message: "",
+  type: "",
+};
+let incidentHistoryStatusState = {
+  message: "",
+  type: "",
+};
+const duplicateIncidentActions = new Map();
 let incidentHistoryFilters = {
   keyword: "",
   customer: "",
@@ -773,8 +348,68 @@ function getIncidentFields() {
   return Array.from(document.querySelectorAll("[data-incident-field]"));
 }
 
+function readIncidentCoreFieldStateFromPage() {
+  return INCIDENT_CORE_FIELD_NAMES.reduce((fields, fieldName) => {
+    const field = getIncidentFieldByName(fieldName);
+    fields[fieldName] = field ? field.value : "";
+    return fields;
+  }, {});
+}
+
+function readIncidentCoreFieldStateFromBridge() {
+  if (window.__mspIncidentCoreFields && typeof window.__mspIncidentCoreFields.getFields === "function") {
+    return window.__mspIncidentCoreFields.getFields();
+  }
+
+  return null;
+}
+
+function syncIncidentCoreFieldsBridge(fields = readIncidentCoreFieldStateFromPage()) {
+  if (window.__mspIncidentCoreFields && typeof window.__mspIncidentCoreFields.syncFields === "function") {
+    window.__mspIncidentCoreFields.syncFields(fields);
+    return true;
+  }
+
+  return false;
+}
+
+function refreshIncidentCoreFieldState() {
+  syncIncidentCoreFieldsBridge(readIncidentCoreFieldStateFromPage());
+}
+
 function getIncidentChecks() {
   return Array.from(document.querySelectorAll("[data-incident-check]"));
+}
+
+function readIncidentCheckStateFromPage() {
+  const checks = {};
+
+  getIncidentChecks().forEach((check) => {
+    checks[check.dataset.incidentCheck] = check.checked;
+  });
+
+  return checks;
+}
+
+function readIncidentCheckStateFromBridge() {
+  if (window.__mspIncidentChecklist && typeof window.__mspIncidentChecklist.getChecks === "function") {
+    return window.__mspIncidentChecklist.getChecks();
+  }
+
+  return null;
+}
+
+function syncIncidentChecklistBridge(checks = readIncidentCheckStateFromPage()) {
+  if (window.__mspIncidentChecklist && typeof window.__mspIncidentChecklist.syncChecks === "function") {
+    window.__mspIncidentChecklist.syncChecks(checks);
+    return true;
+  }
+
+  return false;
+}
+
+function refreshIncidentChecklistState() {
+  syncIncidentChecklistBridge(readIncidentCheckStateFromPage());
 }
 
 function getIncidentRadios() {
@@ -785,6 +420,30 @@ function getIncidentRadios() {
 function getIncidentFollowups() {
   // 後續處理方式是複選題，所以每一個 checkbox 都要各自記錄。
   return Array.from(document.querySelectorAll("[data-incident-followup]"));
+}
+
+function readIncidentFollowupStateFromPage() {
+  const followups = {};
+
+  getIncidentFollowups().forEach((followup) => {
+    followups[followup.dataset.incidentFollowup] = followup.checked;
+  });
+
+  return followups;
+}
+
+function getIncidentServiceDetailFields() {
+  return Array.from(document.querySelectorAll(".incident-details [data-incident-field]"));
+}
+
+function readIncidentServiceDetailFieldStateFromPage() {
+  const fields = {};
+
+  getIncidentServiceDetailFields().forEach((field) => {
+    fields[field.dataset.incidentField] = field.value;
+  });
+
+  return fields;
 }
 
 function getSelectedIncidentRadioValue(name) {
@@ -800,7 +459,125 @@ function getServiceTypeDisplayMode(serviceType = getSelectedIncidentRadioValue("
   return "empty";
 }
 
+function getIncidentServiceDetailsState() {
+  const otherFollowup = document.querySelector('[data-incident-followup="其他"]');
+  return {
+    fields: readIncidentServiceDetailFieldStateFromPage(),
+    followups: readIncidentFollowupStateFromPage(),
+    isCustomer: getSelectedIncidentRadioValue("isCustomer"),
+    otherFollowup: Boolean(otherFollowup && otherFollowup.checked),
+    serviceType: getSelectedIncidentRadioValue("serviceType"),
+  };
+}
+
+function readIncidentServiceDetailsStateFromBridge() {
+  if (
+    window.__mspIncidentServiceDetails
+    && typeof window.__mspIncidentServiceDetails.getState === "function"
+  ) {
+    return window.__mspIncidentServiceDetails.getState();
+  }
+
+  return null;
+}
+
+function readIncidentStateFromBridge() {
+  if (window.__mspIncidentState && typeof window.__mspIncidentState.getState === "function") {
+    return window.__mspIncidentState.getState();
+  }
+
+  return null;
+}
+
+function loadIncidentStateFromBridge() {
+  if (window.__mspIncidentState && typeof window.__mspIncidentState.loadState === "function") {
+    return window.__mspIncidentState.loadState();
+  }
+
+  return null;
+}
+
+function saveIncidentStateToBridge(state) {
+  if (window.__mspIncidentState && typeof window.__mspIncidentState.saveState === "function") {
+    window.__mspIncidentState.saveState(state);
+    return true;
+  }
+
+  return false;
+}
+
+function clearIncidentStateInBridge() {
+  if (window.__mspIncidentState && typeof window.__mspIncidentState.clearState === "function") {
+    window.__mspIncidentState.clearState();
+    return true;
+  }
+
+  return false;
+}
+
+function applyIncidentStateToBridge(state) {
+  if (window.__mspIncidentState && typeof window.__mspIncidentState.applyState === "function") {
+    window.__mspIncidentState.applyState(state);
+    return true;
+  }
+
+  return false;
+}
+
+function patchIncidentFieldsInBridge(fields = {}) {
+  if (!window.__mspIncidentState || typeof window.__mspIncidentState.applyState !== "function") {
+    return false;
+  }
+
+  const currentState = readIncidentStateFromPage();
+  window.__mspIncidentState.applyState({
+    ...currentState,
+    fields: {
+      ...(currentState.fields || {}),
+      ...fields,
+    },
+  });
+  return true;
+}
+
+function patchIncidentRadiosInBridge(radios = {}) {
+  if (!window.__mspIncidentState || typeof window.__mspIncidentState.applyState !== "function") {
+    return false;
+  }
+
+  const currentState = readIncidentStateFromPage();
+  window.__mspIncidentState.applyState({
+    ...currentState,
+    radios: {
+      ...(currentState.radios || {}),
+      ...radios,
+    },
+  });
+  return true;
+}
+
+function patchIncidentFollowupsInBridge(followups = {}) {
+  if (!window.__mspIncidentState || typeof window.__mspIncidentState.applyState !== "function") {
+    return false;
+  }
+
+  const currentState = readIncidentStateFromPage();
+  window.__mspIncidentState.applyState({
+    ...currentState,
+    followups: {
+      ...(currentState.followups || {}),
+      ...followups,
+    },
+  });
+  return true;
+}
+
 function updateServiceTypeFieldVisibility() {
+  if (window.__mspIncidentServiceDetails && typeof window.__mspIncidentServiceDetails.syncState === "function") {
+    window.__mspIncidentServiceDetails.syncState(getIncidentServiceDetailsState());
+    return;
+  }
+
   const mode = getServiceTypeDisplayMode();
   const sections = document.querySelectorAll(".field[data-service-section]");
 
@@ -827,18 +604,35 @@ function updateServiceTypeFieldVisibility() {
 }
 
 function readIncidentStateFromPage() {
+  const bridgedState = readIncidentStateFromBridge();
+  if (bridgedState) {
+    return bridgedState;
+  }
+
   const fields = {};
-  const checks = {};
   const radios = {};
-  const followups = {};
+  const serviceDetails = readIncidentServiceDetailsStateFromBridge();
+  const nextCheck = readIncidentNextCheckStateFromBridge();
+  const notes = readIncidentNotesValueFromBridge();
 
   getIncidentFields().forEach((field) => {
     fields[field.dataset.incidentField] = field.value;
   });
 
-  getIncidentChecks().forEach((check) => {
-    checks[check.dataset.incidentCheck] = check.checked;
-  });
+  Object.assign(fields, readIncidentCoreFieldStateFromBridge() || {});
+
+  if (nextCheck) {
+    fields.nextCheckAt = nextCheck.nextCheckAt || "";
+    fields.trackingStatus = nextCheck.trackingStatus || "";
+  }
+
+  if (notes !== null) {
+    fields.notes = notes;
+  }
+
+  if (serviceDetails && serviceDetails.fields) {
+    Object.assign(fields, serviceDetails.fields);
+  }
 
   getIncidentRadios().forEach((radio) => {
     if (radio.checked) {
@@ -846,55 +640,154 @@ function readIncidentStateFromPage() {
     }
   });
 
-  getIncidentFollowups().forEach((followup) => {
-    followups[followup.dataset.incidentFollowup] = followup.checked;
-  });
+  if (serviceDetails && serviceDetails.isCustomer) {
+    radios.isCustomer = serviceDetails.isCustomer;
+  }
 
-  return { fields, checks, radios, followups };
+  if (serviceDetails && serviceDetails.serviceType) {
+    radios.serviceType = serviceDetails.serviceType;
+  }
+
+  return {
+    fields,
+    checks: readIncidentCheckStateFromBridge() || readIncidentCheckStateFromPage(),
+    radios,
+    followups: serviceDetails && serviceDetails.followups
+      ? serviceDetails.followups
+      : readIncidentFollowupStateFromPage(),
+  };
 }
 
 function saveIncidentState() {
   // 值班事件是個人暫存資料，所以存在 localStorage。
   // 重新整理網頁後資料還在，但不會送到 server 或 Redis。
   try {
-    localStorage.setItem(INCIDENT_STORAGE_KEY, JSON.stringify(readIncidentStateFromPage()));
+    const state = readIncidentStateFromPage();
+    if (saveIncidentStateToBridge(state)) return;
+
+    localStorage.setItem(INCIDENT_STORAGE_KEY, JSON.stringify(state));
   } catch (err) {
     setError("事件暫存失敗：" + err.message);
   }
 }
 
+function getIncidentSaveStatusBridge() {
+  return window.__mspIncidentSaveStatus || null;
+}
+
+function setActiveIncidentRecordIdInBridge(id) {
+  const bridge = getIncidentSaveStatusBridge();
+  if (bridge && typeof bridge.setActiveRecordId === "function") {
+    bridge.setActiveRecordId(id);
+    return true;
+  }
+
+  return false;
+}
+
+function loadActiveIncidentRecordIdFromBridge() {
+  const bridge = getIncidentSaveStatusBridge();
+  if (bridge && typeof bridge.loadActiveRecordId === "function") {
+    return String(bridge.loadActiveRecordId() || "");
+  }
+
+  if (bridge && typeof bridge.getActiveRecordId === "function") {
+    return String(bridge.getActiveRecordId() || "");
+  }
+
+  return null;
+}
+
+function setActiveIncidentSavedSnapshotInBridge(snapshot) {
+  const bridge = getIncidentSaveStatusBridge();
+  if (bridge && typeof bridge.setSavedSnapshot === "function") {
+    bridge.setSavedSnapshot(snapshot);
+    return true;
+  }
+
+  return false;
+}
+
+function clearActiveIncidentSavedSnapshotInBridge() {
+  const bridge = getIncidentSaveStatusBridge();
+  if (bridge && typeof bridge.clearSavedSnapshot === "function") {
+    bridge.clearSavedSnapshot();
+    return true;
+  }
+
+  return false;
+}
+
+function getActiveIncidentSavedSnapshotFromBridge() {
+  const bridge = getIncidentSaveStatusBridge();
+  if (bridge && typeof bridge.getSavedSnapshot === "function") {
+    return bridge.getSavedSnapshot() || null;
+  }
+
+  return undefined;
+}
+
+function syncIncidentSaveStatusBridge() {
+  const bridge = getIncidentSaveStatusBridge();
+  if (bridge && typeof bridge.syncState === "function") {
+    bridge.syncState({
+      activeRecordId: activeIncidentRecordId,
+      hasActiveRecord: Boolean(activeIncidentRecordId),
+      isSaving: incidentSaveButtonLoading,
+      savedSnapshot: activeIncidentSavedSnapshotFallback,
+    });
+    return true;
+  }
+
+  return false;
+}
+
 function updateSaveIncidentButtonLabel() {
+  if (syncIncidentSaveStatusBridge()) return;
+
   const button = document.getElementById("saveIncidentButton");
   if (!button || button.disabled) return;
 
-  button.textContent = activeIncidentRecordId ? "更新事件" : "儲存事件";
+  button.textContent = activeIncidentRecordId ? "更新" : "儲存";
 }
 
 function setActiveIncidentRecordId(id) {
   const nextActiveId = String(id || "");
   if (nextActiveId !== activeIncidentRecordId) {
-    activeIncidentSavedSnapshot = null;
+    clearActiveIncidentSavedSnapshot();
   }
   activeIncidentRecordId = nextActiveId;
 
-  try {
-    if (activeIncidentRecordId) {
-      localStorage.setItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY, activeIncidentRecordId);
-    } else {
-      localStorage.removeItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY);
+  if (!setActiveIncidentRecordIdInBridge(activeIncidentRecordId)) {
+    try {
+      if (activeIncidentRecordId) {
+        localStorage.setItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY, activeIncidentRecordId);
+      } else {
+        localStorage.removeItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY);
+      }
+    } catch {
+      // 無法寫入 localStorage 時仍允許本次編輯使用記憶體狀態。
     }
-  } catch {
-    // 無法寫入 localStorage 時仍允許本次編輯使用記憶體狀態。
   }
 
   updateSaveIncidentButtonLabel();
 }
 
 function loadActiveIncidentRecordId() {
-  try {
-    activeIncidentRecordId = localStorage.getItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY) || "";
-  } catch {
-    activeIncidentRecordId = "";
+  const previousActiveId = activeIncidentRecordId;
+  const bridgedId = loadActiveIncidentRecordIdFromBridge();
+  if (bridgedId !== null) {
+    activeIncidentRecordId = bridgedId;
+  } else {
+    try {
+      activeIncidentRecordId = localStorage.getItem(INCIDENT_ACTIVE_RECORD_STORAGE_KEY) || "";
+    } catch {
+      activeIncidentRecordId = "";
+    }
+  }
+
+  if (activeIncidentRecordId !== previousActiveId) {
+    clearActiveIncidentSavedSnapshot();
   }
 
   updateSaveIncidentButtonLabel();
@@ -922,9 +815,22 @@ function normalizeComparableIncidentState(state) {
 }
 
 function setActiveIncidentSavedSnapshot(record) {
-  activeIncidentSavedSnapshot = record && record.incident
+  activeIncidentSavedSnapshotFallback = record && record.incident
     ? normalizeComparableIncidentState(record.incident)
     : null;
+  setActiveIncidentSavedSnapshotInBridge(activeIncidentSavedSnapshotFallback);
+}
+
+function clearActiveIncidentSavedSnapshot() {
+  activeIncidentSavedSnapshotFallback = null;
+  clearActiveIncidentSavedSnapshotInBridge();
+}
+
+function getActiveIncidentSavedSnapshot() {
+  const bridgedSnapshot = getActiveIncidentSavedSnapshotFromBridge();
+  if (bridgedSnapshot !== undefined) return bridgedSnapshot;
+
+  return activeIncidentSavedSnapshotFallback;
 }
 
 function getActiveIncidentRecord() {
@@ -937,7 +843,7 @@ function hasCurrentIncidentUnsavedChanges(state = readIncidentStateFromPage()) {
 
   const currentSnapshot = normalizeComparableIncidentState(state);
   const cachedRecord = getActiveIncidentRecord();
-  const savedSnapshot = activeIncidentSavedSnapshot
+  const savedSnapshot = getActiveIncidentSavedSnapshot()
     || (cachedRecord && normalizeComparableIncidentState(cachedRecord.incident));
 
   if (!activeIncidentRecordId || !savedSnapshot) return true;
@@ -984,65 +890,98 @@ function getIncidentTemplateById(templateId) {
   return INCIDENT_TEMPLATES.find((template) => template.id === templateId) || null;
 }
 
-function updateIncidentTemplateApplyState() {
-  const select = document.getElementById("incidentTemplateSelect");
-  const button = document.getElementById("applyIncidentTemplateButton");
-  if (!select || !button) return;
+function getIncidentTemplateOptions() {
+  return INCIDENT_TEMPLATES.map((template) => ({
+    id: template.id,
+    label: template.label,
+  }));
+}
 
-  button.disabled = !select.value;
+function updateIncidentTemplateApplyState() {
+  if (window.__mspIncidentTemplates && typeof window.__mspIncidentTemplates.syncTemplates === "function") {
+    window.__mspIncidentTemplates.syncTemplates(getIncidentTemplateOptions());
+  }
 }
 
 function initIncidentTemplates() {
-  const select = document.getElementById("incidentTemplateSelect");
-  if (!select) return;
-
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "選擇常見情境";
-  const options = INCIDENT_TEMPLATES.map((template) => {
-    const option = document.createElement("option");
-    option.value = template.id;
-    option.textContent = template.label;
-    return option;
-  });
-
-  select.replaceChildren(placeholder, ...options);
-  select.addEventListener("change", updateIncidentTemplateApplyState);
-  updateIncidentTemplateApplyState();
+  if (window.__mspIncidentTemplates && typeof window.__mspIncidentTemplates.syncTemplates === "function") {
+    window.__mspIncidentTemplates.syncTemplates(getIncidentTemplateOptions());
+  }
 }
 
 function applyIncidentTemplateField(fieldName, value) {
   const field = getIncidentFieldByName(fieldName);
-  if (!field || String(field.value || "").trim()) return false;
+  const currentState = readIncidentStateFromPage();
+  const currentValue = currentState && currentState.fields
+    ? currentState.fields[fieldName]
+    : (field && field.value);
+  if (String(currentValue || "").trim()) return false;
 
-  field.value = normalizeIncidentFieldValue(fieldName, value);
+  const normalizedValue = normalizeIncidentFieldValue(fieldName, value);
+  if (!String(normalizedValue || "").trim()) return false;
+
+  if (patchIncidentFieldsInBridge({ [fieldName]: normalizedValue })) {
+    if (field) {
+      field.value = normalizedValue;
+    }
+    return true;
+  }
+
+  if (!field) return false;
+
+  field.value = normalizedValue;
   return Boolean(String(field.value || "").trim());
 }
 
 function applyIncidentTemplateRadio(radioName, value) {
-  if (getSelectedIncidentRadioValue(radioName)) return false;
+  const currentState = readIncidentStateFromPage();
+  const currentValue = currentState && currentState.radios
+    ? currentState.radios[radioName]
+    : getSelectedIncidentRadioValue(radioName);
+  if (String(currentValue || "").trim()) return false;
+
+  const normalizedValue = String(value || "").trim();
+  if (!normalizedValue) return false;
 
   const radio = getIncidentRadios().find((item) => (
-    item.dataset.incidentRadio === radioName && item.value === value
+    item.dataset.incidentRadio === radioName && item.value === normalizedValue
   ));
   if (!radio) return false;
+
+  if (patchIncidentRadiosInBridge({ [radioName]: normalizedValue })) {
+    radio.checked = true;
+    return true;
+  }
 
   radio.checked = true;
   return true;
 }
 
 function applyIncidentTemplateFollowup(followupName, value) {
+  const nextValue = Boolean(value);
+  const currentState = readIncidentStateFromPage();
   const followup = getIncidentFollowups().find((item) => item.dataset.incidentFollowup === followupName);
-  if (!followup || followup.checked === Boolean(value)) return false;
+  const currentValue = currentState && currentState.followups
+    && Object.prototype.hasOwnProperty.call(currentState.followups, followupName)
+    ? Boolean(currentState.followups[followupName])
+    : Boolean(followup && followup.checked);
 
-  followup.checked = Boolean(value);
+  if (!followup || currentValue === nextValue) return false;
+
+  if (patchIncidentFollowupsInBridge({ [followupName]: nextValue })) {
+    followup.checked = nextValue;
+    return true;
+  }
+
+  followup.checked = nextValue;
   return true;
 }
 
-function applySelectedIncidentTemplate() {
+function applySelectedIncidentTemplate(templateId = "") {
   const select = document.getElementById("incidentTemplateSelect");
-  const template = select ? getIncidentTemplateById(select.value) : null;
-  if (!select || !template) return;
+  const selectedTemplateId = String(templateId || (select && select.value) || "").trim();
+  const template = getIncidentTemplateById(selectedTemplateId);
+  if (!template) return;
 
   const appliedFields = Object.entries(template.fields || {})
     .filter(([fieldName, value]) => applyIncidentTemplateField(fieldName, value)).length;
@@ -1052,12 +991,16 @@ function applySelectedIncidentTemplate() {
     .filter(([followupName, value]) => applyIncidentTemplateFollowup(followupName, value)).length;
   const appliedCount = appliedFields + appliedRadios + appliedFollowups;
 
+  syncIncidentCoreFieldsBridge();
+  renderIncidentNotesTimeline();
   updateIncidentNextCheckAvailability();
   updateServiceTypeFieldVisibility();
   saveIncidentState();
   updateHandoverSummary();
 
-  select.value = "";
+  if (select && !templateId) {
+    select.value = "";
+  }
   updateIncidentTemplateApplyState();
 
   setHandoverSummaryStatus(
@@ -1068,12 +1011,22 @@ function applySelectedIncidentTemplate() {
   );
 }
 
-function getQuickIncidentInputText() {
+function getQuickIncidentInputText(text) {
+  if (arguments.length > 0) {
+    return String(text || "").trim();
+  }
+
   const input = document.getElementById("incidentQuickIntake");
   return input ? String(input.value || "").trim() : "";
 }
 
 function clearQuickIncidentInput() {
+  if (window.__mspIncidentQuickIntake && typeof window.__mspIncidentQuickIntake.syncText === "function") {
+    window.__mspIncidentQuickIntake.syncText("");
+    setHandoverSummaryStatus("");
+    return;
+  }
+
   const input = document.getElementById("incidentQuickIntake");
   if (input) input.value = "";
   setHandoverSummaryStatus("");
@@ -1197,8 +1150,8 @@ function buildQuickIncidentDraft(text) {
   };
 }
 
-function applyQuickIncidentDraft() {
-  const text = getQuickIncidentInputText();
+function applyQuickIncidentDraft(inputText) {
+  const text = getQuickIncidentInputText(inputText);
   if (!text) {
     setHandoverSummaryStatus("先貼上告警、客戶訊息或 Jira 摘要。", "pending");
     return;
@@ -1212,6 +1165,8 @@ function applyQuickIncidentDraft() {
   const appliedChecklist = markIncidentCheck("確認告警時間與來源") ? 1 : 0;
   const appliedCount = appliedFields + appliedChecklist;
 
+  syncIncidentCoreFieldsBridge();
+  renderIncidentNotesTimeline();
   updateIncidentNextCheckAvailability();
   updateServiceTypeFieldVisibility();
   saveIncidentState();
@@ -1231,8 +1186,8 @@ function applyQuickIncidentDraft() {
   );
 }
 
-function appendQuickIntakeToIncidentNotes() {
-  const text = getQuickIncidentInputText();
+function appendQuickIntakeToIncidentNotes(inputText) {
+  const text = getQuickIncidentInputText(inputText);
   const field = getIncidentFieldByName("notes");
   if (!text || !field) {
     setHandoverSummaryStatus("先貼上要追加的處理紀錄。", "pending");
@@ -1246,6 +1201,7 @@ function appendQuickIntakeToIncidentNotes() {
     : `${formatLocalTimeMinute()} ${title}\n${detail}`;
 
   insertTextAtFieldEnd(field, note);
+  renderIncidentNotesTimeline();
   saveIncidentState();
   updateHandoverSummary();
   setHandoverSummaryStatus("已追加快速接案內容到處理紀錄。", "success");
@@ -1253,17 +1209,24 @@ function appendQuickIntakeToIncidentNotes() {
 
 function loadIncidentState() {
   try {
+    const bridgedState = loadIncidentStateFromBridge();
+    if (bridgedState) {
+      applyIncidentStateToPage(bridgedState);
+      return;
+    }
+
     const raw = localStorage.getItem(INCIDENT_STORAGE_KEY);
     if (!raw) return;
 
     applyIncidentStateToPage(JSON.parse(raw));
-    updateServiceTypeFieldVisibility();
   } catch (err) {
     setError("事件暫存讀取失敗：" + err.message);
   }
 }
 
 function applyIncidentStateToPage(state) {
+  if (applyIncidentStateToBridge(state)) return;
+
   const savedFields = state && state.fields ? state.fields : {};
 
   getIncidentFields().forEach((field) => {
@@ -1272,10 +1235,13 @@ function applyIncidentStateToPage(state) {
       ? normalizeIncidentFieldValue(fieldName, savedFields[fieldName])
       : "";
   });
+  syncIncidentCoreFieldsBridge();
+  renderIncidentNotesTimeline(state);
 
   getIncidentChecks().forEach((check) => {
     check.checked = Boolean(state && state.checks && state.checks[check.dataset.incidentCheck]);
   });
+  syncIncidentChecklistBridge(state && state.checks ? state.checks : {});
 
   getIncidentRadios().forEach((radio) => {
     radio.checked = Boolean(state && state.radios && state.radios[radio.dataset.incidentRadio] === radio.value);
@@ -1287,6 +1253,35 @@ function applyIncidentStateToPage(state) {
 
   updateIncidentNextCheckAvailability();
   updateServiceTypeFieldVisibility();
+}
+
+function clearIncidentUiState() {
+  if (applyIncidentStateToBridge({})) {
+    return true;
+  }
+
+  getIncidentFields().forEach((field) => {
+    field.value = "";
+  });
+  syncIncidentCoreFieldsBridge({});
+  renderIncidentNotesTimeline({ fields: { notes: "" } });
+
+  getIncidentChecks().forEach((check) => {
+    check.checked = false;
+  });
+  syncIncidentChecklistBridge({});
+
+  getIncidentRadios().forEach((radio) => {
+    radio.checked = false;
+  });
+
+  getIncidentFollowups().forEach((followup) => {
+    followup.checked = false;
+  });
+
+  updateIncidentNextCheckAvailability();
+  updateServiceTypeFieldVisibility();
+  return false;
 }
 
 function formatLocalDateTime(date) {
@@ -1304,32 +1299,66 @@ function formatLocalTimeMinute(date = new Date()) {
   return [pad(date.getHours()), pad(date.getMinutes())].join(":");
 }
 
-function setIncidentNow() {
+function setIncidentNow(startedAtValue = "") {
   const startedAt = document.getElementById("incidentStartedAt");
-  startedAt.value = formatLocalDateTime(new Date());
+  if (!startedAt) return;
+
+  startedAt.value = String(startedAtValue || "").trim() || formatLocalDateTime(new Date());
+  syncIncidentCoreFieldsBridge();
   saveIncidentState();
   updateHandoverSummary();
 }
 
 function clearIncidentNextCheckAt() {
   const nextCheckAt = document.getElementById("incidentNextCheckAt");
-  if (!nextCheckAt) return;
-
-  nextCheckAt.value = "";
+  if (nextCheckAt) nextCheckAt.value = "";
+  syncIncidentNextCheckBridge(getIncidentNextCheckState());
   saveIncidentState();
   setHandoverSummaryStatus("");
   updateHandoverSummary();
 }
 
+function getIncidentNextCheckState() {
+  return {
+    nextCheckAt: document.getElementById("incidentNextCheckAt")?.value || "",
+    trackingStatus: document.getElementById("incidentTrackingStatus")?.value || "",
+  };
+}
+
+function readIncidentNextCheckStateFromBridge() {
+  if (window.__mspIncidentNextCheck && typeof window.__mspIncidentNextCheck.getState === "function") {
+    return window.__mspIncidentNextCheck.getState();
+  }
+
+  return null;
+}
+
+function syncIncidentNextCheckBridge(nextState = getIncidentNextCheckState()) {
+  if (window.__mspIncidentNextCheck && typeof window.__mspIncidentNextCheck.syncState === "function") {
+    window.__mspIncidentNextCheck.syncState(nextState);
+    return true;
+  }
+
+  return false;
+}
+
 function updateIncidentNextCheckAvailability() {
-  const trackingStatus = document.getElementById("incidentTrackingStatus");
+  const nextState = getIncidentNextCheckState();
+  const shouldDisable = canTrackingStatusSkipNextCheck(nextState.trackingStatus);
   const nextCheckAt = document.getElementById("incidentNextCheckAt");
+
+  if (shouldDisable && nextCheckAt) {
+    nextCheckAt.value = "";
+    nextState.nextCheckAt = "";
+  }
+
+  if (syncIncidentNextCheckBridge(nextState)) {
+    return;
+  }
+
+  const trackingStatus = document.getElementById("incidentTrackingStatus");
   if (!trackingStatus || !nextCheckAt) return;
 
-  const shouldDisable = canTrackingStatusSkipNextCheck(trackingStatus.value);
-  if (shouldDisable) {
-    nextCheckAt.value = "";
-  }
   nextCheckAt.disabled = shouldDisable;
   nextCheckAt.title = shouldDisable ? "目前追蹤狀態不需要下次確認" : "";
 }
@@ -1346,27 +1375,50 @@ function buildHandoverSummary(mode = handoverSummaryMode) {
   });
 }
 
-function updateHandoverSummary() {
-  const output = document.getElementById("handoverSummary");
-  if (output) {
-    output.value = buildHandoverSummary();
+function syncHandoverSummaryTextBridge(summary) {
+  if (window.__mspHandoverSummaryText && typeof window.__mspHandoverSummaryText.syncText === "function") {
+    window.__mspHandoverSummaryText.syncText(summary);
+    return true;
   }
+
+  return false;
+}
+
+function updateHandoverSummaryText() {
+  const summary = buildHandoverSummary();
+
+  if (!syncHandoverSummaryTextBridge(summary)) {
+    const output = document.getElementById("handoverSummary");
+    if (output) {
+      output.value = summary;
+    }
+  }
+
+  return summary;
+}
+
+function updateHandoverSummary() {
+  const summary = updateHandoverSummaryText();
 
   updateHandoverSummaryBadge();
   renderIncidentNotesTimeline();
   renderDuplicateIncidentStatus();
   renderHandoverReadiness();
+
+  return summary;
+}
+
+function syncHandoverSummaryModeBridge() {
+  if (window.__mspHandoverSummaryMode && typeof window.__mspHandoverSummaryMode.syncMode === "function") {
+    window.__mspHandoverSummaryMode.syncMode(handoverSummaryMode);
+    return true;
+  }
+
+  return false;
 }
 
 function updateHandoverSummaryModeButtons() {
-  Object.keys(HANDOVER_SUMMARY_MODES).forEach((mode) => {
-    const button = document.getElementById(`handoverSummaryMode${mode[0].toUpperCase()}${mode.slice(1)}`);
-    if (!button) return;
-
-    const isActive = handoverSummaryMode === mode;
-    button.classList.toggle("active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
+  syncHandoverSummaryModeBridge();
 }
 
 function setHandoverSummaryMode(mode) {
@@ -1379,36 +1431,42 @@ function setHandoverSummaryMode(mode) {
 }
 
 function closeIncidentPhraseMenus() {
-  Object.values(INCIDENT_PHRASE_GROUPS).forEach((group) => {
-    const menu = document.getElementById(group.menuId);
-    const trigger = document.querySelector(`[aria-controls="${group.menuId}"]`);
-
-    if (menu) menu.hidden = true;
-    if (trigger) trigger.setAttribute("aria-expanded", "false");
-  });
+  if (window.__mspIncidentPhrases && typeof window.__mspIncidentPhrases.closeMenus === "function") {
+    window.__mspIncidentPhrases.closeMenus();
+  }
 }
 
 function toggleIncidentPhraseMenu(groupName) {
-  const group = INCIDENT_PHRASE_GROUPS[groupName];
-  if (!group) return;
-
-  const menu = document.getElementById(group.menuId);
-  const trigger = document.querySelector(`[aria-controls="${group.menuId}"]`);
-  if (!menu) return;
-
-  const shouldOpen = menu.hidden;
-  closeIncidentPhraseMenus();
-  menu.hidden = !shouldOpen;
-  if (trigger) trigger.setAttribute("aria-expanded", String(shouldOpen));
+  if (window.__mspIncidentPhrases && typeof window.__mspIncidentPhrases.syncOpenGroup === "function") {
+    window.__mspIncidentPhrases.syncOpenGroup(groupName);
+  }
 }
 
-function insertTextAtFieldEnd(field, text) {
-  const currentValue = field.value;
-  const prefix = currentValue && !currentValue.endsWith("\n") ? "\n" : "";
-  field.value = `${currentValue}${prefix}${text}`;
+function mirrorIncidentFieldDomValue(field, value) {
+  field.value = value;
   field.focus();
   field.selectionStart = field.value.length;
   field.selectionEnd = field.value.length;
+}
+
+function insertTextAtFieldEnd(field, text) {
+  if (!field) return false;
+
+  const fieldName = field.dataset ? field.dataset.incidentField : "";
+  const currentState = readIncidentStateFromPage();
+  const currentValue = fieldName && currentState && currentState.fields
+    ? String(currentState.fields[fieldName] || "")
+    : field.value;
+  const prefix = currentValue && !currentValue.endsWith("\n") ? "\n" : "";
+  const nextValue = `${currentValue}${prefix}${String(text || "")}`;
+
+  if (fieldName && patchIncidentFieldsInBridge({ [fieldName]: nextValue })) {
+    mirrorIncidentFieldDomValue(field, nextValue);
+    return true;
+  }
+
+  mirrorIncidentFieldDomValue(field, nextValue);
+  return true;
 }
 
 function insertIncidentPhrase(groupName, phrase) {
@@ -1418,6 +1476,10 @@ function insertIncidentPhrase(groupName, phrase) {
 
   const text = group.withTime ? `${formatLocalTimeMinute()} ${phrase}` : phrase;
   insertTextAtFieldEnd(field, text);
+  syncIncidentCoreFieldsBridge();
+  if (groupName === "notes") {
+    renderIncidentNotesTimeline();
+  }
   saveIncidentState();
   setHandoverSummaryStatus("");
   updateHandoverSummary();
@@ -1425,21 +1487,9 @@ function insertIncidentPhrase(groupName, phrase) {
 }
 
 function initIncidentPhraseMenus() {
-  Object.entries(INCIDENT_PHRASE_GROUPS).forEach(([groupName, group]) => {
-    const menu = document.getElementById(group.menuId);
-    if (!menu) return;
-
-    const buttons = group.phrases.map((phrase) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "phrase-menu-item";
-      button.textContent = phrase;
-      button.addEventListener("click", () => insertIncidentPhrase(groupName, phrase));
-      return button;
-    });
-
-    menu.replaceChildren(...buttons);
-  });
+  if (window.__mspIncidentPhrases && typeof window.__mspIncidentPhrases.syncPhraseGroups === "function") {
+    window.__mspIncidentPhrases.syncPhraseGroups(getIncidentPhraseGroups());
+  }
 }
 
 function getMissingHandoverSummaryFields(state = readIncidentStateFromPage()) {
@@ -1455,39 +1505,58 @@ function focusHandoverSummaryField(item) {
   field.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
-function updateHandoverSummaryBadge(state = readIncidentStateFromPage()) {
-  const badge = document.getElementById("handoverSummaryBadge");
-  if (!badge) return;
+function syncHandoverSummaryStatusBridge() {
+  if (window.__mspHandoverSummaryStatus && typeof window.__mspHandoverSummaryStatus.syncState === "function") {
+    window.__mspHandoverSummaryStatus.syncState(handoverSummaryStatusState);
+    return true;
+  }
+  return false;
+}
 
+function focusHandoverSummaryStatusField(fieldId) {
+  const action = handoverSummaryStatusActions.get(fieldId);
+  if (typeof action === "function") {
+    action();
+  }
+}
+
+function getHandoverSummaryBadgeState(state = readIncidentStateFromPage()) {
   const missingFields = getMissingHandoverSummaryFields(state);
   const isComplete = missingFields.length === 0;
-  badge.className = `summary-badge ${isComplete ? "complete" : "missing"}`;
-  badge.textContent = isComplete ? "摘要完整" : `缺 ${missingFields.length} 項`;
-  badge.title = isComplete
-    ? "交班摘要可複製"
-    : `尚缺：${missingFields.map((item) => item.label).join("、")}`;
+  return {
+    isComplete,
+    missingCount: missingFields.length,
+    text: isComplete ? "摘要完整" : `缺 ${missingFields.length} 項`,
+    title: isComplete
+      ? "交班摘要可複製"
+      : `尚缺：${missingFields.map((item) => item.label).join("、")}`,
+  };
+}
+
+function updateHandoverSummaryBadge(state = readIncidentStateFromPage()) {
+  const badgeState = getHandoverSummaryBadgeState(state);
+
+  if (window.__mspHandoverSummaryBadge && typeof window.__mspHandoverSummaryBadge.syncState === "function") {
+    window.__mspHandoverSummaryBadge.syncState(badgeState);
+  }
 }
 
 function setHandoverSummaryMissingStatus(missingFields) {
-  const status = document.getElementById("handoverSummaryStatus");
-  if (!status) return;
-
-  status.className = "handover-summary-status error";
-
-  const nodes = [document.createTextNode("交班摘要還缺：")];
-  missingFields.forEach((item, index) => {
-    if (index > 0) nodes.push(document.createTextNode("、"));
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "missing-field-link";
-    button.textContent = item.label;
-    button.addEventListener("click", () => focusHandoverSummaryField(item));
-    nodes.push(button);
+  handoverSummaryStatusActions.clear();
+  const fields = (missingFields || []).map((item) => {
+    handoverSummaryStatusActions.set(item.field, () => focusHandoverSummaryField(item));
+    return {
+      id: item.field,
+      label: item.label,
+    };
   });
-  nodes.push(document.createTextNode("。"));
+  handoverSummaryStatusState = {
+    fields,
+    message: "",
+    type: "error",
+  };
 
-  status.replaceChildren(...nodes);
+  syncHandoverSummaryStatusBridge();
 }
 
 function scrollToIncidentHistory() {
@@ -1505,21 +1574,14 @@ function clearIncidentHistoryFilters() {
     focus: "",
   };
 
-  const search = document.getElementById("incidentHistorySearch");
-  const customer = document.getElementById("incidentHistoryCustomerFilter");
-  const system = document.getElementById("incidentHistorySystemFilter");
-  if (search) search.value = "";
-  if (customer) customer.value = "";
-  if (system) system.value = "";
+  syncIncidentHistoryFilterBridge();
 }
 
-function createInlineAction(label, onClick, className = "readiness-action") {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = className;
-  button.textContent = label;
-  button.addEventListener("click", onClick);
-  return button;
+function executeHandoverReadinessAction(actionId) {
+  const action = handoverReadinessActions.get(actionId);
+  if (typeof action === "function") {
+    action();
+  }
 }
 
 function getOpenIncidentRecords(records = incidentRecordsCache) {
@@ -1535,10 +1597,7 @@ function setIncidentHistoryFocus(focusName) {
   setIncidentHistoryView("open");
 }
 
-function renderHandoverReadiness(state = readIncidentStateFromPage()) {
-  const bar = document.getElementById("handoverReadinessBar");
-  if (!bar) return;
-
+function getHandoverReadinessState(state = readIncidentStateFromPage()) {
   const currentHasContent = hasIncidentContent(state);
   const missingSummaryFields = currentHasContent ? getMissingHandoverSummaryFields(state) : [];
   const dueRecords = getOpenIncidentRecords().filter(isIncidentRecordDue);
@@ -1546,129 +1605,112 @@ function renderHandoverReadiness(state = readIncidentStateFromPage()) {
   const readyToResolveRecords = getOpenIncidentRecords().filter(isIncidentRecordReadyToResolve);
   const staleResolvedRecords = incidentRecordsCache.filter(isIncidentRecordResolved);
   const issues = [];
+  handoverReadinessActions.clear();
+
+  const addIssue = (id, label, action) => {
+    handoverReadinessActions.set(id, action);
+    issues.push({ id, label });
+  };
 
   if (missingSummaryFields.length) {
-    issues.push({
-      label: `摘要待補 ${missingSummaryFields.length} 項`,
-      action: () => {
+    addIssue(
+      "missing-summary",
+      `摘要待補 ${missingSummaryFields.length} 項`,
+      () => {
         setHandoverSummaryMissingStatus(missingSummaryFields);
         focusHandoverSummaryField(missingSummaryFields[0]);
       },
-    });
+    );
   }
 
   if (hasCurrentIncidentUnsavedChanges(state)) {
-    issues.push({
-      label: activeIncidentRecordId ? "目前事件未更新" : "目前事件未儲存",
-      action: () => saveIncidentRecord(),
-    });
+    addIssue(
+      "save-current-incident",
+      activeIncidentRecordId ? "目前事件未更新" : "目前事件未儲存",
+      () => saveIncidentRecord(),
+    );
   }
 
   if (dueRecords.length) {
-    issues.push({
-      label: `待確認 ${dueRecords.length} 件`,
-      action: () => {
+    addIssue(
+      "due-records",
+      `待確認 ${dueRecords.length} 件`,
+      () => {
         clearIncidentHistoryFilters();
         setIncidentHistoryView("open");
         scrollToIncidentHistory();
       },
-    });
+    );
   }
 
   if (recordsMissingNextStep.length) {
-    issues.push({
-      label: `未填下一步 ${recordsMissingNextStep.length} 件`,
-      action: () => {
+    addIssue(
+      "missing-next-step-records",
+      `未填下一步 ${recordsMissingNextStep.length} 件`,
+      () => {
         clearIncidentHistoryFilters();
         setIncidentHistoryView("open");
         scrollToIncidentHistory();
       },
-    });
+    );
   }
 
   if (readyToResolveRecords.length) {
-    issues.push({
-      label: `可結案 ${readyToResolveRecords.length} 件`,
-      action: () => {
+    addIssue(
+      "ready-to-resolve-records",
+      `可結案 ${readyToResolveRecords.length} 件`,
+      () => {
         clearIncidentHistoryFilters();
         setIncidentHistoryView("open");
         scrollToIncidentHistory();
       },
-    });
+    );
   }
 
   if (staleResolvedRecords.length && incidentHistoryView === "open") {
-    issues.push({
-      label: `已解決仍在列表 ${staleResolvedRecords.length} 件`,
-      action: () => loadIncidentRecords({ showLoading: false }),
-    });
+    addIssue(
+      "refresh-resolved-records",
+      `已解決仍在列表 ${staleResolvedRecords.length} 件`,
+      () => loadIncidentRecords({ showLoading: false }),
+    );
   }
 
   const isReady = issues.length === 0;
-  bar.className = `handover-readiness-bar ${isReady ? "ready" : "attention"}`;
-
-  const label = createTextElement("span", "readiness-label", isReady ? "可交班" : `交班提醒 ${issues.length} 項`);
-  const message = createTextElement(
-    "span",
-    "readiness-message",
-    isReady ? "摘要與未結案事件看起來都完整。" : "這些只是檢查提示，可視情況處理。",
-  );
-  const actions = document.createElement("div");
-  actions.className = "readiness-actions";
-  issues.forEach((issue) => {
-    actions.appendChild(createInlineAction(issue.label, issue.action));
-  });
-
-  bar.replaceChildren(label, message, actions);
+  return {
+    isReady,
+    issues,
+    label: isReady ? "可交班" : `交班提醒 ${issues.length} 項`,
+    message: isReady ? "摘要與未結案事件看起來都完整。" : "這些只是檢查提示，可視情況處理。",
+  };
 }
 
-function parseIncidentNotesTimeline(notes) {
-  return String(notes || "")
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const match = line.match(/^(?:(\d{4}[/-]\d{1,2}[/-]\d{1,2}|\d{1,2}[/-]\d{1,2})\s+)?(\d{1,2}:\d{2})(?:\s*[-|]\s*)?(.*)$/);
-      if (!match) {
-        return {
-          time: "補充",
-          text: line,
-          hasTime: false,
-        };
-      }
+function renderHandoverReadiness(state = readIncidentStateFromPage()) {
+  const readinessState = getHandoverReadinessState(state);
 
-      return {
-        time: `${match[1] ? `${match[1]} ` : ""}${match[2]}`,
-        text: match[3] ? match[3].trim() : line,
-        hasTime: true,
-      };
-    });
+  if (window.__mspHandoverReadiness && typeof window.__mspHandoverReadiness.syncState === "function") {
+    window.__mspHandoverReadiness.syncState(readinessState);
+  }
 }
 
-function renderIncidentNotesTimeline() {
-  const timeline = document.getElementById("incidentNotesTimeline");
-  const notes = document.getElementById("incidentNotes");
-  if (!timeline || !notes) return;
-
-  const entries = parseIncidentNotesTimeline(notes.value);
-  if (!entries.length || !entries.some((entry) => entry.hasTime)) {
-    timeline.replaceChildren();
-    return;
+function readIncidentNotesValueFromBridge() {
+  if (window.__mspIncidentNotesTimeline && typeof window.__mspIncidentNotesTimeline.getNotes === "function") {
+    return window.__mspIncidentNotesTimeline.getNotes();
   }
 
-  const meta = createTextElement("div", "notes-timeline-meta", `時間軸 ${entries.length} 筆`);
-  const list = document.createElement("div");
-  list.className = "notes-timeline-list";
+  return null;
+}
 
-  entries.forEach((entry) => {
-    const row = document.createElement("div");
-    row.className = entry.hasTime ? "notes-timeline-row" : "notes-timeline-row muted";
-    row.appendChild(createTextElement("span", "notes-timeline-time", entry.time));
-    row.appendChild(createTextElement("span", "notes-timeline-text", entry.text));
-    list.appendChild(row);
-  });
+function readIncidentNotesValueFromPage() {
+  const notes = getIncidentFieldByName("notes");
+  return notes ? notes.value : "";
+}
 
-  timeline.replaceChildren(meta, list);
+function renderIncidentNotesTimeline(state) {
+  const notes = state && state.fields ? state.fields.notes : readIncidentNotesValueFromPage();
+
+  if (window.__mspIncidentNotesTimeline && typeof window.__mspIncidentNotesTimeline.syncNotes === "function") {
+    window.__mspIncidentNotesTimeline.syncNotes(notes);
+  }
 }
 
 async function copyHandoverSummary() {
@@ -1682,8 +1724,7 @@ async function copyHandoverSummary() {
       return;
     }
 
-    updateHandoverSummary();
-    const summary = document.getElementById("handoverSummary").value;
+    const summary = updateHandoverSummary();
     await navigator.clipboard.writeText(summary);
 
     markIncidentCheck("整理交班資訊");
@@ -1695,101 +1736,64 @@ async function copyHandoverSummary() {
   }
 }
 
-function setPhoneCallStatus(message, dialUrl) {
-  const status = document.getElementById("phoneCallStatus");
-  if (!status) return;
-
-  if (!message) {
-    status.replaceChildren();
-    return;
-  }
-
-  const messageNode = document.createElement("span");
-  messageNode.textContent = message;
-
-  if (!dialUrl) {
-    status.replaceChildren(messageNode);
-    return;
-  }
-
-  const dialLink = document.createElement("a");
-  dialLink.href = dialUrl;
-  dialLink.textContent = "再次撥號";
-  status.replaceChildren(messageNode, dialLink);
-}
-
-function startPhoneTestCall() {
-  const phone = PHONE_TEST_NUMBER.replace(/\s+/g, "");
-  const dialUrl = `tel:${phone}`;
-
-  markOncallChecklistItem("phone-test", false);
-  setPhoneCallStatus(
-    `撥號中：${phone}，接通後按 ${PHONE_TEST_POST_CONNECT_KEY}。`,
-    dialUrl,
-  );
-
-  window.location.href = dialUrl;
-}
-
 function setJiraStatus(message, type, linkUrl) {
-  const status = document.getElementById("jiraStatus");
-  if (!status) return;
+  jiraStatusState = {
+    linkUrl: linkUrl || "",
+    message: message || "",
+    type: type || "",
+  };
 
-  status.className = type ? `jira-status ${type}` : "jira-status";
-
-  if (!message) {
-    status.replaceChildren();
-    return;
+  if (window.__mspJiraStatus && typeof window.__mspJiraStatus.syncState === "function") {
+    window.__mspJiraStatus.syncState(jiraStatusState);
   }
+}
 
-  const messageNode = document.createElement("span");
-  messageNode.textContent = message;
-
-  if (!linkUrl) {
-    status.replaceChildren(messageNode);
-    return;
+function refreshJiraStatus() {
+  if (window.__mspJiraStatus && typeof window.__mspJiraStatus.syncState === "function") {
+    window.__mspJiraStatus.syncState(jiraStatusState);
   }
-
-  const link = document.createElement("a");
-  link.href = linkUrl;
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  link.textContent = "開啟 Jira";
-  status.replaceChildren(messageNode, link);
 }
 
 function setIncidentHistoryStatus(message, type) {
-  const status = document.getElementById("incidentHistoryStatus");
-  if (!status) return;
+  incidentHistoryStatusState = {
+    message: message || "",
+    type: type || "",
+  };
 
-  status.className = type ? `incident-history-status ${type}` : "incident-history-status";
-  status.textContent = message || "";
+  if (window.__mspIncidentHistoryStatus && typeof window.__mspIncidentHistoryStatus.syncState === "function") {
+    window.__mspIncidentHistoryStatus.syncState(incidentHistoryStatusState);
+  }
+}
+
+function refreshIncidentHistoryStatus() {
+  if (window.__mspIncidentHistoryStatus && typeof window.__mspIncidentHistoryStatus.syncState === "function") {
+    window.__mspIncidentHistoryStatus.syncState(incidentHistoryStatusState);
+  }
 }
 
 function setHandoverSummaryStatus(message, type) {
-  const status = document.getElementById("handoverSummaryStatus");
-  if (!status) return;
+  handoverSummaryStatusActions.clear();
+  handoverSummaryStatusState = {
+    fields: [],
+    message: message || "",
+    type: type || "",
+  };
 
-  status.className = type ? `handover-summary-status ${type}` : "handover-summary-status";
-  status.textContent = message || "";
-}
-
-function setCreateJiraButtonLoading(isLoading) {
-  const button = document.getElementById("createJiraIssueButton");
-  if (!button) return;
-
-  button.disabled = isLoading;
-  button.textContent = isLoading ? "建立中..." : "建立 Jira 小卡";
+  syncHandoverSummaryStatusBridge();
 }
 
 function setSaveIncidentButtonLoading(isLoading) {
+  incidentSaveButtonLoading = Boolean(isLoading);
+
+  if (syncIncidentSaveStatusBridge()) return;
+
   const button = document.getElementById("saveIncidentButton");
   if (!button) return;
 
-  button.disabled = isLoading;
-  button.textContent = isLoading
-    ? (activeIncidentRecordId ? "更新中..." : "儲存中...")
-    : (activeIncidentRecordId ? "更新事件" : "儲存事件");
+  button.disabled = incidentSaveButtonLoading;
+  button.textContent = incidentSaveButtonLoading
+    ? (activeIncidentRecordId ? "更新中" : "儲存中")
+    : (activeIncidentRecordId ? "更新" : "儲存");
 }
 
 function markIncidentCheck(label) {
@@ -1797,26 +1801,12 @@ function markIncidentCheck(label) {
   if (!check || check.checked) return false;
 
   check.checked = true;
+  if (window.__mspIncidentChecklist && typeof window.__mspIncidentChecklist.markCheck === "function") {
+    window.__mspIncidentChecklist.markCheck(label);
+  } else {
+    syncIncidentChecklistBridge();
+  }
   return true;
-}
-
-function formatJiraCreateError(data) {
-  if (data && Array.isArray(data.missing) && data.missing.length) {
-    return `Jira 尚未設定：${data.missing.join("、")}`;
-  }
-
-  const details = data && data.details;
-  const messages = [];
-
-  if (details && Array.isArray(details.errorMessages)) {
-    messages.push(...details.errorMessages);
-  }
-
-  if (details && details.errors) {
-    messages.push(...Object.values(details.errors));
-  }
-
-  return messages.length ? messages.join("；") : (data && data.error) || "建立 Jira 小卡失敗";
 }
 
 function hasIncidentContent(state) {
@@ -1826,46 +1816,37 @@ function hasIncidentContent(state) {
     || Object.values(state.followups || {}).some(Boolean);
 }
 
-async function createJiraIssue() {
+function prepareJiraIssueDraft() {
   const state = readIncidentStateFromPage();
 
-  if (!hasIncidentContent(state)) {
-    setJiraStatus("先填寫事件內容，再建立 Jira 小卡。", "error");
-    return;
+  clearError();
+  if (hasIncidentContent(state)) {
+    updateHandoverSummary();
   }
 
-  try {
-    clearError();
-    setJiraStatus("正在建立 Jira 小卡...", "pending");
-    setCreateJiraButtonLoading(true);
-    updateHandoverSummary();
+  return {
+    handoverSummary: buildHandoverSummary("full"),
+    hasContent: hasIncidentContent(state),
+    incident: state,
+  };
+}
 
-    const res = await fetch("/api/jira/issues", {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        incident: state,
-        handoverSummary: buildHandoverSummary("full"),
-      }),
-    });
-    const data = await res.json();
+function markJiraIssueCreated() {
+  markIncidentCheck("補上 Jira / 小卡處理紀錄");
+  saveIncidentState();
+  updateHandoverSummary();
+}
 
-    if (!res.ok) {
-      throw new Error(formatJiraCreateError(data));
-    }
-
-    markIncidentCheck("補上 Jira / 小卡處理紀錄");
-    saveIncidentState();
-    updateHandoverSummary();
-    setJiraStatus(`已建立 Jira 小卡：${data.key}`, "success", data.url);
-  } catch (err) {
-    setJiraStatus("建立 Jira 小卡失敗：" + err.message, "error");
-  } finally {
-    setCreateJiraButtonLoading(false);
+function createJiraIssue() {
+  if (
+    window.__mspJiraStatus
+    && typeof window.__mspJiraStatus.createIssueFromCurrentIncident === "function"
+  ) {
+    return window.__mspJiraStatus.createIssueFromCurrentIncident();
   }
+
+  setJiraStatus("Jira 建卡功能尚未載入完成。", "error");
+  return undefined;
 }
 
 function formatIncidentRecordTime(value) {
@@ -1982,6 +1963,41 @@ function getIncidentRecordNextCheckLabel(record) {
   return `${label} ${formatIncidentRecordTime(nextCheckValue)}`;
 }
 
+function getIncidentRecordViewModel(record) {
+  const trackingStatus = getIncidentRecordTrackingStatus(record);
+  const savedTimeValue = record && (record.updatedAt || record.createdAt);
+  const nextCheckValue = getIncidentRecordNextCheckValue(record);
+
+  return {
+    id: String(record && record.id || ""),
+    isDue: isIncidentRecordDue(record),
+    isReadyToResolve: isIncidentRecordReadyToResolve(record),
+    isResolved: isIncidentRecordResolved(record),
+    meta: getIncidentRecordMeta(record),
+    nextCheckDateTime: nextCheckValue,
+    nextCheckLabel: getIncidentRecordNextCheckLabel(record),
+    savedTime: formatIncidentRecordSavedTime(record),
+    savedTimeDateTime: String(savedTimeValue || ""),
+    summary: String(record && record.summary || ""),
+    title: String(record && record.title || "未命名事件"),
+    trackingClass: getIncidentTrackingStatusClass(trackingStatus),
+    trackingStatus,
+  };
+}
+
+function syncIncidentHistoryListBridge(nextState) {
+  if (window.__mspIncidentHistoryList && typeof window.__mspIncidentHistoryList.syncState === "function") {
+    window.__mspIncidentHistoryList.syncState(nextState);
+    return true;
+  }
+
+  return false;
+}
+
+function setIncidentHistoryListMessage(message) {
+  syncIncidentHistoryListBridge({ emptyText: message, records: [] });
+}
+
 function getIncidentFocusCounts(records = incidentRecordsCache) {
   const openRecords = getOpenIncidentRecords(records);
 
@@ -1993,6 +2009,31 @@ function getIncidentFocusCounts(records = incidentRecordsCache) {
     waiting: openRecords.filter(isIncidentRecordWaiting).length,
     readyToResolve: openRecords.filter(isIncidentRecordReadyToResolve).length,
   };
+}
+
+const INCIDENT_HISTORY_FOCUS_OPTIONS = [
+  { key: "due", label: "待確認", title: "下次確認時間已到或逾期" },
+  { key: "upcoming", label: "2 小時內", title: "下次確認時間在 2 小時內" },
+  { key: "missingNextStep", label: "缺下一步", title: "仍需追蹤但未填下一步" },
+  { key: "waiting", label: "等回覆", title: "正在等待客戶或二線回覆" },
+  { key: "readyToResolve", label: "可結案", title: "追蹤狀態已標成可結案" },
+];
+
+function getIncidentFocusState(records = incidentRecordsCache) {
+  return {
+    activeFocus: incidentHistoryFilters.focus,
+    counts: getIncidentFocusCounts(records),
+    options: INCIDENT_HISTORY_FOCUS_OPTIONS,
+  };
+}
+
+function syncIncidentFocusBridge(records = incidentRecordsCache) {
+  if (window.__mspIncidentHistoryFocus && typeof window.__mspIncidentHistoryFocus.syncState === "function") {
+    window.__mspIncidentHistoryFocus.syncState(getIncidentFocusState(records));
+    return true;
+  }
+
+  return false;
 }
 
 function matchesIncidentHistoryFocus(record) {
@@ -2012,46 +2053,8 @@ function matchesIncidentHistoryFocus(record) {
   }
 }
 
-function createIncidentFocusButton(config, counts) {
-  const button = document.createElement("button");
-  const isActive = incidentHistoryFilters.focus === config.key;
-  const count = counts[config.key] || 0;
-
-  button.type = "button";
-  button.className = isActive ? "incident-focus-chip active" : "incident-focus-chip";
-  button.setAttribute("aria-pressed", String(isActive));
-  button.title = config.title || config.label;
-
-  const label = createTextElement("span", "incident-focus-label", config.label);
-  const value = createTextElement("strong", "incident-focus-count", String(count));
-  button.replaceChildren(label, value);
-  button.addEventListener("click", () => setIncidentHistoryFocus(config.key));
-
-  return button;
-}
-
 function renderIncidentFocusBar(records = incidentRecordsCache) {
-  const bar = document.getElementById("incidentFocusBar");
-  if (!bar) return;
-
-  const counts = getIncidentFocusCounts(records);
-  const summary = createTextElement("div", "incident-focus-summary", `未結案 ${counts.open} 件`);
-  const buttons = [
-    { key: "due", label: "待確認", title: "下次確認時間已到或逾期" },
-    { key: "upcoming", label: "2 小時內", title: "下次確認時間在 2 小時內" },
-    { key: "missingNextStep", label: "缺下一步", title: "仍需追蹤但未填下一步" },
-    { key: "waiting", label: "等回覆", title: "正在等待客戶或二線回覆" },
-    { key: "readyToResolve", label: "可結案", title: "追蹤狀態已標成可結案" },
-  ].map((config) => createIncidentFocusButton(config, counts));
-
-  const clearButton = document.createElement("button");
-  clearButton.type = "button";
-  clearButton.className = incidentHistoryFilters.focus ? "incident-focus-clear visible" : "incident-focus-clear";
-  clearButton.textContent = "清除焦點";
-  clearButton.disabled = !incidentHistoryFilters.focus;
-  clearButton.addEventListener("click", () => setIncidentHistoryFocus(incidentHistoryFilters.focus));
-
-  bar.replaceChildren(summary, ...buttons, clearButton);
+  syncIncidentFocusBridge(records);
 }
 
 function getIncidentRecordSortTime(record) {
@@ -2155,23 +2158,31 @@ function getDuplicateIncidentMatches(state = readIncidentStateFromPage()) {
 }
 
 function renderDuplicateIncidentStatus(state = readIncidentStateFromPage()) {
-  const status = document.getElementById("duplicateIncidentStatus");
-  if (!status) return;
-
   const matches = getDuplicateIncidentMatches(state);
-  if (!matches.length) {
-    status.replaceChildren();
-    return;
+  duplicateIncidentActions.clear();
+  matches.forEach((record) => {
+    duplicateIncidentActions.set(record.id, () => restoreIncidentRecord(record));
+  });
+
+  if (window.__mspDuplicateIncidentStatus && typeof window.__mspDuplicateIncidentStatus.syncState === "function") {
+    window.__mspDuplicateIncidentStatus.syncState({
+      matches: matches.map((record) => ({
+        id: record.id,
+        title: record.title || "未命名事件",
+      })),
+    });
   }
+}
 
-  const label = createTextElement("span", "", "可能已有相似未結案事件：");
-  const actions = matches.map((record) => createInlineAction(
-    record.title || "未命名事件",
-    () => restoreIncidentRecord(record),
-    "duplicate-incident-link",
-  ));
+function refreshDuplicateIncidentStatus() {
+  renderDuplicateIncidentStatus();
+}
 
-  status.replaceChildren(label, ...actions);
+function restoreDuplicateIncidentMatch(matchId) {
+  const action = duplicateIncidentActions.get(matchId);
+  if (typeof action === "function") {
+    action();
+  }
 }
 
 function restoreIncidentRecord(record) {
@@ -2184,12 +2195,23 @@ function restoreIncidentRecord(record) {
   updateHandoverSummary();
   setHandoverSummaryStatus("");
   setIncidentHistoryStatus(`已載入事件：${record.title || record.id}。後續儲存會更新這筆紀錄。`, "success");
-  setActiveView("dashboard");
+  activateAppView("dashboard");
   const title = document.getElementById("incidentTitle");
   if (title) title.focus();
 }
 
+function getIncidentRecordById(recordId) {
+  const id = String(recordId || "");
+  return incidentRecordsCache.find((record) => String(record.id || "") === id) || null;
+}
+
+function restoreIncidentRecordById(recordId) {
+  restoreIncidentRecord(getIncidentRecordById(recordId));
+}
+
 async function copyIncidentRecordSummary(record) {
+  if (!record) return;
+
   try {
     await navigator.clipboard.writeText(record.handoverSummary || "");
     setIncidentHistoryStatus("已複製這筆事件的交班摘要。", "success");
@@ -2198,21 +2220,17 @@ async function copyIncidentRecordSummary(record) {
   }
 }
 
+async function copyIncidentRecordSummaryById(recordId) {
+  await copyIncidentRecordSummary(getIncidentRecordById(recordId));
+}
+
 async function resolveIncidentRecord(record) {
   if (!record || !record.id) return;
   if (!confirm(`確定要將「${record.title || "未命名事件"}」標記為已解決？`)) return;
 
   try {
     setIncidentHistoryStatus("正在標記已解決...", "pending");
-    const res = await fetch(`/api/incidents/${encodeURIComponent(record.id)}/resolve`, {
-      method: "PATCH",
-      cache: "no-store",
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Resolve incident failed");
-    }
+    const data = await getIncidentHistoryApi("resolveRecord")(record.id);
 
     if (activeIncidentRecordId === record.id && data.incident && data.incident.incident) {
       applyIncidentStateToPage(data.incident.incident);
@@ -2224,8 +2242,31 @@ async function resolveIncidentRecord(record) {
     setIncidentHistoryStatus(`已結案：${data.incident.title}`, "success");
     await loadIncidentRecords({ showLoading: false });
   } catch (err) {
+    if (isStorageUnavailableError(err)) {
+      const localRecord = resolveLocalIncidentRecord(record);
+      if (!localRecord) {
+        setIncidentHistoryStatus("找不到本機事件紀錄。", "error");
+        return;
+      }
+
+      if (activeIncidentRecordId === record.id && localRecord.incident) {
+        applyIncidentStateToPage(localRecord.incident);
+        setActiveIncidentSavedSnapshot(localRecord);
+        saveIncidentState();
+        updateHandoverSummary();
+      }
+
+      setIncidentHistoryStatus(`已在此瀏覽器標記結案：${localRecord.title}`, "success");
+      loadLocalIncidentRecords(false);
+      return;
+    }
+
     setIncidentHistoryStatus("標記已解決失敗：" + err.message, "error");
   }
+}
+
+async function resolveIncidentRecordById(recordId) {
+  await resolveIncidentRecord(getIncidentRecordById(recordId));
 }
 
 async function deleteIncidentRecord(record) {
@@ -2234,15 +2275,7 @@ async function deleteIncidentRecord(record) {
 
   try {
     setIncidentHistoryStatus("正在刪除事件紀錄...", "pending");
-    const res = await fetch(`/api/incidents/${encodeURIComponent(record.id)}`, {
-      method: "DELETE",
-      cache: "no-store",
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Delete incident failed");
-    }
+    await getIncidentHistoryApi("deleteRecord")(record.id);
 
     if (activeIncidentRecordId === record.id) {
       setActiveIncidentRecordId("");
@@ -2251,103 +2284,27 @@ async function deleteIncidentRecord(record) {
     setIncidentHistoryStatus("已刪除事件紀錄。", "success");
     await loadIncidentRecords({ showLoading: false });
   } catch (err) {
+    if (isStorageUnavailableError(err)) {
+      if (!deleteLocalIncidentRecord(record)) {
+        setIncidentHistoryStatus("找不到本機事件紀錄。", "error");
+        return;
+      }
+
+      if (activeIncidentRecordId === record.id) {
+        setActiveIncidentRecordId("");
+      }
+
+      setIncidentHistoryStatus("已刪除此瀏覽器的本機事件紀錄。", "success");
+      loadLocalIncidentRecords(false);
+      return;
+    }
+
     setIncidentHistoryStatus("刪除事件紀錄失敗：" + err.message, "error");
   }
 }
 
-function createIncidentRecordCard(record) {
-  const card = document.createElement("article");
-  card.className = "incident-record";
-  card.classList.toggle("resolved", isIncidentRecordResolved(record));
-  card.classList.toggle("due", isIncidentRecordDue(record));
-  card.classList.toggle("ready-to-resolve", isIncidentRecordReadyToResolve(record));
-
-  const restoreButton = document.createElement("button");
-  restoreButton.type = "button";
-  restoreButton.className = "incident-record-action primary";
-  restoreButton.textContent = "載入";
-  restoreButton.addEventListener("click", () => restoreIncidentRecord(record));
-
-  const copyButton = document.createElement("button");
-  copyButton.type = "button";
-  copyButton.className = "incident-record-action";
-  copyButton.textContent = "複製";
-  copyButton.addEventListener("click", () => copyIncidentRecordSummary(record));
-
-  const resolveButton = document.createElement("button");
-  resolveButton.type = "button";
-  resolveButton.className = "incident-record-action";
-  resolveButton.textContent = "結案";
-  resolveButton.addEventListener("click", () => resolveIncidentRecord(record));
-
-  const deleteButton = document.createElement("button");
-  deleteButton.type = "button";
-  deleteButton.className = "incident-record-action danger";
-  deleteButton.textContent = "刪除";
-  deleteButton.addEventListener("click", () => deleteIncidentRecord(record));
-
-  const body = document.createElement("div");
-  body.className = "incident-record-body";
-
-  const top = document.createElement("div");
-  top.className = "incident-record-top";
-
-  const side = document.createElement("div");
-  side.className = "incident-record-side";
-
-  const topActions = document.createElement("div");
-  topActions.className = "incident-record-actions";
-  topActions.appendChild(restoreButton);
-  topActions.appendChild(copyButton);
-  if (!isIncidentRecordResolved(record)) {
-    topActions.appendChild(resolveButton);
-  }
-  topActions.appendChild(deleteButton);
-
-  const savedTime = formatIncidentRecordSavedTime(record);
-  const trackingStatus = getIncidentRecordTrackingStatus(record);
-  if (isIncidentRecordResolved(record)) {
-    side.appendChild(createTextElement("div", "incident-record-state", "已解決"));
-  } else if (trackingStatus) {
-    side.appendChild(createTextElement(
-      "div",
-      `incident-record-tracking ${getIncidentTrackingStatusClass(trackingStatus)}`.trim(),
-      trackingStatus,
-    ));
-  }
-
-  const nextCheckLabel = getIncidentRecordNextCheckLabel(record);
-  if (nextCheckLabel) {
-    const reminder = createTextElement(
-      "time",
-      isIncidentRecordDue(record) ? "incident-record-reminder due" : "incident-record-reminder",
-      nextCheckLabel,
-    );
-    reminder.dateTime = getIncidentRecordNextCheckValue(record);
-    side.appendChild(reminder);
-  }
-  if (savedTime) {
-    const time = createTextElement("time", "incident-record-time", savedTime);
-    time.dateTime = record.updatedAt || record.createdAt;
-    side.appendChild(time);
-  }
-  side.appendChild(topActions);
-
-  const titleBlock = document.createElement("div");
-  titleBlock.className = "incident-record-title-block";
-  titleBlock.appendChild(createTextElement("h4", "incident-record-title", record.title || "未命名事件"));
-  titleBlock.appendChild(createTextElement("div", "incident-record-meta", getIncidentRecordMeta(record)));
-
-  if (record.summary) {
-    titleBlock.appendChild(createTextElement("p", "incident-record-summary", record.summary));
-  }
-
-  top.appendChild(titleBlock);
-  top.appendChild(side);
-  body.appendChild(top);
-  card.appendChild(body);
-
-  return card;
+async function deleteIncidentRecordById(recordId) {
+  await deleteIncidentRecord(getIncidentRecordById(recordId));
 }
 
 function getUniqueIncidentFilterValues(records, fieldName) {
@@ -2357,35 +2314,31 @@ function getUniqueIncidentFilterValues(records, fieldName) {
     .sort((a, b) => a.localeCompare(b, "zh-Hant"));
 }
 
-function setIncidentFilterOptions(select, placeholder, values, currentValue) {
-  if (!select) return "";
+function getIncidentHistoryFilterState(records = incidentRecordsCache) {
+  const customerOptions = getUniqueIncidentFilterValues(records, "customer");
+  const systemOptions = getUniqueIncidentFilterValues(records, "system");
 
-  const options = [""].concat(values);
-  const nextValue = options.includes(currentValue) ? currentValue : "";
+  return {
+    customer: customerOptions.includes(incidentHistoryFilters.customer) ? incidentHistoryFilters.customer : "",
+    customerOptions,
+    keyword: incidentHistoryFilters.keyword,
+    system: systemOptions.includes(incidentHistoryFilters.system) ? incidentHistoryFilters.system : "",
+    systemOptions,
+  };
+}
 
-  select.replaceChildren(...options.map((value) => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value || placeholder;
-    return option;
-  }));
-  select.value = nextValue;
-  return nextValue;
+function syncIncidentHistoryFilterBridge(records = incidentRecordsCache) {
+  const nextState = getIncidentHistoryFilterState(records);
+  incidentHistoryFilters.customer = nextState.customer;
+  incidentHistoryFilters.system = nextState.system;
+
+  if (window.__mspIncidentHistoryFilters && typeof window.__mspIncidentHistoryFilters.syncState === "function") {
+    window.__mspIncidentHistoryFilters.syncState(nextState);
+  }
 }
 
 function renderIncidentHistoryFilterOptions(records) {
-  incidentHistoryFilters.customer = setIncidentFilterOptions(
-    document.getElementById("incidentHistoryCustomerFilter"),
-    "全部客戶",
-    getUniqueIncidentFilterValues(records, "customer"),
-    incidentHistoryFilters.customer,
-  );
-  incidentHistoryFilters.system = setIncidentFilterOptions(
-    document.getElementById("incidentHistorySystemFilter"),
-    "全部系統",
-    getUniqueIncidentFilterValues(records, "system"),
-    incidentHistoryFilters.system,
-  );
+  syncIncidentHistoryFilterBridge(records);
 }
 
 function getFilteredIncidentRecords(records) {
@@ -2408,36 +2361,25 @@ function getFilteredIncidentRecords(records) {
 }
 
 function initIncidentHistoryFilters() {
-  const search = document.getElementById("incidentHistorySearch");
-  const customer = document.getElementById("incidentHistoryCustomerFilter");
-  const system = document.getElementById("incidentHistorySystemFilter");
+  syncIncidentHistoryFilterBridge();
+}
 
-  if (search) {
-    search.addEventListener("input", () => {
-      incidentHistoryFilters.keyword = search.value;
-      renderIncidentRecords(incidentRecordsCache);
-    });
-  }
+function applyIncidentHistoryFilters(nextFilters = {}) {
+  incidentHistoryFilters.keyword = Object.prototype.hasOwnProperty.call(nextFilters, "keyword")
+    ? String(nextFilters.keyword || "")
+    : incidentHistoryFilters.keyword;
+  incidentHistoryFilters.customer = Object.prototype.hasOwnProperty.call(nextFilters, "customer")
+    ? String(nextFilters.customer || "")
+    : incidentHistoryFilters.customer;
+  incidentHistoryFilters.system = Object.prototype.hasOwnProperty.call(nextFilters, "system")
+    ? String(nextFilters.system || "")
+    : incidentHistoryFilters.system;
 
-  if (customer) {
-    customer.addEventListener("change", () => {
-      incidentHistoryFilters.customer = customer.value;
-      renderIncidentRecords(incidentRecordsCache);
-    });
-  }
-
-  if (system) {
-    system.addEventListener("change", () => {
-      incidentHistoryFilters.system = system.value;
-      renderIncidentRecords(incidentRecordsCache);
-    });
-  }
+  syncIncidentHistoryFilterBridge();
+  renderIncidentRecords(incidentRecordsCache);
 }
 
 function renderIncidentRecords(records) {
-  const list = document.getElementById("incidentHistoryList");
-  if (!list) return;
-
   incidentRecordsCache = Array.isArray(records) ? records : [];
   renderIncidentHistoryFilterOptions(incidentRecordsCache);
   renderIncidentFocusBar(incidentRecordsCache);
@@ -2446,7 +2388,7 @@ function renderIncidentRecords(records) {
     const emptyText = incidentHistoryView === "all"
       ? "目前還沒有儲存的事件紀錄"
       : "目前沒有未結案事件紀錄";
-    list.replaceChildren(createTextElement("div", "incident-history-empty", emptyText));
+    syncIncidentHistoryListBridge({ emptyText, records: [] });
     renderHandoverReadiness();
     renderDuplicateIncidentStatus();
     return;
@@ -2454,14 +2396,18 @@ function renderIncidentRecords(records) {
 
   const filteredRecords = getFilteredIncidentRecords(records);
   if (!filteredRecords.length) {
-    list.replaceChildren(createTextElement("div", "incident-history-empty", "沒有符合篩選的事件紀錄"));
+    const emptyText = "沒有符合篩選的事件紀錄";
+    syncIncidentHistoryListBridge({ emptyText, records: [] });
     renderHandoverReadiness();
     renderDuplicateIncidentStatus();
     return;
   }
 
   const sortedRecords = [...filteredRecords].sort(compareIncidentRecordsForDisplay);
-  list.replaceChildren(...sortedRecords.map(createIncidentRecordCard));
+  syncIncidentHistoryListBridge({
+    emptyText: "",
+    records: sortedRecords.map(getIncidentRecordViewModel),
+  });
   renderHandoverReadiness();
   renderDuplicateIncidentStatus();
 }
@@ -2472,7 +2418,22 @@ function refreshIncidentRecordReminderState() {
   }
 }
 
+function refreshIncidentHistoryListState() {
+  renderIncidentRecords(incidentRecordsCache);
+}
+
+function syncIncidentHistoryViewBridge() {
+  if (window.__mspIncidentHistoryView && typeof window.__mspIncidentHistoryView.syncView === "function") {
+    window.__mspIncidentHistoryView.syncView(incidentHistoryView);
+    return true;
+  }
+
+  return false;
+}
+
 function updateIncidentHistoryViewButtons() {
+  if (syncIncidentHistoryViewBridge()) return;
+
   const openButton = document.getElementById("incidentOpenFilterButton");
   const allButton = document.getElementById("incidentAllFilterButton");
 
@@ -2496,45 +2457,179 @@ function setIncidentHistoryView(view) {
   loadIncidentRecords();
 }
 
+function isStorageUnavailableError(err) {
+  return /redis client not available|failed to fetch|load failed|networkerror/i.test(String(err && err.message || err || ""));
+}
+
+function readLocalIncidentRecords() {
+  try {
+    const raw = localStorage.getItem(INCIDENT_LOCAL_RECORDS_STORAGE_KEY);
+    const records = raw ? JSON.parse(raw) : [];
+    return Array.isArray(records) ? records.filter((record) => record && record.id) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalIncidentRecords(records) {
+  const normalizedRecords = Array.isArray(records) ? records.slice(0, 50) : [];
+  localStorage.setItem(INCIDENT_LOCAL_RECORDS_STORAGE_KEY, JSON.stringify(normalizedRecords));
+}
+
+function getLocalIncidentTitle(fields) {
+  return String(fields.title || fields.problemDescription || "").trim().slice(0, 160) || "未命名事件";
+}
+
+function getLocalIncidentSummary(fields) {
+  return String(fields.nextStep || fields.problemDescription || fields.notes || "").trim().slice(0, 180);
+}
+
+function buildLocalIncidentRecord(incident, handoverSummary, existing = {}) {
+  const now = new Date().toISOString();
+  const fields = incident.fields || {};
+  const status = fields.status || "";
+  const isResolved = /resolved|已解決/i.test(status);
+
+  return {
+    id: existing.id || (window.crypto && window.crypto.randomUUID
+      ? window.crypto.randomUUID()
+      : `local-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    createdAt: existing.createdAt || now,
+    updatedAt: now,
+    resolvedAt: isResolved ? (existing.resolvedAt || now) : "",
+    title: getLocalIncidentTitle(fields),
+    summary: getLocalIncidentSummary(fields),
+    severity: fields.severity || "",
+    status,
+    customer: fields.customer || "",
+    system: fields.system || "",
+    startedAt: fields.startedAt || "",
+    source: fields.source || "",
+    incident,
+    handoverSummary,
+    storage: "local",
+  };
+}
+
+function getVisibleLocalIncidentRecords() {
+  return readLocalIncidentRecords()
+    .filter((record) => incidentHistoryView === "all" || !isIncidentRecordResolved(record));
+}
+
+function loadLocalIncidentRecords(showStatus = false) {
+  incidentRecordsCache = getVisibleLocalIncidentRecords();
+  const activeRecord = getActiveIncidentRecord();
+  if (activeRecord) {
+    setActiveIncidentSavedSnapshot(activeRecord);
+  }
+  renderIncidentRecords(incidentRecordsCache);
+
+  if (showStatus) {
+    setIncidentHistoryStatus("後端事件暫存未連線，已改用此瀏覽器的本機紀錄。", "pending");
+  }
+
+  return incidentRecordsCache;
+}
+
+function saveLocalIncidentRecord(incident, handoverSummary, recordId = "") {
+  const records = readLocalIncidentRecords();
+  const existingIndex = records.findIndex((record) => record.id === recordId);
+  const existing = existingIndex >= 0 ? records[existingIndex] : {};
+  const item = buildLocalIncidentRecord(incident, handoverSummary, existing);
+  const nextRecords = existingIndex >= 0
+    ? records.map((record, index) => (index === existingIndex ? item : record))
+    : [item, ...records];
+
+  writeLocalIncidentRecords(nextRecords.sort(compareIncidentRecordsForDisplay));
+  return item;
+}
+
+function resolveLocalIncidentRecord(record) {
+  const records = readLocalIncidentRecords();
+  const index = records.findIndex((item) => item.id === record.id);
+  if (index < 0) return null;
+
+  const current = records[index];
+  const fields = current.incident && current.incident.fields ? current.incident.fields : {};
+  const nextIncident = {
+    ...(current.incident || {}),
+    fields: {
+      ...fields,
+      status: "Resolved / 已解決",
+    },
+  };
+  const nextRecord = buildLocalIncidentRecord(
+    nextIncident,
+    current.handoverSummary || "",
+    {
+      ...current,
+      resolvedAt: current.resolvedAt || new Date().toISOString(),
+    },
+  );
+
+  records[index] = nextRecord;
+  writeLocalIncidentRecords(records.sort(compareIncidentRecordsForDisplay));
+  return nextRecord;
+}
+
+function deleteLocalIncidentRecord(record) {
+  const records = readLocalIncidentRecords();
+  const nextRecords = records.filter((item) => item.id !== record.id);
+  writeLocalIncidentRecords(nextRecords);
+  return nextRecords.length !== records.length;
+}
+
+function applyIncidentRecordsResponse(data = {}) {
+  incidentRecordsCache = data.incidents || [];
+  const activeRecord = getActiveIncidentRecord();
+  if (activeRecord) {
+    setActiveIncidentSavedSnapshot(activeRecord);
+  }
+  renderIncidentRecords(incidentRecordsCache);
+  return incidentRecordsCache;
+}
+
+function handleIncidentRecordsLoadError(err, showLoading) {
+  if (isStorageUnavailableError(err)) {
+    return loadLocalIncidentRecords(showLoading);
+  }
+
+  if (showLoading) {
+    setIncidentHistoryListMessage("事件紀錄讀取失敗，請稍後再試。");
+    setIncidentHistoryStatus("事件紀錄讀取失敗：" + err.message, "error");
+  }
+
+  return incidentRecordsCache;
+}
+
+function getIncidentHistoryApi(actionName) {
+  const api = window.__mspIncidentHistoryApi;
+  const action = api && api[actionName];
+
+  if (typeof action !== "function") {
+    throw new Error(`Incident history API bridge is not ready: ${actionName}`);
+  }
+
+  return action;
+}
+
 async function loadIncidentRecords(options = {}) {
-  const list = document.getElementById("incidentHistoryList");
   const showLoading = options.showLoading !== false;
 
   try {
     updateIncidentHistoryViewButtons();
 
-    if (list && showLoading) {
-      list.replaceChildren(createTextElement("div", "incident-history-empty", "事件紀錄載入中..."));
+    if (showLoading) {
+      setIncidentHistoryListMessage("事件紀錄載入中...");
     }
 
-    const params = new URLSearchParams({
-      limit: "50",
+    return await getIncidentHistoryApi("loadRecords")({
+      limit: 50,
+      showLoading,
       view: incidentHistoryView,
     });
-    const res = await fetch(`/api/incidents?${params.toString()}`, {
-      cache: "no-store",
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Load incidents failed");
-    }
-
-    incidentRecordsCache = data.incidents || [];
-    const activeRecord = getActiveIncidentRecord();
-    if (activeRecord) {
-      setActiveIncidentSavedSnapshot(activeRecord);
-    }
-    renderIncidentRecords(incidentRecordsCache);
-    return incidentRecordsCache;
   } catch (err) {
-    if (list && showLoading) {
-      list.replaceChildren(createTextElement("div", "incident-history-empty", "事件紀錄讀取失敗：" + err.message));
-    }
-    if (showLoading) {
-      setIncidentHistoryStatus("事件紀錄讀取失敗：" + err.message, "error");
-    }
-    return incidentRecordsCache;
+    return handleIncidentRecordsLoadError(err, showLoading);
   }
 }
 
@@ -2553,32 +2648,31 @@ async function saveIncidentRecord() {
     updateHandoverSummary();
 
     const recordId = activeIncidentRecordId;
-    const res = await fetch(recordId ? `/api/incidents/${encodeURIComponent(recordId)}` : "/api/incidents", {
-      method: recordId ? "PUT" : "POST",
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        incident: state,
-        handoverSummary: buildHandoverSummary("full"),
-      }),
+    const handoverSummary = buildHandoverSummary("full");
+    const data = await getIncidentHistoryApi("saveRecord")({
+      handoverSummary,
+      incident: state,
+      recordId,
     });
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Save incident failed");
-    }
 
     setActiveIncidentRecordId(data.incident.id);
     setActiveIncidentSavedSnapshot(data.incident);
     setIncidentHistoryStatus(`${recordId ? "已更新事件" : "已儲存事件"}：${data.incident.title}`, "success");
     await loadIncidentRecords({ showLoading: false });
   } catch (err) {
-    if (activeIncidentRecordId && err.message === "incident not found") {
+    if (isStorageUnavailableError(err)) {
+      const handoverSummary = buildHandoverSummary("full");
+      const localRecord = saveLocalIncidentRecord(state, handoverSummary, activeIncidentRecordId);
+      setActiveIncidentRecordId(localRecord.id);
+      setActiveIncidentSavedSnapshot(localRecord);
+      setIncidentHistoryStatus(`已暫存在此瀏覽器：${localRecord.title}`, "success");
+      loadLocalIncidentRecords(false);
+    } else if (activeIncidentRecordId && err.message === "incident not found") {
       setActiveIncidentRecordId("");
+      setIncidentHistoryStatus("後端找不到原事件，請重新儲存一次。", "error");
+    } else {
+      setIncidentHistoryStatus("儲存事件失敗：" + err.message, "error");
     }
-    setIncidentHistoryStatus("儲存事件失敗：" + err.message, "error");
   } finally {
     setSaveIncidentButtonLoading(false);
   }
@@ -2590,26 +2684,10 @@ function clearIncidentState() {
   }
 
   clearQuickIncidentInput();
-
-  getIncidentFields().forEach((field) => {
-    field.value = "";
-  });
-
-  getIncidentChecks().forEach((check) => {
-    check.checked = false;
-  });
-
-  getIncidentRadios().forEach((radio) => {
-    radio.checked = false;
-  });
-
-  getIncidentFollowups().forEach((followup) => {
-    followup.checked = false;
-  });
-
-  updateIncidentNextCheckAvailability();
-  updateServiceTypeFieldVisibility();
-  localStorage.removeItem(INCIDENT_STORAGE_KEY);
+  clearIncidentUiState();
+  if (!clearIncidentStateInBridge()) {
+    localStorage.removeItem(INCIDENT_STORAGE_KEY);
+  }
   setActiveIncidentRecordId("");
   setJiraStatus("");
   setHandoverSummaryStatus("");
@@ -2631,6 +2709,8 @@ function initIncidentPanel() {
   updateHandoverSummary();
   const syncIncidentState = () => {
     updateIncidentNextCheckAvailability();
+    syncIncidentCoreFieldsBridge();
+    syncIncidentChecklistBridge();
     saveIncidentState();
     setHandoverSummaryStatus("");
     updateServiceTypeFieldVisibility();
@@ -2667,361 +2747,8 @@ function initIncidentPanel() {
   });
 }
 
-const RUNBOOK_STATE = {
-  categories: [],
-  runbooks: [],
-  activeCategory: "all",
-  keyword: "",
-};
-
-function createTextElement(tagName, className, text) {
-  // 建立 HTML 元素時使用 textContent，不用 innerHTML。
-  // 這樣即使後端資料有特殊字元，也不會被瀏覽器當成程式碼執行。
-  const element = document.createElement(tagName);
-  if (className) element.className = className;
-  element.textContent = text || "";
-  return element;
-}
-
 function getRunbookCategoryName(categoryId) {
-  const category = RUNBOOK_STATE.categories.find((item) => item.id === categoryId);
-  return category ? category.name : categoryId;
-}
-
-function getFilteredRunbooks() {
-  const keyword = RUNBOOK_STATE.keyword.trim().toLowerCase();
-
-  return RUNBOOK_STATE.runbooks.filter((runbook) => {
-    const categoryMatched = RUNBOOK_STATE.activeCategory === "all"
-      || runbook.category === RUNBOOK_STATE.activeCategory;
-
-    if (!categoryMatched) return false;
-    if (!keyword) return true;
-
-    const searchableText = [
-      runbook.title,
-      runbook.summary,
-      runbook.severity,
-      ...(runbook.triggers || []),
-      ...(runbook.dutyRules || []),
-      ...(runbook.replyRules || []),
-      ...(runbook.ignoreRules || []),
-      ...(runbook.firstChecks || []),
-      ...(runbook.steps || []),
-      ...(runbook.escalateWhen || []),
-      ...(runbook.contacts || []),
-      ...(runbook.mailRecipients || []),
-      ...((runbook.extraSections || []).flatMap((section) => [
-        section.title,
-        ...(section.items || []),
-        ...((section.copyGroups || []).flatMap((group) => [
-          group.label,
-          group.copyLabel,
-          group.text,
-        ])),
-      ])),
-    ].join(" ").toLowerCase();
-
-    return searchableText.includes(keyword);
-  });
-}
-
-function renderRunbookCategories() {
-  const container = document.getElementById("runbookCategories");
-  if (!container) return;
-
-  const allButton = createRunbookCategoryButton("all", "全部");
-  const buttons = RUNBOOK_STATE.categories.map((category) => (
-    createRunbookCategoryButton(category.id, category.name)
-  ));
-
-  container.replaceChildren(allButton, ...buttons);
-}
-
-function createRunbookCategoryButton(categoryId, label) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = categoryId === RUNBOOK_STATE.activeCategory
-    ? "runbook-category active"
-    : "runbook-category";
-  button.textContent = label;
-
-  button.addEventListener("click", () => {
-    RUNBOOK_STATE.activeCategory = categoryId;
-    renderRunbookCategories();
-    renderRunbooks();
-  });
-
-  return button;
-}
-
-function getRunbookLinkAliases(runbook) {
-  const aliases = [];
-  const seen = new Set();
-
-  (runbook.links || []).forEach((link) => {
-    const candidates = [link.label];
-
-    if (link.label === "iTop") {
-      candidates.push("ITop", "ITOP");
-    }
-
-    if (link.href && link.href.includes("subnet.min.io")) {
-      candidates.push("MINIO Subnet", "MinIO Subnet", "Subnet 登入頁面", "Subnet");
-    }
-
-    if (link.label === "原 SOP") {
-      candidates.push("原 SOP");
-    }
-
-    if (link.label === "通話記錄用表格") {
-      candidates.push("通話記錄用表格", "通話記錄表格", "紀錄表單", "記錄表單");
-    }
-
-    if (link.label === "Akamai SE 分工表 & 合約表") {
-      candidates.push("Akamai SE 分工表", "SE 分工表", "SE分工表", "Akamai 合約表", "合約表");
-    }
-
-    if (link.label === "Akamai 流程問題意見回覆表") {
-      candidates.push("流程問題意見回覆表", "MSP 維運問題紀錄");
-    }
-
-    candidates.forEach((candidate) => {
-      const alias = String(candidate || "").trim();
-      const key = alias.toLowerCase();
-
-      if (!alias || seen.has(key)) return;
-
-      seen.add(key);
-      aliases.push({
-        alias,
-        aliasLower: key,
-        href: link.href,
-      });
-    });
-  });
-
-  return aliases.sort((a, b) => b.alias.length - a.alias.length);
-}
-
-function appendRunbookLinkedText(parent, text, runbook) {
-  const value = String(text || "");
-  const valueLower = value.toLowerCase();
-  const aliases = getRunbookLinkAliases(runbook);
-  let cursor = 0;
-
-  while (cursor < value.length) {
-    let nextMatch = null;
-
-    aliases.forEach((alias) => {
-      const index = valueLower.indexOf(alias.aliasLower, cursor);
-
-      if (index === -1) return;
-      if (!nextMatch || index < nextMatch.index || (
-        index === nextMatch.index && alias.alias.length > nextMatch.alias.alias.length
-      )) {
-        nextMatch = { alias, index };
-      }
-    });
-
-    if (!nextMatch) {
-      parent.appendChild(document.createTextNode(value.slice(cursor)));
-      break;
-    }
-
-    if (nextMatch.index > cursor) {
-      parent.appendChild(document.createTextNode(value.slice(cursor, nextMatch.index)));
-    }
-
-    const anchor = document.createElement("a");
-    anchor.className = "runbook-inline-link";
-    anchor.href = nextMatch.alias.href;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
-    anchor.textContent = value.slice(
-      nextMatch.index,
-      nextMatch.index + nextMatch.alias.alias.length,
-    );
-    parent.appendChild(anchor);
-
-    cursor = nextMatch.index + nextMatch.alias.alias.length;
-  }
-}
-
-async function copyTextToClipboard(text) {
-  const value = String(text || "");
-
-  if (navigator.clipboard && window.isSecureContext !== false) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-
-  const textarea = document.createElement("textarea");
-  textarea.value = value;
-  textarea.setAttribute("readonly", "");
-  textarea.style.position = "fixed";
-  textarea.style.left = "-9999px";
-  document.body.appendChild(textarea);
-  textarea.select();
-
-  try {
-    document.execCommand("copy");
-  } finally {
-    textarea.remove();
-  }
-}
-
-function setTemporaryButtonText(button, text, duration = 1400) {
-  const originalText = button.dataset.originalText || button.textContent;
-  button.dataset.originalText = originalText;
-  button.textContent = text;
-  window.clearTimeout(Number(button.dataset.resetTimer || 0));
-
-  const timer = window.setTimeout(() => {
-    button.textContent = originalText;
-    button.dataset.resetTimer = "";
-  }, duration);
-  button.dataset.resetTimer = String(timer);
-}
-
-function createRunbookCopyButton(items, label = "複製") {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "runbook-copy-button";
-  button.textContent = label;
-  button.setAttribute("aria-label", "複製此段內容");
-
-  button.addEventListener("click", async () => {
-    try {
-      await copyTextToClipboard((items || []).join("\n"));
-      setTemporaryButtonText(button, "已複製");
-    } catch (err) {
-      setTemporaryButtonText(button, "複製失敗");
-    }
-  });
-
-  return button;
-}
-
-function getRunbookCopyGroupButtonLabel(group) {
-  const copyLabel = String(group && group.copyLabel ? group.copyLabel : "").trim();
-  if (copyLabel) return copyLabel;
-
-  const label = String(group && group.label ? group.label : "").trim();
-  const shortLabel = label.replace(/\s*Team$/i, "");
-
-  return shortLabel ? `複製 ${shortLabel}` : "複製";
-}
-
-function getRunbookLinkButtonLabel(link) {
-  const label = String(link && link.label ? link.label : "").trim();
-
-  if (!label) return "開啟連結";
-  if (/^開啟/.test(label)) return label;
-  if (label === "Subnet 登入頁面") return "開啟 Subnet";
-
-  return /^[A-Za-z0-9]/.test(label) ? `開啟 ${label}` : `開啟${label}`;
-}
-
-function getRunbookListItemClass(item) {
-  const normalizedItem = String(item || "").trim();
-
-  if (normalizedItem.startsWith("※") || normalizedItem.startsWith("⚠️")) {
-    return "runbook-note-line";
-  }
-
-  if (
-    /^\d+\.\s/.test(normalizedItem)
-    || /^Step\s*\d+\./i.test(normalizedItem)
-    || /^[①②③✔✘✓ＯＸX→•]/.test(normalizedItem)
-    || /^[是否]\s*->/.test(normalizedItem)
-  ) {
-    return "runbook-numbered-line";
-  }
-
-  return "";
-}
-
-function appendRunbookCopyGroups(parent, copyGroups, runbook) {
-  if (!copyGroups || copyGroups.length === 0) return;
-
-  const groups = document.createElement("div");
-  groups.className = "runbook-copy-groups";
-  if (copyGroups.length > 4) {
-    groups.classList.add("runbook-copy-groups-many");
-  }
-
-  copyGroups.forEach((group) => {
-    const row = document.createElement("div");
-    row.className = "runbook-copy-group";
-
-    const header = document.createElement("div");
-    header.className = "runbook-copy-group-header";
-    header.appendChild(createTextElement("strong", "runbook-copy-group-label", group.label));
-    header.appendChild(createRunbookCopyButton([group.text], getRunbookCopyGroupButtonLabel(group)));
-
-    const value = document.createElement("div");
-    value.className = "runbook-copy-group-value";
-    appendRunbookLinkedText(value, group.text, runbook);
-
-    row.appendChild(header);
-    row.appendChild(value);
-    groups.appendChild(row);
-  });
-
-  parent.appendChild(groups);
-}
-
-function appendRunbookList(parent, title, items, runbook, options = {}) {
-  const copyGroups = options.copyGroups || [];
-  if ((!items || items.length === 0) && copyGroups.length === 0) return;
-
-  const section = document.createElement("div");
-  section.className = "runbook-detail";
-  if (options.wide) {
-    section.classList.add("wide");
-  }
-
-  const heading = document.createElement("div");
-  heading.className = "runbook-detail-heading";
-  heading.appendChild(createTextElement("h4", "", title));
-
-  if (/聯絡資訊|信件收件人/.test(title) && items && items.length > 0 && copyGroups.length === 0) {
-    heading.appendChild(createRunbookCopyButton(items, "複製"));
-  }
-
-  section.appendChild(heading);
-
-  if (items && items.length > 0) {
-    const list = document.createElement("ul");
-    items.forEach((item) => {
-      const listItem = document.createElement("li");
-      const itemClass = getRunbookListItemClass(item);
-
-      if (itemClass) {
-        listItem.className = itemClass;
-      }
-
-      appendRunbookLinkedText(listItem, item, runbook);
-      list.appendChild(listItem);
-    });
-
-    section.appendChild(list);
-  }
-
-  appendRunbookCopyGroups(section, copyGroups, runbook);
-  parent.appendChild(section);
-}
-
-function appendRunbookExtraSections(parent, sections, runbook) {
-  // 不同產品的 SOP 會有自己的特殊段落。
-  // extraSections 讓資料可以自由新增「案件追蹤」「Case 範本」「Q&A」等內容。
-  (sections || []).forEach((section) => {
-    appendRunbookList(parent, section.title, section.items, runbook, {
-      copyGroups: section.copyGroups || [],
-      wide: section.wide,
-    });
-  });
+  return categoryId || "";
 }
 
 function normalizeRunbookDraftText(value) {
@@ -3096,7 +2823,7 @@ function getRunbookDraftNextStep(runbook) {
 
 function getRunbookDraftNotes(runbook) {
   const lines = [`${formatLocalTimeMinute()} 已查閱 SOP：${runbook.title || "未命名 SOP"}`];
-  const categoryName = getRunbookCategoryName(runbook.category);
+  const categoryName = runbook.categoryName || getRunbookCategoryName(runbook.category);
   const summary = truncateRunbookDraftText(runbook.summary, 180);
   const actionItem = truncateRunbookDraftText(getRunbookDraftActionItem(runbook), 160);
 
@@ -3109,7 +2836,7 @@ function getRunbookDraftNotes(runbook) {
 
 function buildRunbookIncidentDraftFields(runbook) {
   const title = runbook.title || "SOP";
-  const categoryName = getRunbookCategoryName(runbook.category);
+  const categoryName = runbook.categoryName || getRunbookCategoryName(runbook.category);
   const summary = truncateRunbookDraftText(runbook.summary, 180);
 
   return {
@@ -3132,7 +2859,7 @@ function buildRunbookIncidentDraftFields(runbook) {
 function focusIncidentDraft() {
   const title = document.getElementById("incidentTitle");
 
-  setActiveView("dashboard", { scrollTop: false });
+  activateAppView("dashboard", { scrollTop: false });
 
   if (title) {
     title.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -3149,6 +2876,8 @@ function applyRunbookToIncidentDraft(runbook) {
   const appliedChecklist = markIncidentCheck("查閱對應 SOP") ? 1 : 0;
   const appliedCount = appliedFields + appliedChecklist;
 
+  syncIncidentCoreFieldsBridge();
+  renderIncidentNotesTimeline();
   updateIncidentNextCheckAvailability();
   updateServiceTypeFieldVisibility();
   saveIncidentState();
@@ -3168,441 +2897,76 @@ function applyRunbookToIncidentDraft(runbook) {
   setHandoverSummaryStatus("目前事件欄位已有內容；Runbook 未覆蓋既有草稿。", "pending");
 }
 
-function createRunbookCard(runbook) {
-  const card = document.createElement("article");
-  card.className = "runbook-card";
-
-  const header = document.createElement("div");
-  header.className = "runbook-card-header";
-
-  const titleBlock = document.createElement("div");
-  titleBlock.appendChild(createTextElement("h3", "runbook-card-title", runbook.title));
-  titleBlock.appendChild(createTextElement("p", "runbook-card-summary", runbook.summary));
-
-  const tag = createTextElement("span", "runbook-tag", getRunbookCategoryName(runbook.category));
-  header.appendChild(titleBlock);
-  header.appendChild(tag);
-
-  const metaLabel = runbook.severityLabel || "嚴重度";
-  const meta = createTextElement("div", "runbook-card-meta", `${metaLabel}：${runbook.severity || "未分類"}`);
-
-  const body = document.createElement("div");
-  body.className = "runbook-card-body";
-  appendRunbookList(body, "值班規則", runbook.dutyRules, runbook);
-  appendRunbookList(body, "信件判斷", runbook.replyRules, runbook);
-  appendRunbookList(body, "不需處理", runbook.ignoreRules, runbook);
-  appendRunbookList(body, "觸發情境", runbook.triggers, runbook);
-  appendRunbookList(body, "先確認", runbook.firstChecks, runbook);
-  appendRunbookList(body, "處理步驟", runbook.steps, runbook);
-  appendRunbookList(body, "升級條件", runbook.escalateWhen, runbook);
-  appendRunbookList(body, "聯絡資訊", runbook.contacts, runbook);
-  appendRunbookList(body, "信件收件人", runbook.mailRecipients, runbook);
-  appendRunbookExtraSections(body, runbook.extraSections, runbook);
-
-  const actions = document.createElement("div");
-  actions.className = "runbook-actions";
-
-  const draftButton = document.createElement("button");
-  draftButton.type = "button";
-  draftButton.className = "runbook-link runbook-draft-button";
-  draftButton.textContent = "帶入事件草稿";
-  draftButton.addEventListener("click", () => applyRunbookToIncidentDraft(runbook));
-  actions.appendChild(draftButton);
-
-  (runbook.links || []).forEach((link) => {
-    const anchor = document.createElement("a");
-    anchor.className = "runbook-link";
-    anchor.href = link.href;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer";
-    anchor.textContent = getRunbookLinkButtonLabel(link);
-    actions.appendChild(anchor);
-  });
-
-  const relatedLinks = document.createElement("div");
-  relatedLinks.className = "runbook-related-links";
-  relatedLinks.appendChild(createTextElement("h4", "runbook-related-title", "快速動作"));
-  relatedLinks.appendChild(actions);
-
-  card.appendChild(header);
-  card.appendChild(meta);
-  if (actions.children.length > 0) {
-    card.appendChild(relatedLinks);
-  }
-  card.appendChild(body);
-
-  return card;
-}
-
-function renderRunbooks() {
-  const list = document.getElementById("runbookList");
-  if (!list) return;
-
-  const filteredRunbooks = getFilteredRunbooks();
-
-  if (filteredRunbooks.length === 0) {
-    list.replaceChildren(createTextElement("div", "runbook-empty", "找不到符合條件的 Runbook"));
-    return;
-  }
-
-  list.replaceChildren(...filteredRunbooks.map(createRunbookCard));
-}
-
-async function loadRunbooks() {
-  const meta = document.getElementById("runbookMeta");
-  const list = document.getElementById("runbookList");
-
-  try {
-    const res = await fetch("/api/runbooks", {
-      cache: "no-store",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Load runbooks failed");
-    }
-
-    RUNBOOK_STATE.categories = data.categories || [];
-    RUNBOOK_STATE.runbooks = data.runbooks || [];
-
-    if (meta) {
-      meta.textContent = `v${data.version} / ${RUNBOOK_STATE.runbooks.length} items`;
-    }
-
-    renderRunbookCategories();
-    renderRunbooks();
-  } catch (err) {
-    if (meta) meta.textContent = "Unavailable";
-    if (list) {
-      list.replaceChildren(createTextElement("div", "runbook-empty", "Runbook 載入失敗：" + err.message));
-    }
-  }
-}
-
-function initRunbookPanel() {
-  const search = document.getElementById("runbookSearch");
-
-  if (search) {
-    search.addEventListener("input", () => {
-      RUNBOOK_STATE.keyword = search.value;
-      renderRunbooks();
-    });
-  }
-
-  loadRunbooks();
-}
-
-function getOncallChecklistDateKey(date = new Date()) {
-  const pad = (value) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-");
-}
-
-function getOncallChecklistStorageKey() {
-  return `${ONCALL_CHECKLIST_STORAGE_PREFIX}${getOncallChecklistDateKey()}`;
-}
-
-function getOncallChecklistInputs() {
-  return Array.from(document.querySelectorAll("[data-oncall-check]"));
-}
-
-function setOncallChecklistStatus(message, type) {
-  const status = document.getElementById("oncallChecklistStatus");
-  if (!status) return;
-
-  window.clearTimeout(oncallChecklistStatusTimer);
-  status.className = type ? `oncall-checklist-status ${type}` : "oncall-checklist-status";
-  status.textContent = message || "";
-
-  if (message) {
-    oncallChecklistStatusTimer = window.setTimeout(() => {
-      status.textContent = "";
-      status.className = "oncall-checklist-status";
-    }, 2600);
-  }
-}
-
-function readOncallChecklistState() {
-  try {
-    const raw = localStorage.getItem(getOncallChecklistStorageKey());
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveOncallChecklistState(showStatus = false) {
-  const checked = getOncallChecklistInputs().reduce((result, input) => {
-    result[input.dataset.oncallCheck] = input.checked;
-    return result;
-  }, {});
-
-  try {
-    localStorage.setItem(getOncallChecklistStorageKey(), JSON.stringify({
-      date: getOncallChecklistDateKey(),
-      checked,
-      updatedAt: new Date().toISOString(),
-    }));
-  } catch (err) {
-    setOncallChecklistStatus("今日檢查儲存失敗：" + err.message, "error");
-    return;
-  }
-
-  updateOncallChecklistProgress();
-  if (showStatus) {
-    setOncallChecklistStatus("已更新今日值班檢查。", "success");
-  }
-}
-
-function updateOncallChecklistProgress() {
-  const inputs = getOncallChecklistInputs();
-  const meta = document.getElementById("oncallChecklistMeta");
-  const panel = document.querySelector(".oncall-checklist");
-  const done = inputs.filter((input) => input.checked).length;
-  const total = inputs.length;
-
-  if (meta) {
-    meta.textContent = total ? `${done} / ${total}` : "0 / 0";
-  }
-
-  if (panel) {
-    panel.classList.toggle("complete", total > 0 && done === total);
-  }
-}
-
-function loadOncallChecklistState() {
-  const state = readOncallChecklistState();
-  const checked = state && state.checked ? state.checked : {};
-
-  getOncallChecklistInputs().forEach((input) => {
-    input.checked = Boolean(checked[input.dataset.oncallCheck]);
-  });
-
-  updateOncallChecklistProgress();
-}
-
-function markOncallChecklistItem(itemId, showStatus = false) {
-  const input = getOncallChecklistInputs()
-    .find((item) => item.dataset.oncallCheck === itemId);
-  if (!input || input.checked) return false;
-
-  input.checked = true;
-  saveOncallChecklistState(showStatus);
-  return true;
-}
-
-function resetOncallChecklist() {
-  getOncallChecklistInputs().forEach((input) => {
-    input.checked = false;
-  });
-
-  saveOncallChecklistState(false);
-  setOncallChecklistStatus("已重置今日值班檢查。", "pending");
-}
-
-function initOncallChecklist() {
-  getOncallChecklistInputs().forEach((input) => {
-    input.addEventListener("change", () => saveOncallChecklistState(true));
-  });
-
-  loadOncallChecklistState();
-}
-
-function openLinkElements(selector) {
-  const links = Array.from(document.querySelectorAll(selector))
-    .map((link) => link.href)
-    .filter(Boolean);
-
-  if (!links.length) {
-    alert("沒有可開啟的連結");
-    return 0;
-  }
-
-  links.forEach((url, idx) => {
-    setTimeout(() => window.open(url, "_blank", "noopener,noreferrer"), idx * 120);
-  });
-
-  return links.length;
-}
-
-function openLinkGroup(groupId) {
-  return openLinkElements(`#${groupId} a.quick-link`);
-}
-
-function openCoreLinks() {
-  const openedCount = openLinkGroup("coreLinksGrid");
-  if (openedCount) {
-    markOncallChecklistItem("open-core", false);
-    setOncallChecklistStatus(`已開啟 ${openedCount} 個每日值班入口。`, "success");
-  }
-}
-
-function updateCoreLinksCount() {
-  const count = document.querySelectorAll("#coreLinksGrid a.quick-link").length;
-  const label = document.getElementById("coreLinksCount");
-  if (!label) return;
-
-  label.textContent = `${count} links`;
-}
-
-function setLinksPanelOpen(isOpen) {
-  const panel = document.getElementById("linksPanel");
-  const toggle = document.getElementById("linksPanelToggle");
-  if (!panel) return;
-
-  panel.classList.toggle("open", isOpen);
-
-  if (!isOpen) {
-    panel.querySelectorAll("details[open]").forEach((details) => {
-      details.open = false;
-    });
-  }
-
-  if (toggle) {
-    toggle.setAttribute("aria-expanded", String(isOpen));
-  }
-}
-
-function toggleLinksPanel(forceOpen) {
-  const panel = document.getElementById("linksPanel");
-  if (!panel) return;
-
-  const isOpen = typeof forceOpen === "boolean"
-    ? forceOpen
-    : !panel.classList.contains("open");
-  setLinksPanelOpen(isOpen);
-}
-
-function initLinksPanel() {
-  updateCoreLinksCount();
-  initOncallChecklist();
-
-  document.addEventListener("click", (event) => {
-    const panel = document.getElementById("linksPanel");
-    if (!panel || !panel.classList.contains("open")) return;
-
-    if (!event.target.closest("#linksPanel")) {
-      setLinksPanelOpen(false);
-      return;
-    }
-
-    const openDrawer = panel.querySelector(".link-drawer[open]");
-    if (openDrawer && !event.target.closest(".link-drawer")) {
-      openDrawer.open = false;
-    }
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      setLinksPanelOpen(false);
-    }
-  });
-}
-
-function updateBackToTopButton() {
-  const button = document.getElementById("backToTopButton");
-  if (!button) return;
-
-  button.classList.toggle("visible", window.scrollY > 420);
-}
-
-function scrollToTop() {
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}
-
-function initBackToTop() {
-  updateBackToTopButton();
-  window.addEventListener("scroll", updateBackToTopButton, { passive: true });
-}
-
-async function increment() {
-  try {
-    clearError();
-
-    // POST /increment 會讓 Redis 裡的 counter +1。
-    const res = await fetch("/increment", {
-      method: "POST",
-      cache: "no-store",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Increment failed");
-    }
-
-    document.getElementById("count").textContent = data.count;
-  } catch (err) {
-    setError("+1 失敗：" + err.message);
-  }
-}
-
-async function resetCounter() {
-  try {
-    clearError();
-    const resetToken = getResetToken();
-
-    if (!resetToken) {
-      throw new Error("未輸入 Reset Token");
-    }
-
-    // Reset token 放在 header，不放在網址，也不寫死在 HTML。
-    const res = await fetch("/reset", {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "x-reset-token": resetToken,
-      },
-    });
-
-    const data = await res.json();
-
-    // HTTP 狀態不是 2xx 時，res.ok 會是 false。
-    // throw 會跳到下面 catch，顯示錯誤。
-    if (!res.ok) {
-      // token 錯誤時清掉 sessionStorage，下一次按 Reset 會重新要求輸入。
-      if (res.status === 403) {
-        sessionStorage.removeItem("reset_token");
-      }
-
-      throw new Error(data.error || "Reset failed");
-    }
-
-    document.getElementById("count").textContent = data.count;
-  } catch (err) {
-    setError("Reset 失敗：" + err.message);
-  }
-}
-
-// 頁面第一次載入時：
-// 1. trackView() 記錄一次瀏覽並更新訪客統計
-// 2. loadCount() 載入 Current Count
-// 3. 每 30 秒 loadStats() 更新統計
-initIncidentPanel();
-initRunbookPanel();
-initLinksPanel();
-initBackToTop();
-initTheme();
-initViewTabs();
-loadIncidentRecords();
-loadLocalWeather();
-trackView();
-loadCount();
-setInterval(loadStats, 30000);
-setInterval(heartbeatActiveVisitor, 15000);
-setInterval(loadLocalWeather, 3 * 60 * 1000);
-setInterval(refreshIncidentRecordReminderState, 60 * 1000);
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
-    heartbeatActiveVisitor();
-    loadStats();
-    refreshIncidentRecordReminderState();
-  }
+Object.assign(window, {
+  appendQuickIntakeToIncidentNotes,
+  applyIncidentRecordsResponse,
+  applyIncidentHistoryFilters,
+  applyRunbookToIncidentDraft,
+  applyQuickIncidentDraft,
+  applySelectedIncidentTemplate,
+  clearIncidentNextCheckAt,
+  clearIncidentState,
+  clearQuickIncidentInput,
+  copyHandoverSummary,
+  copyIncidentRecordSummaryById,
+  createJiraIssue,
+  deleteIncidentRecordById,
+  executeHandoverReadinessAction,
+  focusHandoverSummaryStatusField,
+  getIncidentPhraseGroups,
+  getIncidentTemplateOptions,
+  markJiraIssueCreated,
+  prepareJiraIssueDraft,
+  refreshDuplicateIncidentStatus,
+  refreshHandoverReadiness: renderHandoverReadiness,
+  refreshHandoverSummaryBadge: updateHandoverSummaryBadge,
+  refreshHandoverSummaryMode: updateHandoverSummaryModeButtons,
+  refreshHandoverSummaryStatus: syncHandoverSummaryStatusBridge,
+  refreshHandoverSummaryText: updateHandoverSummaryText,
+  refreshIncidentCoreFieldState,
+  refreshIncidentNotesTimeline: renderIncidentNotesTimeline,
+  refreshIncidentServiceDetailsState: updateServiceTypeFieldVisibility,
+  refreshJiraStatus,
+  insertIncidentPhrase,
+  loadIncidentRecords,
+  refreshIncidentHistoryFilterState: syncIncidentHistoryFilterBridge,
+  refreshIncidentHistoryFocusState: syncIncidentFocusBridge,
+  refreshIncidentChecklistState,
+  refreshIncidentHistoryViewState: updateIncidentHistoryViewButtons,
+  refreshIncidentHistoryListState,
+  refreshIncidentHistoryStatus,
+  refreshIncidentNextCheckAvailability: updateIncidentNextCheckAvailability,
+  refreshIncidentActionLabels: updateSaveIncidentButtonLabel,
+  saveIncidentRecord,
+  restoreDuplicateIncidentMatch,
+  resolveIncidentRecordById,
+  restoreIncidentRecordById,
+  setHandoverSummaryMode,
+  setIncidentHistoryFocus,
+  setIncidentHistoryView,
+  setIncidentNow,
+  toggleIncidentPhraseMenu,
 });
+
+function runDashboardInitStep(name, fn) {
+  try {
+    fn();
+  } catch (err) {
+    console.error(`[Dashboard] ${name} init failed:`, err);
+  }
+}
+
+function initDashboard() {
+  // 訪客統計已搬到 Vue 的 WeatherStatsPanel，這裡只保留舊版事件/SOP互動初始化。
+  runDashboardInitStep("incident panel", initIncidentPanel);
+  runDashboardInitStep("legacy shell fallback", initLegacyShellFallback);
+  loadIncidentRecords();
+  setInterval(refreshIncidentRecordReminderState, 60 * 1000);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      refreshIncidentRecordReminderState();
+    }
+  });
+}
+
+initDashboard();

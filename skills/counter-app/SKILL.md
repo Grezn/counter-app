@@ -1,6 +1,6 @@
 ---
 name: counter-app
-description: Develop, debug, and operate the C:\docker-demo counter-app / MSP on-call dashboard. Use when working on this repository's Express routes, Redis-backed counter and incident records, runbook data, Jira proxy, CWA weather proxy, Docker/AWS deployment scripts, or the project MCP server.
+description: Develop, debug, and operate the C:\docker-demo counter-app / MSP on-call dashboard. Use when working on this repository's Express routes, visitor stats, incident records, runbook data, Jira proxy, CWA/weather fallback proxy, Docker/AWS deployment scripts, or the project MCP server.
 ---
 
 # Counter App
@@ -20,19 +20,21 @@ Keep `MCP_ALLOW_WRITES` unset or `0` unless the user explicitly wants MCP to cre
 ## Architecture
 
 - `server.js` wires Express middleware, static files, request logging, routes, and graceful shutdown.
-- `routes/counter.js` owns counter, visitor tracking, heartbeat, and reset token behavior.
-- `routes/incidents.js` owns Redis-backed incident record CRUD.
+- `frontend/` is the Vue + Vite frontend; `src/components/` owns the dashboard shell pieces, with weather, visitor stats, and `IncidentPanel.vue` split into panel header, action toolbar, fields, quick intake, incident templates, phrase menus, notes timeline, checklist, handover summary panel, Jira status, incident history status, incident history focus chips, incident history list, duplicate incident status, next-check availability, handover readiness, summary badge, summary status, service detail fields, workflow, and history subcomponents. `src/composables/` owns app shell, local weather, visitor stats, quick intake, incident template selector state, phrase menu state, notes timeline state, Jira status state, incident history status state, incident history focus state, incident history list state, duplicate incident status state, next-check availability state, handover readiness state, summary badge state, summary status state, service detail visibility, handover summary mode, incident history view/filter state, runbooks, and links panel state. `npm run build` writes the production bundle to `frontend/dist`.
+- `routes/counter.js` owns the home page, visitor tracking, heartbeat behavior, and Redis-to-memory degraded stats fallback.
+- Incident record CRUD is served by the app API with Redis persistence, backend memory fallback when Redis is degraded, and frontend localStorage fallback when backend storage is unavailable.
 - `routes/runbooks.js` serves `data/runbooks.json`; keep sensitive SOP content out of this file.
 - `routes/jira.js` proxies Jira issue creation without exposing tokens to the browser.
 - `routes/weather.js` proxies Central Weather Administration data and caches responses in process memory.
 - `services/redis.js` centralizes Redis connection, retry, and reconnect behavior.
-- `public/index.html`, `public/app.js`, and `public/styles.css` are the dashboard UI.
+- `public/index.html` is only a build-missing fallback page; do not rebuild a second legacy UI there.
+- `public/app.js` and `public/styles.css` are still used as the current interaction/style bridge loaded by the Vue shell through `frontend/src/legacyBridge.js`; app shell, weather, visitor stats, runbooks, quick intake, incident template selector state, phrase menu state, notes timeline state, Jira status state, incident history status state, incident history focus state, incident history list state, duplicate incident status state, next-check availability state, handover readiness state, summary badge state, summary status state, service detail visibility, handover summary mode, incident history view/filter state, links panel, and back-to-top behavior have moved into Vue.
 
 ## Development Rules
 
 Read nearby code before changing behavior. Keep changes scoped to the feature and preserve the existing CommonJS Express app unless the task is specifically about MCP, which uses `mcp/server.mjs` as ESM.
 
-Do not place secrets in frontend code, `data/runbooks.json`, README examples, or committed env files. Jira, reset token, AWS, and CWA credentials belong in environment variables, SSM Parameter Store, or Secrets Manager.
+Do not place secrets in frontend code, `data/runbooks.json`, README examples, or committed env files. Jira, AWS, and CWA credentials belong in environment variables, SSM Parameter Store, or Secrets Manager.
 
 For incident changes, preserve the backend sanitization path in `routes/incidents.js`. If MCP needs to create or update incidents, route it through the existing app API instead of writing Redis directly.
 Do not set `MCP_ALLOW_WRITES=1` for exploratory reads, smoke tests, or production-oriented checks.

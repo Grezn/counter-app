@@ -9,6 +9,8 @@ skills/
 
 # 本機 dependencies/logs 不要複製進 image，dependencies 會在 image 裡重新安裝。
 node_modules
+frontend/node_modules
+frontend/dist
 npm-debug.log*
 
 # 不要把秘密設定檔複製進 Docker image。

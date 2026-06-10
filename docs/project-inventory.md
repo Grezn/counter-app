@@ -1,6 +1,6 @@
 # Counter App 專案總整理
 
-最後整理日期：2026-05-11
+最後整理日期：2026-06-04
 
 這份文件把目前 repo 裡能確認的網路、AWS 資源、部署流程、應用功能和外部依賴集中在一起。除非特別註明，內容都是從這個 repo 的程式碼、Terraform、GitHub Actions 和腳本整理出來；AWS Console、Cloudflare Console 裡的即時狀態仍以實際畫面為準。
 
@@ -24,23 +24,33 @@
 - 因為 Cloudflare 沒有 proxy，Cloudflare WAF、Access、IP allowlist 不會保護這個站。
 - 主要入口安全邊界應放在 AWS ALB Security Group。
 - 建議 ALB Security Group 的 80 和 443 source 都引用 AWS customer-managed prefix list，之後新增 IP 只改 prefix list。
-- app 本身目前沒有登入系統，只有 reset 動作需要 `RESET_TOKEN`。
+- app 本身目前沒有登入系統；正式環境主要靠 ALB Security Group/IP allowlist 保護入口。
 
 ## Repo 結構
 
 | 路徑 | 用途 | 備註 |
 | --- | --- | --- |
 | `server.js` | Express app 入口 | 掛 routes、靜態檔案、request log、安全 headers、graceful shutdown |
-| `routes/counter.js` | 首頁、計數器、訪客統計、reset API | 依賴 Redis |
-| `routes/health.js` | `/health`、`/ready` | `/ready` 會 ping Redis |
-| `routes/jira.js` | Jira Cloud issue 建立 API | 後端代送，token 不進前端 |
-| `routes/runbooks.js` | SOP / Runbook API | 從 `data/runbooks.json` 讀資料 |
-| `routes/weather.js` | 本地即時氣象 API proxy | 呼叫中央氣象署觀測與預報 API |
+| `frontend/` | Vue + Vite 前端 | `src/components/` 拆出頁首、本地氣象、訪客統計、事件標題/操作工具列、事件欄位/快速接案/事件樣板/常用句/處理紀錄時間軸/Jira 狀態/交班提醒/摘要徽章/摘要文字/摘要狀態、事件 checklist、交班摘要面板、事件歷史狀態/事件歷史焦點列/事件歷史列表/重複事件提示/報修補充欄位/工作流/歷史紀錄、SOP 速查、值班入口與回頂部按鈕；`src/composables/` 管畫面狀態、事件核心欄位、事件 checklist 狀態與 `useWindowBridge.js`，所有 `__msp*` window bridge 註冊集中在 helper；`src/api/` 集中 Express API JSON 呼叫；`npm run build` 輸出到 `frontend/dist` |
+| `routes/counter.js` | 訪客統計 API | 新路徑為 `/api/visitor-stats/*`，舊根路徑保留相容；Redis 可用時持久化，Redis degraded 時暫用 process memory |
+| `routes/incidents.js` | 事件紀錄 API controller | Redis 可用時持久化，Redis degraded 時暫用 process memory；前端另有 localStorage fallback |
+| `routes/health.js` | `/health`、`/ready` | `/ready` 回報 Redis 狀態，但不因 Redis degraded 中斷 |
+| `routes/jira.js` | Jira Cloud API controller | 後端代送，token 不進前端 |
+| `routes/runbooks.js` | SOP / Runbook API controller | 從 runbook service 讀資料 |
+| `routes/weather.js` | 本地即時氣象 API controller | 回傳 weather service 結果；外部來源不可用時仍回穩定 degraded JSON |
+| `services/incidents.js` | 事件紀錄 service | 集中資料清洗、Redis hash/sorted set、legacy list migration、memory fallback 與結案/刪除狀態轉換 |
+| `services/jira.js` | Jira service | 集中 Jira 設定檢查、ADF payload 組裝、priority/label 推導與 Atlassian REST 呼叫 |
+| `services/runbooks.js` | Runbook service | 集中 `data/runbooks.json` 載入、搜尋、分類過濾與 MCP 摘要格式 |
+| `services/visitorStats.js` | 訪客統計 service | 集中 Redis key、memory fallback、visitor id 與 active visitors 邏輯 |
+| `services/weather.js` | 本地氣象 service | 集中 CWA/Open-Meteo 呼叫、快取、觀測站解析、預報與 local degraded response |
 | `services/redis.js` | Redis client | 支援 `REDIS_URL` 或 `REDIS_HOST` + `REDIS_PORT` |
-| `public/index.html` | 前端畫面 | MSP 值班中控台 |
-| `public/app.js` | 前端互動邏輯 | localStorage、API 呼叫、交班摘要 |
-| `public/styles.css` | 前端樣式 | light/dark theme |
+| `public/index.html` | Vue build fallback | `frontend/dist` 不存在時顯示建置提示，不再維護第二套舊 UI |
+| `public/app.js` | 前端互動橋接 | Vue shell 透過 `legacyBridge.js` 接上尚未完全 Vue 化的互動；Jira/visitor stats/incidents CRUD API 已由 Vue 管理，事件時間/客戶/系統/主旨/問題描述/影響範圍/接手人員/下一步/已通知/嚴重度/目前狀態/來源欄位、快速接案文字、處理紀錄 textarea 與時間軸、追蹤狀態 select 與下次確認欄位狀態、摘要文字、摘要格式、事件樣板選取、事件歷史 view 與事件儲存按鈕狀態已由 Vue 顯示；事件 snapshot、草稿 localStorage、狀態套用、欄位/radio/follow-up 補值與文字追加會優先走 `__mspIncidentState`，目前編輯中的事件紀錄 ID、已儲存 snapshot 與儲存按鈕狀態優先走 `__mspIncidentSaveStatus`，DOM 掃描保留為 fallback，`public/app.js` 不再直接 `fetch` |
+| `public/styles.css` | 前端樣式來源 | Vue build 會打包進 assets |
 | `data/runbooks.json` | SOP / Runbook 資料 | 只應放可出現在前端的資訊 |
+| `scripts/api-smoke.mjs` | API smoke test | 覆蓋 Vue shell、health/ready、visitor stats、incidents、Jira status、runbooks、weather |
+| `scripts/incidents-service-smoke.mjs` | Incidents service smoke test | 模擬 Redis unavailable，確認 validation、create、update、resolve、list、delete memory fallback 行為 |
+| `scripts/weather-service-smoke.mjs` | Weather service smoke test | 模擬外部氣象來源失敗，確認 service 仍回 HTTP 200、source 與 current shape |
 | `Dockerfile` | production image | Node 20 Alpine，跑 `npm start` |
 | `docker-compose.yml` | 本機或手動容器設定 | 預設 host `80` -> container `3000` |
 | `.github/workflows/deploy.yml` | CI/CD | build、push ECR、SSM in-place deploy |
@@ -56,6 +66,7 @@
 | --- | --- |
 | Runtime | Node.js 20 Alpine |
 | Framework | Express 4 |
+| Frontend | Vue 3 + Vite |
 | Redis library | `redis` 4 |
 | App name | `counter-app` |
 | Container port | `3000` |
@@ -70,31 +81,36 @@
 
 | Method | Path | 功能 | 備註 |
 | --- | --- | --- | --- |
-| `GET` | `/` | 回傳首頁 | `public/index.html` |
+| `GET` | `/` | 回傳首頁 | 優先 `frontend/dist/index.html`，無 build 時 fallback `public/index.html` |
 | `GET` | `/whoami` | 回傳 app/version | 不回 container hostname |
 | `GET` | `/health` | app process health | 不檢查 Redis |
-| `GET` | `/ready` | readiness | 會 ping Redis，ALB/Docker 使用這個 |
-| `POST` | `/track-view` | 訪客/瀏覽統計 | 需要 Redis |
-| `GET` | `/stats` | 統計資料 | 需要 Redis |
-| `GET` | `/count` | 目前 counter | 需要 Redis |
-| `POST` | `/increment` | counter +1 | 需要 Redis |
-| `POST` | `/reset` | counter 歸零 | 需要 `x-reset-token` header |
+| `GET` | `/ready` | readiness | 回報 Redis ready/degraded，ALB/Docker 使用這個 |
+| `GET` | `/api/visitor-stats` | 統計資料 | Redis degraded 時暫用 process memory；舊 `/stats` 保留相容 |
+| `POST` | `/api/visitor-stats/views` | 訪客/瀏覽統計 | Redis degraded 時暫用 process memory；舊 `/track-view` 保留相容 |
+| `POST` | `/api/visitor-stats/heartbeat` | 維持 active visitors | Redis degraded 時暫用 process memory；舊 `/heartbeat` 保留相容 |
+| `GET` | `/api/incidents` | 事件紀錄列表 | Redis degraded 時暫用 process memory |
+| `POST` | `/api/incidents` | 建立事件紀錄 | Redis degraded 時暫用 process memory |
+| `PUT` | `/api/incidents/:id` | 更新事件紀錄 | Redis degraded 時暫用 process memory |
+| `PATCH` | `/api/incidents/:id/resolve` | 標記事件已解決 | Redis degraded 時暫用 process memory |
+| `DELETE` | `/api/incidents/:id` | 刪除事件紀錄 | Redis degraded 時暫用 process memory |
 | `GET` | `/api/jira/status` | Jira 設定狀態 | 不回 token |
 | `POST` | `/api/jira/issues` | 建立 Jira issue | 後端 Basic auth 呼叫 Jira REST API |
 | `GET` | `/api/runbooks` | 搜尋/列出 SOP | 支援 `category`、`q` query |
-| `GET` | `/api/weather/local` | 本地即時氣象 | 支援定位座標、最近測站觀測、預報與快取 |
+| `GET` | `/api/weather/local` | 本地即時氣象 | 支援定位座標、最近測站觀測、預報、快取；外部來源失敗時回 degraded current shape |
 
 ### Redis keys
 
 | Key | 類型 | 用途 | TTL |
 | --- | --- | --- | --- |
-| `counter` | string/integer | 畫面上的目前計數 | 無 |
 | `stats:total_page_views` | string/integer | 累計瀏覽數 | 無 |
 | `stats:daily_page_views:YYYY-MM-DD` | string/integer | 每日瀏覽數 | 30 天 |
 | `stats:total_unique_visitors` | HyperLogLog | 累計不重複訪客估算 | 無 |
 | `stats:daily_unique_visitors:YYYY-MM-DD` | HyperLogLog | 每日不重複訪客估算 | 30 天 |
 | `stats:active_visitors_zset` | sorted set | 最近 30 秒活躍訪客 | 約 60 秒 |
-| `incidents:recent` | list | 最近事件暫存紀錄，供未結案列表、搜尋篩選與交班檢查列使用 | 無 |
+| `incidents:items` | hash | 事件紀錄內容 | 無 |
+| `incidents:order` | sorted set | 事件列表排序 | 無 |
+| `incidents:migrated:v2` | string | 舊事件資料遷移標記 | 無 |
+| `incidents:recent` | list | 舊版事件暫存紀錄，遷移後保留相容 | 無 |
 
 ### Browser storage
 
@@ -103,20 +119,18 @@
 | `msp_theme` | localStorage | light/dark theme | 非敏感 |
 | `visitor_id` | localStorage | 訪客統計 ID | 非帳號身分 |
 | `noc_incident_state` | localStorage | 值班事件暫存 | 個人瀏覽器資料，不送後端保存 |
-| `noc_incident_active_record_id` | localStorage | 目前載入的事件紀錄 ID | 讓再次儲存時更新同一筆 Redis 紀錄 |
+| `noc_incident_active_record_id` | localStorage | 目前載入的事件紀錄 ID | 讓再次儲存時更新同一筆後端紀錄 |
+| `noc_incident_records_local` | localStorage | 後端事件暫存不可用時的本機事件紀錄 | 只保存在目前瀏覽器 |
 | `msp_oncall_checklist:<yyyy-mm-dd>` | localStorage | 每日值班檢查勾選狀態 | 以本地日期分日保存，隔天自動使用新 key |
-| `reset_token` | sessionStorage | reset token 暫存 | 關閉分頁後消失 |
 
 ## 前端功能
 
 - Dashboard：本地即時氣象、累計訪客、今日訪客、目前在線、日期與事件留存。
-- 計數器分頁：目前計數、+1、重設。
-- Reset：需要輸入 `RESET_TOKEN`，前端只放在本分頁 `sessionStorage`。
-- 本地即時氣象：瀏覽器可用 Geolocation，後端呼叫中央氣象署最近測站觀測與預報 API；也可在前端用「地區」手動固定顯示地區，避免桌機定位偏移。
+- 本地即時氣象：瀏覽器可用 Geolocation，後端呼叫中央氣象署最近測站觀測與預報 API；也可在前端用「地區」手動固定顯示地區，避免桌機定位偏移。CWA 或 Open-Meteo 不可用時，後端仍回 local degraded weather shape，讓前端維持可用狀態。
 - 事件留存與交班：表單資料存在 localStorage，可用快速接案貼上告警內容帶入草稿，並產生完整/精簡/更新版交班摘要、追蹤狀態、交班前檢查、事件搜尋篩選與處理紀錄時間軸。
 - Jira 小卡：把事件與交班摘要送到後端，再由後端建立 Jira issue。
-- SOP 速查：從 `/api/runbooks` 讀取 `data/runbooks.json`。
-- 值班入口側邊欄：常用外部系統連結、每日值班檢查與今日進度。
+- SOP 速查：Vue 從 `/api/runbooks` 讀取 `data/runbooks.json`，支援分類、搜尋、複製與帶入事件草稿。
+- 值班入口側邊欄：常用外部系統連結、每日值班檢查與今日進度，由 Vue 管理開關與 localStorage。
 - 話機通話測試：前端組 tel link，號碼目前是 `+886800008669`，接通後按 `3`。
 
 ## 外部入口連結
@@ -330,7 +344,7 @@ HTTPS  TCP 443  Source = counter-app-allowed-ips prefix list
 | Endpoint | `demo-caches.nyynzy.ng.0001.use1.cache.amazonaws.com` |
 | Port | `6379` |
 | URL | `redis://demo-caches.nyynzy.ng.0001.use1.cache.amazonaws.com:6379` |
-| 用途 | counter、訪客統計、active visitors |
+| 用途 | 訪客統計、active visitors、事件紀錄 |
 
 備註：user-data 註解提醒要填 Primary endpoint，不要填 configuration endpoint。
 
@@ -340,7 +354,6 @@ HTTPS  TCP 443  Source = counter-app-allowed-ips prefix list
 
 | Parameter | 類型建議 | 用途 | 必要性 |
 | --- | --- | --- | --- |
-| `/counter-app/prod/reset-token` | SecureString | `/reset` 授權 | 必要，缺少時 reset 不可用 |
 | `/counter-app/prod/jira-email` | String | Jira Basic auth email | Jira 建卡需要 |
 | `/counter-app/prod/jira-api-token` | SecureString | Jira API token | Jira 建卡需要 |
 | `/counter-app/prod/cwa-api-key` | SecureString | 中央氣象署 API 授權碼 | 氣象功能需要 |
@@ -366,7 +379,6 @@ EC2 role 需要：
 | `REDIS_PORT` | Redis port | `6379` |
 | `REDIS_CONNECT_TIMEOUT_MS` | Redis connect timeout | `3000` |
 | `REDIS_CONNECT_MAX_RETRIES` | Redis startup reconnect retry | `5` |
-| `RESET_TOKEN` | reset 授權 token | SSM |
 
 ### Jira
 
@@ -452,15 +464,14 @@ Script：`infra/user-data.sh`
 1. Log to `/var/log/user-data.log`.
 2. Install Docker, AWS CLI, jq.
 3. Start Docker.
-4. Read `/counter-app/prod/reset-token`.
-5. Optionally read Jira email/API token.
-6. Optionally read CWA API key.
-7. Login to ECR.
-8. Pull `docker-demo:latest`.
-9. Compute `APP_VERSION` from image digest.
-10. Remove old `counter-app` container.
-11. Run container on host `80` -> container `3000`.
-12. Print Docker status, logs, `/health`, `/ready`, `/whoami`.
+4. Optionally read Jira email/API token.
+5. Optionally read CWA API key.
+6. Login to ECR.
+7. Pull `docker-demo:latest`.
+8. Compute `APP_VERSION` from image digest.
+9. Remove old `counter-app` container.
+10. Run container on host `80` -> container `3000`.
+11. Print Docker status, logs, `/health`, `/ready`, `/whoami`.
 
 ### User data update
 
@@ -502,7 +513,7 @@ docker compose up
 - container port：`3000`
 - healthcheck：`/ready`
 
-備註：本機如果沒有 Redis 或沒有連到正式 Redis，`/ready` 會失敗，依賴 Redis 的功能也會報錯。
+備註：本機如果沒有 Redis 或沒有連到正式 Redis，`/ready` 仍會回 ready/degraded；訪客統計與事件紀錄 API 會暫用 process memory，前端事件紀錄仍會保留 localStorage fallback。
 
 ## 安全備註
 
@@ -535,4 +546,4 @@ docker compose up
 4. 新增 `package-lock.json`，Dockerfile 改成 `npm ci --omit=dev`。
 5. 釐清 Terraform 是否要完整接管 Security Group、Prefix List、Listener rules。
 6. 長期若不想靠 IP，改成登入機制或 Cloudflare Access，但那會讓使用者看到 Cloudflare edge 憑證，而不是 ACM 憑證。
-7. 把 `public/index.html` 拆成較小的 HTML/CSS/JS 模組，降低日後維護成本。
+7. 把 `public/app.js` 的既有互動橋接逐步拆成 Vue components，降低日後維護成本。

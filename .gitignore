@@ -13,3 +13,8 @@
 
 # Node.js 本機安裝輸出
 node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# 本機測試截圖與背景服務 log
+.local-logs/

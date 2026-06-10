@@ -4,7 +4,7 @@ const os = require("os");
 const crypto = require("crypto");
 
 // routes/ 底下放的是「不同功能的網址」。
-// counterRoutes 管首頁、計數器、訪客統計；healthRoutes 管健康檢查。
+// counterRoutes 管首頁與訪客統計；healthRoutes 管健康檢查。
 // runbookRoutes 管 SOP / Runbook API，讓前端不用把資料寫死在 HTML。
 const counterRoutes = require("./routes/counter");
 const healthRoutes = require("./routes/health");
@@ -26,6 +26,8 @@ const TRUST_PROXY_HOPS = Number(process.env.TRUST_PROXY_HOPS || 1);
 // os.hostname() 在 container 裡通常會是 container id。
 // 放進 /whoami 和 log 裡，可以看出目前是哪台 instance/container 回應。
 const INSTANCE_ID = os.hostname();
+const FRONTEND_DIST_DIR = path.join(__dirname, "frontend", "dist");
+const PUBLIC_DIR = path.join(__dirname, "public");
 let server;
 
 // 這個服務跑在 AWS ALB 後面，所以預設只信任最靠近 app 的一層 proxy。
@@ -94,9 +96,9 @@ app.use((req, res, next) => {
 // 事件摘要會送到 Jira API；限制大小仍可避免被亂塞大 payload。
 app.use(express.json({ limit: "64kb" }));
 
-// public/ 是靜態檔案資料夾。
-// 例如 /favicon.svg 會直接從 public/favicon.svg 回傳。
-app.use(express.static(path.join(__dirname, "public")));
+// Vue build 後會放在 frontend/dist；public/ 保留 favicon 與少量共用 legacy helper。
+app.use(express.static(FRONTEND_DIST_DIR));
+app.use(express.static(PUBLIC_DIR));
 
 // /whoami 用來確認目前部署版本。
 // 不回傳 container hostname，避免公開暴露太細的執行環境資訊。
@@ -108,7 +110,7 @@ app.get("/whoami", (req, res) => {
 });
 
 // 把 routes/*.js 掛到網站根路徑。
-// 例如 counterRoutes 裡的 router.post("/increment") 會變成 /increment。
+// 例如 counterRoutes 裡的 router.post("/track-view") 會變成 /track-view。
 app.use("/", counterRoutes);
 app.use("/", healthRoutes);
 app.use("/", jiraRoutes);

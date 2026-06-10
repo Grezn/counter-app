@@ -4,7 +4,7 @@ set -euxo pipefail
 # 這份 user data 是給 ASG/EC2 開機時使用的。
 # 重點：
 # 1. EC2 要掛 IAM Role / Instance Profile，讓 aws cli 可以登入 ECR。
-# 2. RESET_TOKEN / JIRA_API_TOKEN 建議放 SSM Parameter Store，不要寫死在 user data。
+# 2. JIRA_API_TOKEN / CWA_API_KEY 建議放 SSM Parameter Store，不要寫死在 user data。
 # 3. docker run 會把 Redis、Jira、氣象和 app 設定用環境變數傳進 container。
 
 # ===== 記錄 log =====
@@ -51,9 +51,6 @@ CWA_MAX_OBSERVATION_DISTANCE_KM="80"
 CWA_CACHE_TTL_MS="180000"
 
 # ===== Secret =====
-# 建議先在 SSM 建立 SecureString：
-# aws ssm put-parameter --name /counter-app/prod/reset-token --type SecureString --value "你的長隨機token"
-RESET_TOKEN_PARAM_NAME="/counter-app/prod/reset-token"
 JIRA_EMAIL_PARAM_NAME="/counter-app/prod/jira-email"
 JIRA_API_TOKEN_PARAM_NAME="/counter-app/prod/jira-api-token"
 CWA_API_KEY_PARAM_NAME="/counter-app/prod/cwa-api-key"
@@ -93,15 +90,6 @@ ecr_login() {
     | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 }
 
-read_reset_token() {
-  aws ssm get-parameter \
-    --region "$AWS_REGION" \
-    --name "$RESET_TOKEN_PARAM_NAME" \
-    --with-decryption \
-    --query "Parameter.Value" \
-    --output text
-}
-
 read_optional_parameter() {
   local name="$1"
 
@@ -119,14 +107,6 @@ retry 3 install_packages
 systemctl enable docker
 systemctl start docker
 usermod -aG docker ec2-user || true
-
-# ===== 讀取 Reset Token =====
-# 如果這裡失敗，通常代表 EC2 IAM Role 少了 ssm:GetParameter 或 kms:Decrypt。
-RESET_TOKEN="$(read_reset_token)"
-if [ -z "$RESET_TOKEN" ] || [ "$RESET_TOKEN" = "None" ]; then
-  echo "[UserData] ERROR: RESET_TOKEN is empty"
-  exit 1
-fi
 
 # ===== 讀取 Jira 設定 =====
 # Jira 是事件留存功能；沒設定時 app 仍會啟動，但建立小卡會顯示未設定。
@@ -180,7 +160,6 @@ docker run -d \
   -e "REDIS_HOST=${REDIS_ENDPOINT}" \
   -e "REDIS_PORT=${REDIS_PORT}" \
   -e "REDIS_URL=${REDIS_URL}" \
-  -e "RESET_TOKEN=${RESET_TOKEN}" \
   -e "JIRA_BASE_URL=${JIRA_BASE_URL}" \
   -e "JIRA_REST_BASE_URL=${JIRA_REST_BASE_URL}" \
   -e "JIRA_EMAIL=${JIRA_EMAIL}" \

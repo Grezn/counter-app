@@ -6,9 +6,12 @@ let client;
 let reconnectTimer;
 let connectInProgress = false;
 let shuttingDown = false;
+let lastRedisErrorMessage = "";
+let lastRedisErrorLogAt = 0;
 const REDIS_CONNECT_TIMEOUT_MS = Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 3000);
 const REDIS_CONNECT_MAX_RETRIES = Number(process.env.REDIS_CONNECT_MAX_RETRIES || 5);
 const REDIS_RECONNECT_DELAY_MS = Number(process.env.REDIS_RECONNECT_DELAY_MS || 5000);
+const REDIS_ERROR_LOG_INTERVAL_MS = 60 * 1000;
 
 function getRedisUrl() {
   // 正式環境可以直接設定 REDIS_URL。
@@ -56,7 +59,7 @@ function createRedisClient(redisUrl) {
 
   // error event 一定要監聽，否則 Redis 連線錯誤可能讓 Node process 掛掉。
   nextClient.on("error", (err) => {
-    console.error("Redis error:", err.message);
+    logRedisError("Redis error", err);
   });
 
   nextClient.on("end", () => {
@@ -67,6 +70,22 @@ function createRedisClient(redisUrl) {
   });
 
   return nextClient;
+}
+
+function logRedisError(label, err) {
+  const message = err && err.message ? err.message : String(err || "unknown error");
+  const now = Date.now();
+
+  if (
+    message === lastRedisErrorMessage
+    && now - lastRedisErrorLogAt < REDIS_ERROR_LOG_INTERVAL_MS
+  ) {
+    return;
+  }
+
+  lastRedisErrorMessage = message;
+  lastRedisErrorLogAt = now;
+  console.error(`${label}:`, message);
 }
 
 async function connectRedis() {
@@ -85,7 +104,7 @@ async function connectRedis() {
     console.log("Redis connected:", getRedisLogLabel(redisUrl));
   } catch (err) {
     client = null;
-    console.error("Redis connect failed:", err.message);
+    logRedisError("Redis connect failed", err);
     scheduleReconnect();
   } finally {
     connectInProgress = false;

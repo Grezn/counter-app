@@ -12,6 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const require = createRequire(import.meta.url);
 const { buildHandoverSummary } = require("../public/handover-summary.js");
+const runbookService = require("../services/runbooks.js");
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const DEFAULT_APP_BASE_URL = process.env.COUNTER_APP_BASE_URL || process.env.APP_BASE_URL || "http://127.0.0.1:3000";
 const DEFAULT_TIMEOUT_MS = Number(process.env.MCP_APP_TIMEOUT_MS || 6000);
@@ -96,64 +97,6 @@ function resolveProjectPath(relativePath) {
 
 async function readProjectFile(relativePath) {
   return readFile(resolveProjectPath(relativePath), "utf8");
-}
-
-async function loadRunbookData() {
-  return JSON.parse(await readProjectFile("data/runbooks.json"));
-}
-
-function searchableRunbookText(runbook) {
-  return [
-    runbook.id,
-    runbook.category,
-    runbook.title,
-    runbook.summary,
-    runbook.severity,
-    ...(runbook.triggers || []),
-    ...(runbook.dutyRules || []),
-    ...(runbook.replyRules || []),
-    ...(runbook.ignoreRules || []),
-    ...(runbook.firstChecks || []),
-    ...(runbook.steps || []),
-    ...(runbook.escalateWhen || []),
-    ...(runbook.contacts || []),
-    ...(runbook.mailRecipients || []),
-    ...((runbook.extraSections || []).flatMap((section) => [
-      section.title,
-      ...(section.items || []),
-      ...((section.copyGroups || []).flatMap((group) => [
-        group.label,
-        group.copyLabel,
-        group.text,
-      ])),
-    ])),
-  ].join(" ").toLowerCase();
-}
-
-function summarizeRunbook(runbook) {
-  return {
-    id: runbook.id,
-    category: runbook.category,
-    title: runbook.title,
-    summary: runbook.summary,
-    severity: runbook.severity,
-    linkLabels: (runbook.links || []).map((link) => link.label).filter(Boolean),
-    sectionTitles: (runbook.extraSections || []).map((section) => section.title).filter(Boolean),
-  };
-}
-
-function filterRunbooks(data, options = {}) {
-  const keyword = normalizeText(options.q).toLowerCase();
-  const category = normalizeText(options.category).toLowerCase();
-  const limit = clampInteger(options.limit, 1, 50, 10);
-
-  return (data.runbooks || [])
-    .filter((runbook) => {
-      const categoryMatched = !category || normalizeText(runbook.category).toLowerCase() === category;
-      const keywordMatched = !keyword || searchableRunbookText(runbook).includes(keyword);
-      return categoryMatched && keywordMatched;
-    })
-    .slice(0, limit);
 }
 
 function getAppUrl(endpoint, appBaseUrl = DEFAULT_APP_BASE_URL) {
@@ -291,15 +234,15 @@ server.registerTool("search_runbooks", {
     openWorldHint: false,
   },
 }, async ({ q = "", category = "", limit = 10, includeDetails = false }) => {
-  const data = await loadRunbookData();
-  const matches = filterRunbooks(data, { q, category, limit });
+  const data = await runbookService.loadRunbookData();
+  const matches = runbookService.filterRunbooks(data, { q, category, limit: clampInteger(limit, 1, 50, 10) });
 
   return textResult({
     version: data.version,
     total: data.runbooks.length,
     filtered: matches.length,
     categories: data.categories,
-    runbooks: includeDetails ? matches : matches.map(summarizeRunbook),
+    runbooks: includeDetails ? matches : matches.map(runbookService.summarizeRunbook),
   });
 });
 
@@ -314,8 +257,8 @@ server.registerTool("get_runbook", {
     openWorldHint: false,
   },
 }, async ({ id }) => {
-  const data = await loadRunbookData();
-  const runbook = (data.runbooks || []).find((item) => item.id === id);
+  const data = await runbookService.loadRunbookData();
+  const runbook = runbookService.getRunbookById(data, id);
 
   if (!runbook) {
     return {
