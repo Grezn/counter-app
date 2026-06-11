@@ -86,8 +86,15 @@ function hasIncidentContent(incident, handoverSummary) {
 }
 
 function getIncidentTitle(fields) {
-  return normalizeText(fields.title, 160)
-    || normalizeText(fields.problemDescription, 160)
+  const title = normalizeText(fields.title, 160);
+  if (title) return title;
+
+  const customer = normalizeText(fields.customer, 80);
+  const problem = normalizeText(fields.problemDescription, 160);
+  if (customer && problem) return normalizeText(`${customer} - ${problem}`, 160);
+
+  return problem
+    || customer
     || "未命名事件";
 }
 

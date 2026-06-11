@@ -19,6 +19,10 @@
     return `${label}：${valueOrDash(value)}`;
   }
 
+  function optionalLine(label, value) {
+    return normalizeText(value) ? line(label, value) : "";
+  }
+
   function formatDisplayDateTime(value) {
     return value ? String(value).replace("T", " ") : "-";
   }
@@ -89,6 +93,40 @@
     });
   }
 
+  function getReporterName(fields) {
+    return normalizeText(fields.repairTarget)
+      || normalizeText(fields.dealer)
+      || normalizeText(fields.customer)
+      || "xxx";
+  }
+
+  function getIncidentTitle(fields) {
+    const explicitTitle = normalizeText(fields.title);
+    if (explicitTitle) return explicitTitle;
+
+    const customer = normalizeText(fields.customer);
+    const problem = normalizeText(fields.problemDescription);
+    if (customer && problem) return `${customer} - ${problem}`;
+    return customer || problem || "-";
+  }
+
+  function getRepairPhoneResponseLines(fields) {
+    return [
+      `Hello, 這邊有接到來自${getReporterName(fields)}的報修電話, 資訊如下`,
+      "",
+      line("進線時間", formatDisplayDateTime(fields.startedAt)),
+      line("經銷商", fields.dealer),
+      line("客戶名稱", fields.customer),
+      line("問題描述", fields.problemDescription),
+      line("產品型號", fields.model),
+      line("產品序號", fields.serial),
+      line("負責業務", fields.owner),
+      line("聯繫方式", fields.contactMethod),
+      "",
+      "再麻煩協助, 感謝",
+    ];
+  }
+
   function getHandoverSummaryChangeLines(fields, previousFields) {
     if (!previousFields) return [];
 
@@ -129,23 +167,13 @@
       repair: [
         ["產品名稱", fields.productName],
         ["合約編號", fields.contractId],
-        ["產品型號", fields.model],
-        ["產品序號", fields.serial],
-        ["經銷商名稱", fields.dealer],
-        ["報修對象", fields.repairTarget],
-        ["負責業務 / 工程師", fields.owner],
-        ["聯繫方式 / 稱呼", fields.contactMethod],
         ["是否為客戶", radios.isCustomer],
       ],
       aws: [
         ["產品名稱", fields.productName],
-        ["負責業務 / 工程師", fields.owner],
-        ["聯繫方式 / 稱呼", fields.contactMethod],
         ["是否為客戶", radios.isCustomer],
       ],
       other: [
-        ["負責業務 / 工程師", fields.owner],
-        ["聯繫方式 / 稱呼", fields.contactMethod],
         ["是否為客戶", radios.isCustomer],
       ],
       general: [],
@@ -177,18 +205,10 @@
       : formatDisplayDateTime(fields.nextCheckAt);
     const doneChecks = getEnabledKeys(incidentState.checks);
     const reportLines = getReportLines(fields, radios, followups);
-    const headline = `[${valueOrDash(fields.severity)} / ${valueOrDash(fields.status)}] ${valueOrDash(fields.title)}`;
+    const repairPhoneResponseLines = getRepairPhoneResponseLines(fields);
 
     if (mode === "compact") {
-      return [
-        "【交班摘要】",
-        line("主旨", fields.title),
-        line("狀態", fields.status),
-        line("影響", fields.impact),
-        line("下一步", fields.nextStep),
-        line("追蹤狀態", fields.trackingStatus),
-        line("下次確認", nextCheckText),
-      ].join("\n");
+      return repairPhoneResponseLines.join("\n");
     }
 
     if (mode === "update") {
@@ -204,39 +224,29 @@
 
       return [
         "【事件更新】",
-        headline,
+        getIncidentTitle(fields),
         ...updateLines,
       ].join("\n");
     }
 
+    const internalLines = [
+      optionalLine("目前狀態", fields.status),
+      optionalLine("系統 / 服務", fields.system),
+      optionalLine("下一步", fields.nextStep),
+      optionalLine("處理紀錄", fields.notes),
+      doneChecks.length ? line("已完成檢查", doneChecks.join("、")) : "",
+      reportLines.length ? reportLines.join("\n") : "",
+    ].filter(Boolean);
+
+    if (!internalLines.length) {
+      return repairPhoneResponseLines.join("\n");
+    }
+
     return [
-      "【接手重點】",
-      headline,
-      line("事件時間", formatDisplayDateTime(fields.startedAt)),
-      line("客戶 / 單位", fields.customer),
-      line("系統 / 設備", fields.system),
-      line("來源", fields.source),
-      line("服務類型", serviceType),
+      ...repairPhoneResponseLines,
       "",
-      "【問題 / 影響】",
-      line("問題描述", fields.problemDescription),
-      line("影響範圍", fields.impact),
-      "",
-      "【接手動作】",
-      line("下一步", fields.nextStep),
-      line("追蹤狀態", fields.trackingStatus),
-      line("下次確認", nextCheckText),
-      line("接手人員", fields.handoverOwner),
-      line("已通知", fields.notified),
-      "",
-      "【處理紀錄】",
-      valueOrDash(fields.notes),
-      "",
-      "【已完成檢查】",
-      doneChecks.length ? doneChecks.join("、") : "-",
-      "",
-      "【報修補充】",
-      reportLines.length ? reportLines.join("\n") : "-",
+      "【內部補充】",
+      ...internalLines,
     ].join("\n");
   }
 

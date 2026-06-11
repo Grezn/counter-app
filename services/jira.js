@@ -85,9 +85,13 @@ function getConfiguredLabels(config, fields) {
 }
 
 function buildIssueSummary(fields) {
-  const title = normalizeText(fields.title, "值班事件紀錄");
   const customer = normalizeText(fields.customer);
-  const system = normalizeText(fields.system);
+  const problem = normalizeText(fields.problemDescription);
+  const title = normalizeText(fields.title)
+    || (customer && problem ? `${customer} - ${problem}` : "")
+    || problem
+    || "值班事件紀錄";
+  const system = normalizeText(fields.system) || normalizeText(fields.model);
   const prefixParts = [customer, system].filter(Boolean);
   const prefix = prefixParts.length ? `[NOC] ${prefixParts.join(" / ")} - ` : "[NOC] ";
 

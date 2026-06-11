@@ -167,13 +167,29 @@ const INCIDENT_CORE_FIELD_NAMES = [
   "nextStep",
   "notified",
 ];
+const INCIDENT_SERVICE_DETAIL_FIELD_NAMES = [
+  "serviceTypeOther",
+  "productName",
+  "contractId",
+  "serial",
+  "model",
+  "dealer",
+  "repairTarget",
+  "owner",
+  "contactMethod",
+  "followupOther",
+  "extraInfo",
+];
+const INCIDENT_SERVICE_DETAIL_FIELD_NAME_SET = new Set(INCIDENT_SERVICE_DETAIL_FIELD_NAMES);
 const HANDOVER_SUMMARY_REQUIRED_FIELDS = [
-  { field: "title", label: "一句話主旨", elementId: "incidentTitle" },
-  { field: "status", label: "目前狀態", elementId: "incidentStatus" },
-  { field: "impact", label: "影響範圍", elementId: "incidentImpact" },
-  { field: "nextStep", label: "下一步", elementId: "incidentNextStep" },
-  { field: "trackingStatus", label: "追蹤狀態", elementId: "incidentTrackingStatus" },
-  { field: "notified", label: "已通知", elementId: "incidentNotified" },
+  { field: "startedAt", label: "進線時間", elementId: "incidentStartedAt" },
+  { field: "dealer", label: "經銷商", elementId: "incidentDealer" },
+  { field: "customer", label: "客戶名稱", elementId: "incidentCustomer" },
+  { field: "problemDescription", label: "問題描述", elementId: "incidentProblemDescription" },
+  { field: "model", label: "產品型號", elementId: "incidentModel" },
+  { field: "serial", label: "產品序號", elementId: "incidentSerial" },
+  { field: "owner", label: "負責業務", elementId: "incidentOwner" },
+  { field: "contactMethod", label: "聯繫方式", elementId: "incidentContactMethod" },
 ];
 const INCIDENT_PHRASE_GROUPS = {
   nextStep: {
@@ -302,9 +318,9 @@ const INCIDENT_TEMPLATES = [
 ];
 const SERVICE_TYPE_HINTS = {
   general: "一般諮詢只保留後續處理與其他補充，避免不必要的報修欄位干擾。",
-  repair: "產品報修會顯示產品、合約、序號與對接窗口欄位。",
-  aws: "AWS 邀請組織先保留產品與窗口資訊；帳號、組織或特殊需求可寫在其他補充。",
-  other: "其他類型只保留窗口與補充欄位，需要的背景請寫在其他補充。",
+  repair: "產品報修主要資訊已放在上方；這裡只補產品分類、合約與後續處理。",
+  aws: "AWS 邀請組織可補產品分類；帳號、組織或特殊需求可寫在其他補充。",
+  other: "其他類型只保留後續處理與補充欄位，需要的背景請寫在其他補充。",
   empty: "選擇服務類型後，下方只會顯示相關補充欄位。",
 };
 const HANDOVER_SUMMARY_MODES = {
@@ -433,7 +449,9 @@ function readIncidentFollowupStateFromPage() {
 }
 
 function getIncidentServiceDetailFields() {
-  return Array.from(document.querySelectorAll(".incident-details [data-incident-field]"));
+  return getIncidentFields().filter((field) => (
+    field.dataset && INCIDENT_SERVICE_DETAIL_FIELD_NAME_SET.has(field.dataset.incidentField)
+  ));
 }
 
 function readIncidentServiceDetailFieldStateFromPage() {
@@ -1055,6 +1073,11 @@ function getQuickIncidentTaggedValue(text, labels) {
   return match ? compactQuickIncidentLine(match[1]) : "";
 }
 
+function getQuickIncidentReporter(text) {
+  const match = String(text || "").match(/接到來自(.+?)的報修電話/i);
+  return match ? compactQuickIncidentLine(match[1]) : "";
+}
+
 function getQuickIncidentFirstMeaningfulLine(text) {
   const taggedTitle = getQuickIncidentTaggedValue(text, ["Subject", "主旨", "標題", "Title", "Issue", "事件"]);
   if (taggedTitle) return taggedTitle;
@@ -1126,21 +1149,37 @@ function buildQuickIncidentDraft(text) {
   const source = inferQuickIncidentSource(text);
   const severity = inferQuickIncidentSeverity(text);
   const trackingStatus = inferQuickIncidentTrackingStatus(text);
-  const title = getQuickIncidentFirstMeaningfulLine(text);
   const customer = getQuickIncidentTaggedValue(text, ["客戶", "客戶名稱", "Customer", "公司", "單位"]);
+  const problemDescription = getQuickIncidentTaggedValue(text, ["問題描述", "問題內容", "Description", "Problem"])
+    || compactQuickIncidentText(text);
+  const dealer = getQuickIncidentTaggedValue(text, ["經銷商", "經銷商名稱", "Dealer", "SI"]);
+  const model = getQuickIncidentTaggedValue(text, ["產品型號", "型號", "Model"]);
+  const serial = getQuickIncidentTaggedValue(text, ["產品序號", "序號", "Serial", "S/N", "SN"]);
+  const owner = getQuickIncidentTaggedValue(text, ["負責業務", "業務", "Owner", "Sales"]);
+  const contactMethod = getQuickIncidentTaggedValue(text, ["聯繫方式", "聯絡方式", "聯絡資訊", "電話", "Email", "Mail", "Contact"]);
+  const repairTarget = getQuickIncidentReporter(text);
+  const title = customer && problemDescription
+    ? `${customer} - ${compactQuickIncidentLine(problemDescription, 72)}`
+    : getQuickIncidentFirstMeaningfulLine(text);
   const system = inferQuickIncidentSystem(text);
   const isServiceImpact = severity === "Service Impact / 服務影響";
   const noteTitle = compactQuickIncidentLine(title, 120);
 
   return {
     startedAt: formatLocalDateTime(new Date()),
+    dealer,
+    repairTarget,
+    model,
+    serial,
+    owner,
+    contactMethod,
     severity,
     status: trackingStatus === "可結案" ? "Monitoring / 監控中" : "Triage / 初步判斷",
     source,
     customer,
     system,
     title: noteTitle,
-    problemDescription: compactQuickIncidentText(text),
+    problemDescription,
     impact: isServiceImpact
       ? "可能影響服務可用性，需先確認影響範圍、受影響對象與 workaround。"
       : "待確認是否影響服務、影響範圍與是否需要通知相關窗口。",
@@ -1172,10 +1211,12 @@ function applyQuickIncidentDraft(inputText) {
   saveIncidentState();
   updateHandoverSummary();
 
-  const title = document.getElementById("incidentTitle");
-  if (title) {
-    title.scrollIntoView({ block: "center", behavior: "smooth" });
-    title.focus();
+  const firstDraftField = document.getElementById("incidentProblemDescription")
+    || document.getElementById("incidentCustomer")
+    || document.getElementById("incidentTitle");
+  if (firstDraftField) {
+    firstDraftField.scrollIntoView({ block: "center", behavior: "smooth" });
+    firstDraftField.focus();
   }
 
   setHandoverSummaryStatus(
@@ -2477,7 +2518,14 @@ function writeLocalIncidentRecords(records) {
 }
 
 function getLocalIncidentTitle(fields) {
-  return String(fields.title || fields.problemDescription || "").trim().slice(0, 160) || "未命名事件";
+  const title = String(fields.title || "").trim();
+  if (title) return title.slice(0, 160);
+
+  const customer = String(fields.customer || "").trim();
+  const problem = String(fields.problemDescription || "").trim();
+  if (customer && problem) return `${customer} - ${problem}`.slice(0, 160);
+
+  return (problem || customer).slice(0, 160) || "未命名事件";
 }
 
 function getLocalIncidentSummary(fields) {
@@ -2857,13 +2905,15 @@ function buildRunbookIncidentDraftFields(runbook) {
 }
 
 function focusIncidentDraft() {
-  const title = document.getElementById("incidentTitle");
+  const firstDraftField = document.getElementById("incidentProblemDescription")
+    || document.getElementById("incidentCustomer")
+    || document.getElementById("incidentTitle");
 
   activateAppView("dashboard", { scrollTop: false });
 
-  if (title) {
-    title.scrollIntoView({ behavior: "smooth", block: "center" });
-    title.focus();
+  if (firstDraftField) {
+    firstDraftField.scrollIntoView({ behavior: "smooth", block: "center" });
+    firstDraftField.focus();
   }
 }
 

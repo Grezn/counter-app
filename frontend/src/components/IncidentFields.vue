@@ -1,11 +1,9 @@
 <script setup>
 import IncidentNotesTimeline from "./IncidentNotesTimeline.vue";
 import IncidentPhraseMenu from "./IncidentPhraseMenu.vue";
-import IncidentTemplatePicker from "./IncidentTemplatePicker.vue";
-import IncidentQuickIntake from "./IncidentQuickIntake.vue";
 import IncidentDetailsFields from "./IncidentDetailsFields.vue";
 import { useIncidentCoreFields } from "../composables/useIncidentCoreFields";
-import { useIncidentNextCheck } from "../composables/useIncidentNextCheck";
+import { useIncidentServiceDetails } from "../composables/useIncidentServiceDetails";
 
 const {
   fieldOptions: coreFieldOptions,
@@ -14,26 +12,17 @@ const {
 } = useIncidentCoreFields();
 
 const {
-  clearNextCheckAt,
-  isNextCheckDisabled,
-  nextCheckTitle,
-  setNextCheckAt,
-  setTrackingStatus,
-  state: nextCheckState,
-  trackingStatusOptions,
-} = useIncidentNextCheck();
+  getField: getServiceField,
+  setField: setServiceField,
+} = useIncidentServiceDetails();
 </script>
 
 <template>
       <div class="incident-grid">
-        <div class="incident-core-title">接手重點</div>
-
-        <IncidentQuickIntake />
-
-        <IncidentTemplatePicker />
+        <div class="incident-core-title">報修電話資訊</div>
 
         <div class="field">
-          <label for="incidentStartedAt">事件時間</label>
+          <label for="incidentStartedAt">進線時間</label>
           <input
             id="incidentStartedAt"
             type="datetime-local"
@@ -45,94 +34,71 @@ const {
         </div>
 
         <div class="field">
-          <label for="incidentSeverity">嚴重度</label>
-          <select id="incidentSeverity" data-incident-field="severity" :value="getCoreField('severity')" @change="setCoreField('severity', $event.target.value)">
-            <option v-for="option in coreFieldOptions.severity" :key="option.label" :value="option.value">{{ option.label }}</option>
-          </select>
+          <label for="incidentRepairTarget">來自</label>
+          <input id="incidentRepairTarget" type="text" data-incident-field="repairTarget" :value="getServiceField('repairTarget')" placeholder="公版 xxx，例如：王小姐 / 經銷商窗口" @input="setServiceField('repairTarget', $event.target.value)" />
         </div>
 
         <div class="field">
-          <label for="incidentStatus">目前狀態</label>
-          <select id="incidentStatus" data-incident-field="status" :value="getCoreField('status')" @change="setCoreField('status', $event.target.value)">
-            <option v-for="option in coreFieldOptions.status" :key="option.label" :value="option.value">{{ option.label }}</option>
-          </select>
+          <label for="incidentDealer">經銷商</label>
+          <input id="incidentDealer" type="text" data-incident-field="dealer" :value="getServiceField('dealer')" placeholder="無則填無" @input="setServiceField('dealer', $event.target.value)" />
         </div>
 
         <div class="field">
-          <label for="incidentCustomer">客戶 / 單位</label>
-          <input id="incidentCustomer" type="text" data-incident-field="customer" :value="getCoreField('customer')" placeholder="客戶或內部單位" @input="setCoreField('customer', $event.target.value)" />
+          <label for="incidentCustomer">客戶名稱</label>
+          <input id="incidentCustomer" type="text" data-incident-field="customer" :value="getCoreField('customer')" placeholder="客戶公司或單位" @input="setCoreField('customer', $event.target.value)" />
         </div>
 
         <div class="field">
-          <label for="incidentSystem">系統 / 設備</label>
-          <input id="incidentSystem" type="text" data-incident-field="system" :value="getCoreField('system')" placeholder="服務、設備或主機名稱" @input="setCoreField('system', $event.target.value)" />
+          <label for="incidentOwner">負責業務</label>
+          <input id="incidentOwner" type="text" data-incident-field="owner" :value="getServiceField('owner')" placeholder="業務姓名 / 無 / 待確認" @input="setServiceField('owner', $event.target.value)" />
         </div>
 
         <div class="field">
-          <label for="incidentSource">來源</label>
-          <select id="incidentSource" data-incident-field="source" :value="getCoreField('source')" @change="setCoreField('source', $event.target.value)">
-            <option v-for="option in coreFieldOptions.source" :key="option.label" :value="option.value">{{ option.label }}</option>
-          </select>
+          <label for="incidentModel">產品型號</label>
+          <input id="incidentModel" type="text" data-incident-field="model" :value="getServiceField('model')" placeholder="無則填無" @input="setServiceField('model', $event.target.value)" />
         </div>
 
-        <div class="field full">
-          <label for="incidentTitle">一句話主旨</label>
-          <input id="incidentTitle" type="text" data-incident-field="title" :value="getCoreField('title')" placeholder="例如：XX 客戶 VPN 連線失敗，需要二線接手確認" @input="setCoreField('title', $event.target.value)" />
+        <div class="field">
+          <label for="incidentSerial">產品序號</label>
+          <input id="incidentSerial" type="text" data-incident-field="serial" :value="getServiceField('serial')" placeholder="無則填無" @input="setServiceField('serial', $event.target.value)" />
+        </div>
+
+        <div class="field">
+          <label for="incidentContactMethod">聯繫方式</label>
+          <input id="incidentContactMethod" type="text" data-incident-field="contactMethod" :value="getServiceField('contactMethod')" placeholder="電話 / Email / Line / 聯絡人" @input="setServiceField('contactMethod', $event.target.value)" />
         </div>
 
         <div class="field full">
           <label for="incidentProblemDescription">問題描述</label>
-          <textarea id="incidentProblemDescription" data-incident-field="problemDescription" :value="getCoreField('problemDescription')" placeholder="只寫接手需要知道的現象、錯誤訊息、發生時間。" @input="setCoreField('problemDescription', $event.target.value)"></textarea>
+          <textarea id="incidentProblemDescription" data-incident-field="problemDescription" :value="getCoreField('problemDescription')" placeholder="客戶口述現象、錯誤訊息、發生時間與目前狀況。" @input="setCoreField('problemDescription', $event.target.value)"></textarea>
         </div>
 
-        <div class="field span-2">
-          <label for="incidentImpact">影響範圍</label>
-          <textarea id="incidentImpact" data-incident-field="impact" :value="getCoreField('impact')" placeholder="誰受影響、是否影響服務、是否已有 workaround。" @input="setCoreField('impact', $event.target.value)"></textarea>
-        </div>
+        <details class="incident-details incident-internal-details">
+          <summary>內部追蹤補充</summary>
+          <div class="details-grid">
+            <div class="field">
+              <label for="incidentStatus">目前狀態</label>
+              <select id="incidentStatus" data-incident-field="status" :value="getCoreField('status')" @change="setCoreField('status', $event.target.value)">
+                <option v-for="option in coreFieldOptions.status" :key="option.label" :value="option.value">{{ option.label }}</option>
+              </select>
+            </div>
 
-        <div class="field">
-          <label for="incidentHandoverOwner">接手人員</label>
-          <textarea id="incidentHandoverOwner" data-incident-field="handoverOwner" :value="getCoreField('handoverOwner')" placeholder="工程師 / 業務 / 部門 / 無" @input="setCoreField('handoverOwner', $event.target.value)"></textarea>
-        </div>
+            <div class="field">
+              <label for="incidentSystem">系統 / 服務</label>
+              <input id="incidentSystem" type="text" data-incident-field="system" :value="getCoreField('system')" placeholder="選填" @input="setCoreField('system', $event.target.value)" />
+            </div>
 
-        <div class="field span-2 has-phrase-menu">
-          <IncidentPhraseMenu group-name="nextStep" field-id="incidentNextStep" label="下一步" />
-          <textarea id="incidentNextStep" data-incident-field="nextStep" :value="getCoreField('nextStep')" placeholder="下一個動作、等待誰回覆、預計何時再確認。" @input="setCoreField('nextStep', $event.target.value)"></textarea>
-        </div>
+            <div class="field full has-phrase-menu">
+              <IncidentPhraseMenu group-name="nextStep" field-id="incidentNextStep" label="下一步" />
+              <textarea id="incidentNextStep" data-incident-field="nextStep" :value="getCoreField('nextStep')" placeholder="選填；需要交班追蹤時再補。" @input="setCoreField('nextStep', $event.target.value)"></textarea>
+            </div>
 
-        <div class="field">
-          <label for="incidentTrackingStatus">追蹤狀態</label>
-          <select id="incidentTrackingStatus" data-incident-field="trackingStatus" :value="nextCheckState.trackingStatus" @change="setTrackingStatus($event.target.value)">
-            <option v-for="option in trackingStatusOptions" :key="option.label" :value="option.value">{{ option.label }}</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <div class="field-label-row">
-            <label for="incidentNextCheckAt">下次確認</label>
-            <button class="field-mini-action" type="button" @click="clearNextCheckAt">清除</button>
+            <div class="field full has-phrase-menu">
+              <IncidentPhraseMenu group-name="notes" field-id="incidentNotes" label="處理紀錄" />
+              <IncidentNotesTimeline />
+            </div>
           </div>
-          <input
-            id="incidentNextCheckAt"
-            type="datetime-local"
-            data-incident-field="nextCheckAt"
-            :disabled="isNextCheckDisabled"
-            :title="nextCheckTitle"
-            :value="nextCheckState.nextCheckAt"
-            @change="setNextCheckAt($event.target.value)"
-            @input="setNextCheckAt($event.target.value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="incidentNotified">已通知</label>
-          <textarea id="incidentNotified" data-incident-field="notified" :value="getCoreField('notified')" placeholder="人員、時間、管道。" @input="setCoreField('notified', $event.target.value)"></textarea>
-        </div>
-
-        <div class="field full has-phrase-menu">
-          <IncidentPhraseMenu group-name="notes" field-id="incidentNotes" label="處理紀錄" />
-          <IncidentNotesTimeline />
-        </div>
+        </details>
 
         <IncidentDetailsFields />
       </div>

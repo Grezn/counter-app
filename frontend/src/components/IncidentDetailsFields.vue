@@ -57,36 +57,6 @@ const {
         <input id="incidentContractId" type="text" data-incident-field="contractId" :value="getField('contractId')" placeholder="無則填無" @input="setField('contractId', $event.target.value)" />
       </div>
 
-      <div class="field" data-service-section="repair" :hidden="!isSectionVisible('repair')">
-        <label for="incidentSerial">產品序號</label>
-        <input id="incidentSerial" type="text" data-incident-field="serial" :value="getField('serial')" placeholder="無則填無" @input="setField('serial', $event.target.value)" />
-      </div>
-
-      <div class="field" data-service-section="repair" :hidden="!isSectionVisible('repair')">
-        <label for="incidentModel">產品型號</label>
-        <input id="incidentModel" type="text" data-incident-field="model" :value="getField('model')" placeholder="無則填無" @input="setField('model', $event.target.value)" />
-      </div>
-
-      <div class="field" data-service-section="repair" :hidden="!isSectionVisible('repair')">
-        <label for="incidentDealer">經銷商名稱</label>
-        <input id="incidentDealer" type="text" data-incident-field="dealer" :value="getField('dealer')" placeholder="輸入經銷商名稱" @input="setField('dealer', $event.target.value)" />
-      </div>
-
-      <div class="field" data-service-section="repair" :hidden="!isSectionVisible('repair')">
-        <label for="incidentRepairTarget">報修對象</label>
-        <input id="incidentRepairTarget" type="text" data-incident-field="repairTarget" :value="getField('repairTarget')" placeholder="客戶 / 經銷商 / 內部單位" @input="setField('repairTarget', $event.target.value)" />
-      </div>
-
-      <div class="field" data-service-section="repair aws other" :hidden="!isSectionVisible('repair aws other')">
-        <label for="incidentOwner">負責業務 / 工程師</label>
-        <input id="incidentOwner" type="text" data-incident-field="owner" :value="getField('owner')" placeholder="對接窗口" @input="setField('owner', $event.target.value)" />
-      </div>
-
-      <div class="field" data-service-section="repair aws other" :hidden="!isSectionVisible('repair aws other')">
-        <label for="incidentContactMethod">聯繫方式 / 稱呼</label>
-        <input id="incidentContactMethod" type="text" data-incident-field="contactMethod" :value="getField('contactMethod')" @input="setField('contactMethod', $event.target.value)" />
-      </div>
-
       <div class="field" data-service-section="repair aws other" :hidden="!isSectionVisible('repair aws other')">
         <label>是否為客戶</label>
         <div class="choice-group">

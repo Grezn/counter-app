@@ -1046,15 +1046,18 @@ button:disabled {
 
 .incident-core-title {
   grid-column: 1 / -1;
-  order: -3;
-  margin: 6px 0 0;
+  margin: 8px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid #2b3340;
   color: #e8eaed;
   font-size: 0.95rem;
   font-weight: 800;
 }
 
-.field:has(#incidentTitle) {
-  order: -2;
+.incident-core-title:first-child {
+  margin-top: 2px;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .incident-template-field {
@@ -2684,6 +2687,10 @@ body {
 
 html[data-theme="light"] .incident-quick-intake {
   background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .incident-core-title {
   border-color: #cbd5e1;
 }
 
