@@ -22,22 +22,22 @@ const props = defineProps({
 const emit = defineEmits(["apply-draft"]);
 
 const baseSections = [
-  { title: "值班規則", items: () => props.runbook.dutyRules || [] },
-  { title: "信件判斷", items: () => props.runbook.replyRules || [] },
-  { title: "不需處理", items: () => props.runbook.ignoreRules || [] },
-  { title: "觸發情境", items: () => props.runbook.triggers || [] },
-  { title: "先確認", items: () => props.runbook.firstChecks || [] },
-  { title: "處理步驟", items: () => props.runbook.steps || [] },
-  { title: "升級條件", items: () => props.runbook.escalateWhen || [] },
-  { title: "聯絡資訊", items: () => props.runbook.contacts || [] },
-  { title: "信件收件人", items: () => props.runbook.mailRecipients || [] },
+  { title: "值班規則", items: () => props.runbook.dutyRules || [], copyGroups: () => [] },
+  { title: "信件判斷", items: () => props.runbook.replyRules || [], copyGroups: () => [] },
+  { title: "不需處理", items: () => props.runbook.ignoreRules || [], copyGroups: () => [] },
+  { title: "觸發情境", items: () => props.runbook.triggers || [], copyGroups: () => [] },
+  { title: "先確認", items: () => props.runbook.firstChecks || [], copyGroups: () => [] },
+  { title: "處理步驟", items: () => props.runbook.steps || [], copyGroups: () => [] },
+  { title: "升級條件", items: () => props.runbook.escalateWhen || [], copyGroups: () => [] },
+  { title: "聯絡資訊", items: () => [], copyGroups: () => getContactCopyGroups(props.runbook.contacts || []) },
+  { title: "信件收件人", items: () => props.runbook.mailRecipients || [], copyGroups: () => [] },
 ];
 
 const sections = computed(() => [
   ...baseSections.map((section) => ({
     title: section.title,
     items: section.items(),
-    copyGroups: [],
+    copyGroups: section.copyGroups(),
     wide: false,
   })),
   ...(props.runbook.extraSections || []).map((section) => ({
@@ -50,6 +50,38 @@ const sections = computed(() => [
 
 const metaLabel = computed(() => props.runbook.severityLabel || "嚴重度");
 const actionsCount = computed(() => 1 + (props.runbook.links || []).length);
+
+function getContactLabel(text) {
+  return String(text || "").split(/[:：]/)[0].trim() || "聯絡資訊";
+}
+
+function getContactCopyTarget(label) {
+  const normalizedLabel = String(label || "").trim();
+  const fixedLabels = ["To", "Cc", "固定 CC"];
+  const fixedLabel = fixedLabels.find((item) => normalizedLabel.startsWith(item));
+
+  if (fixedLabel) return fixedLabel;
+
+  const contactPrefix = normalizedLabel.match(/^(.*?)(主聯絡人|主要聯絡人|次聯絡人|POC)/);
+  if (contactPrefix && contactPrefix[1].trim()) return contactPrefix[1].trim();
+
+  return normalizedLabel.split(/\s+/)[0] || "此段";
+}
+
+function getContactCopyGroups(items) {
+  return items
+    .map((item) => {
+      const text = String(item || "").trim();
+      const label = getContactLabel(text);
+
+      return {
+        copyLabel: `複製${getContactCopyTarget(label)}`,
+        label,
+        text,
+      };
+    })
+    .filter((group) => group.text);
+}
 
 function shouldShowSectionCopy(section) {
   return /聯絡資訊|信件收件人/.test(section.title)

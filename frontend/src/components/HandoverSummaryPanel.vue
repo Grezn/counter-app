@@ -1,5 +1,5 @@
 <script setup>
-import { legacyReady } from "../legacyBridge";
+import { legacy, legacyReady } from "../legacyBridge";
 import HandoverSummaryBadge from "./HandoverSummaryBadge.vue";
 import { useHandoverSummaryMode } from "../composables/useHandoverSummaryMode";
 import { useHandoverSummaryText } from "../composables/useHandoverSummaryText";
@@ -14,6 +14,17 @@ const { summaryText } = useHandoverSummaryText();
       <h3 class="workflow-title">交班摘要</h3>
       <div class="summary-header-tools">
         <HandoverSummaryBadge />
+        <button
+          class="summary-copy-button"
+          type="button"
+          aria-label="複製交班摘要"
+          :disabled="!legacyReady"
+          title="複製交班摘要"
+          @click="legacy('copyHandoverSummary')"
+        >
+          <span aria-hidden="true">⧉</span>
+          複製摘要
+        </button>
         <div class="summary-mode-control" role="group" aria-label="交班摘要格式">
           <button
             v-for="mode in modes"

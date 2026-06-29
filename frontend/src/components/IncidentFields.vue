@@ -2,6 +2,7 @@
 import IncidentNotesTimeline from "./IncidentNotesTimeline.vue";
 import IncidentPhraseMenu from "./IncidentPhraseMenu.vue";
 import IncidentDetailsFields from "./IncidentDetailsFields.vue";
+import { legacy, legacyReady } from "../legacyBridge";
 import { useIncidentCoreFields } from "../composables/useIncidentCoreFields";
 import { useIncidentServiceDetails } from "../composables/useIncidentServiceDetails";
 
@@ -15,6 +16,19 @@ const {
   getField: getServiceField,
   setField: setServiceField,
 } = useIncidentServiceDetails();
+
+function formatDateTimeLocal(date = new Date()) {
+  const pad = (value) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+  ].join("-") + "T" + [pad(date.getHours()), pad(date.getMinutes())].join(":");
+}
+
+function setIncidentNow() {
+  legacy("setIncidentNow", formatDateTimeLocal());
+}
 </script>
 
 <template>
@@ -23,14 +37,27 @@ const {
 
         <div class="field">
           <label for="incidentStartedAt">進線時間</label>
-          <input
-            id="incidentStartedAt"
-            type="datetime-local"
-            data-incident-field="startedAt"
-            :value="getCoreField('startedAt')"
-            @change="setCoreField('startedAt', $event.target.value)"
-            @input="setCoreField('startedAt', $event.target.value)"
-          />
+          <div class="field-control-row">
+            <input
+              id="incidentStartedAt"
+              type="datetime-local"
+              data-incident-field="startedAt"
+              :value="getCoreField('startedAt')"
+              @change="setCoreField('startedAt', $event.target.value)"
+              @input="setCoreField('startedAt', $event.target.value)"
+            />
+            <button
+              class="field-adjacent-action"
+              type="button"
+              aria-label="填入現在時間"
+              :disabled="!legacyReady"
+              title="填入現在時間"
+              @click="setIncidentNow"
+            >
+              <span aria-hidden="true">⏱</span>
+              現在
+            </button>
+          </div>
         </div>
 
         <div class="field">

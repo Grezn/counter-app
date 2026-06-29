@@ -1,7 +1,16 @@
 <script setup>
 import { useLocalWeather } from "../composables/useLocalWeather";
 
-const { configureWeatherLocation, loadLocalWeather, weather } = useLocalWeather();
+const {
+  loadLocalWeather,
+  selectedWeatherCounty,
+  selectedWeatherDistrict,
+  setWeatherCounty,
+  setWeatherDistrict,
+  weather,
+  weatherCountyOptions,
+  weatherDistrictOptions,
+} = useLocalWeather();
 </script>
 
 <template>
@@ -12,7 +21,43 @@ const { configureWeatherLocation, loadLocalWeather, weather } = useLocalWeather(
         <div id="weatherMeta" class="weather-meta">{{ weather.meta }}</div>
       </div>
       <div class="weather-actions">
-        <button class="weather-refresh" type="button" @click="configureWeatherLocation">地區</button>
+        <label class="weather-location-picker">
+          <span>縣市</span>
+          <select
+            class="weather-location-select county-select"
+            :value="selectedWeatherCounty"
+            aria-label="選擇氣象縣市"
+            @change="setWeatherCounty($event.target.value)"
+          >
+            <option value="">自動定位 / 預設</option>
+            <option
+              v-for="county in weatherCountyOptions"
+              :key="county"
+              :value="county"
+            >
+              {{ county }}
+            </option>
+          </select>
+        </label>
+        <label class="weather-location-picker">
+          <span>地區</span>
+          <select
+            class="weather-location-select district-select"
+            :value="selectedWeatherDistrict"
+            aria-label="選擇氣象地區"
+            :disabled="!selectedWeatherCounty"
+            @change="setWeatherDistrict($event.target.value)"
+          >
+            <option value="">{{ selectedWeatherCounty ? "縣市預設" : "先選縣市" }}</option>
+            <option
+              v-for="district in weatherDistrictOptions"
+              :key="district"
+              :value="district"
+            >
+              {{ district }}
+            </option>
+          </select>
+        </label>
         <button class="weather-refresh" type="button" @click="loadLocalWeather(true)">更新</button>
       </div>
     </div>

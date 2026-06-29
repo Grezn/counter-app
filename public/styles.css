@@ -213,6 +213,23 @@ h1 {
   justify-content: flex-end;
   gap: 6px;
   flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+
+.weather-location-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+}
+
+.weather-location-picker span {
+  color: #8ea0b8;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .weather-title {
@@ -238,6 +255,29 @@ h1 {
   border: 1px solid #3a4b63;
   color: #d8dde6;
   font-size: 0.78rem;
+}
+
+.weather-location-select {
+  width: clamp(118px, 12vw, 142px);
+  min-width: 0;
+  margin: 0;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: #1d2530;
+  border: 1px solid #3a4b63;
+  color: #d8dde6;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.weather-location-select.district-select {
+  width: clamp(108px, 11vw, 136px);
+}
+
+.weather-location-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
 }
 
 .weather-content {
@@ -1128,6 +1168,18 @@ button:disabled {
   font-weight: 700;
 }
 
+.field-control-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.field-control-row input {
+  min-width: 0;
+}
+
 .field-label-row {
   display: flex;
   align-items: center;
@@ -1148,6 +1200,38 @@ button:disabled {
   font-size: 0.76rem;
   font-weight: 800;
   line-height: 1.4;
+}
+
+.field-adjacent-action {
+  width: auto;
+  min-width: 70px;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #0f766e;
+  border: 1px solid #14b8a6;
+  color: #ecfeff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.field-adjacent-action:hover,
+.field-adjacent-action:focus-visible {
+  background: #0d9488;
+  border-color: #2dd4bf;
+  outline: none;
+}
+
+.field-adjacent-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .phrase-trigger[aria-expanded="true"] {
@@ -1756,6 +1840,37 @@ button:disabled {
   background: rgba(180, 83, 9, 0.18);
   border-color: rgba(251, 191, 36, 0.42);
   color: #fed7aa;
+}
+
+.summary-copy-button {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: #0f766e;
+  border: 1px solid #14b8a6;
+  color: #ecfeff;
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.35;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.summary-copy-button:hover,
+.summary-copy-button:focus-visible {
+  background: #0d9488;
+  border-color: #2dd4bf;
+  outline: none;
+}
+
+.summary-copy-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .summary-mode-control {
@@ -2667,6 +2782,7 @@ body {
 .field-mini-action,
 .phrase-menu,
 .weather-refresh,
+.weather-location-select,
 .weather-summary,
 .weather-chip,
 .field input:not([type="radio"]):not([type="checkbox"]),
@@ -2702,6 +2818,25 @@ html[data-theme="light"] .incident-quick-primary {
 
 html[data-theme="light"] .incident-quick-primary:hover,
 html[data-theme="light"] .incident-quick-primary:focus-visible {
+  background: #0d9488;
+  border-color: #0f766e;
+}
+
+html[data-theme="light"] .weather-location-picker span {
+  color: #52657d;
+}
+
+html[data-theme="light"] .field-adjacent-action,
+html[data-theme="light"] .summary-copy-button {
+  background: #0f766e;
+  border-color: #0d9488;
+  color: #ecfeff;
+}
+
+html[data-theme="light"] .field-adjacent-action:hover,
+html[data-theme="light"] .field-adjacent-action:focus-visible,
+html[data-theme="light"] .summary-copy-button:hover,
+html[data-theme="light"] .summary-copy-button:focus-visible {
   background: #0d9488;
   border-color: #0f766e;
 }
@@ -3377,6 +3512,7 @@ html[data-theme="dark"] .phrase-trigger,
 html[data-theme="dark"] .field-mini-action,
 html[data-theme="dark"] .phrase-menu,
 html[data-theme="dark"] .weather-refresh,
+html[data-theme="dark"] .weather-location-select,
 html[data-theme="dark"] .weather-summary,
 html[data-theme="dark"] .weather-chip,
 html[data-theme="dark"] .field input:not([type="radio"]):not([type="checkbox"]),
@@ -3711,6 +3847,24 @@ html[data-theme="dark"] a {
     flex-direction: column;
   }
 
+  .weather-actions {
+    width: 100%;
+  }
+
+  .weather-location-picker {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .weather-location-select {
+    width: 100%;
+  }
+
+  .weather-location-select.county-select,
+  .weather-location-select.district-select {
+    width: 100%;
+  }
+
   .weather-summary {
     justify-content: flex-start;
   }
@@ -3728,6 +3882,16 @@ html[data-theme="dark"] a {
 
   .weather-chip {
     min-width: 0;
+  }
+
+  .summary-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summary-header-tools {
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .incident-record-top {
