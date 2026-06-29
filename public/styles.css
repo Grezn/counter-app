@@ -2591,6 +2591,47 @@ button:disabled {
   flex: 0 0 auto;
 }
 
+.runbook-contact-details {
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.runbook-contact-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  background: #ffffff;
+  border: 1px solid #dbe3ed;
+}
+
+.runbook-contact-detail-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runbook-contact-detail-text strong {
+  color: #334155;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.runbook-contact-detail-text span {
+  color: #475569;
+  font-size: 0.86rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.runbook-contact-detail .runbook-copy-button {
+  min-width: 70px;
+  padding: 5px 7px;
+}
+
 .runbook-copy-groups-many .runbook-copy-group {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2624,6 +2665,11 @@ button:disabled {
   min-width: 46px;
   padding: 5px 8px;
   font-size: 0.75rem;
+}
+
+.runbook-copy-groups-many .runbook-contact-details {
+  grid-column: 1 / -1;
+  grid-row: 3;
 }
 
 .runbook-related-links {
@@ -3636,6 +3682,19 @@ html[data-theme="dark"] .runbook-copy-group-value {
   color: #cbd5e1;
 }
 
+html[data-theme="dark"] .runbook-contact-detail {
+  background: #111827;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .runbook-contact-detail-text strong {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .runbook-contact-detail-text span {
+  color: #cbd5e1;
+}
+
 html[data-theme="dark"] .runbook-detail li.runbook-note-line {
   background: rgba(148, 163, 184, 0.12);
   border-left-color: #64748b;
@@ -3882,6 +3941,15 @@ html[data-theme="dark"] a {
 
   .weather-chip {
     min-width: 0;
+  }
+
+  .runbook-contact-detail {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .runbook-contact-detail .runbook-copy-button {
+    width: 100%;
   }
 
   .summary-header {
