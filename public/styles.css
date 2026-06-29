@@ -160,12 +160,12 @@ h1 {
 
 .dashboard-overview {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 0.52fr);
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.34fr);
   align-items: stretch;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
   margin: 0 0 12px;
-  padding: 10px 12px;
+  padding: 12px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   background: #ffffff;
@@ -184,10 +184,12 @@ h1 {
 }
 
 .dashboard-overview .weather-strip {
-  grid-template-columns: 1fr;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 0.46fr) minmax(0, 1fr);
+  grid-template-areas:
+    "weather-heading weather-reading"
+    "weather-controls weather-controls";
   align-content: stretch;
-  gap: 6px;
+  gap: 8px 12px;
   min-height: 0;
   margin: 0;
   padding: 0;
@@ -207,6 +209,19 @@ h1 {
   min-width: 0;
 }
 
+.dashboard-overview .weather-header {
+  display: contents;
+}
+
+.dashboard-overview .weather-header > div:first-child {
+  grid-area: weather-heading;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2px 0;
+}
+
 .weather-actions {
   display: flex;
   align-items: center;
@@ -214,6 +229,18 @@ h1 {
   gap: 6px;
   flex: 0 0 auto;
   flex-wrap: wrap;
+}
+
+.dashboard-overview .weather-actions {
+  grid-area: weather-controls;
+  align-self: stretch;
+  box-sizing: border-box;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #dbe3ed;
+  border-radius: 8px;
+  background: #f8fbfc;
 }
 
 .weather-location-picker {
@@ -224,12 +251,25 @@ h1 {
   margin: 0;
 }
 
+.dashboard-overview .weather-location-picker {
+  display: grid;
+  flex: 1 1 0;
+  gap: 4px;
+  align-items: stretch;
+}
+
 .weather-location-picker span {
   color: #8ea0b8;
   font-size: 0.76rem;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
+}
+
+.dashboard-overview .weather-location-picker span {
+  color: #64748b;
+  font-size: 0.68rem;
+  letter-spacing: 0;
 }
 
 .weather-title {
@@ -245,6 +285,10 @@ h1 {
   line-height: 1.35;
 }
 
+.dashboard-overview .weather-meta {
+  max-width: 30ch;
+}
+
 .weather-refresh {
   width: auto;
   margin: 0;
@@ -255,6 +299,12 @@ h1 {
   border: 1px solid #3a4b63;
   color: #d8dde6;
   font-size: 0.78rem;
+}
+
+.dashboard-overview .weather-refresh {
+  align-self: end;
+  min-width: 50px;
+  padding: 6px 9px;
 }
 
 .weather-location-select {
@@ -271,8 +321,17 @@ h1 {
   font-weight: 800;
 }
 
+.dashboard-overview .weather-location-select {
+  width: 100%;
+  padding: 6px 8px;
+}
+
 .weather-location-select.district-select {
   width: clamp(108px, 11vw, 136px);
+}
+
+.dashboard-overview .weather-location-select.district-select {
+  width: 100%;
 }
 
 .weather-location-select:disabled {
@@ -291,9 +350,10 @@ h1 {
 }
 
 .dashboard-overview .weather-content {
-  grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 0.72fr));
+  grid-area: weather-reading;
+  grid-template-columns: minmax(170px, 1.25fr) repeat(2, minmax(82px, 0.72fr));
   align-self: stretch;
-  gap: 0;
+  gap: 8px;
 }
 
 .weather-summary {
@@ -389,19 +449,18 @@ h1 {
 .dashboard-overview .weather-chip,
 .dashboard-overview .stat-box {
   min-height: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
+  background: #f8fbfc;
+  border: 1px solid #dbe3ed;
+  border-radius: 8px;
   box-shadow: none;
 }
 
 .dashboard-overview .weather-summary {
-  padding: 4px 8px 4px 0;
+  padding: 8px 10px;
 }
 
 .dashboard-overview .weather-chip {
-  padding: 4px 8px;
-  border-left: 1px solid #cbd5e1;
+  padding: 8px 10px;
 }
 
 .dashboard-overview .weather-temp {
@@ -436,10 +495,10 @@ h1 {
 
 .dashboard-overview .stats-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0;
+  gap: 8px;
   margin: 0;
-  padding-left: 10px;
-  border-left: 1px solid #cbd5e1;
+  padding-left: 12px;
+  border-left: 1px solid #dbe3ed;
 }
 
 .stat-box {
@@ -455,16 +514,8 @@ h1 {
 }
 
 .dashboard-overview .stat-box {
-  min-height: 38px;
-  padding: 4px 8px;
-}
-
-.dashboard-overview .stat-box:nth-child(odd) {
-  border-right: 1px solid #cbd5e1;
-}
-
-.dashboard-overview .stat-box:nth-child(-n + 2) {
-  border-bottom: 1px solid #cbd5e1;
+  min-height: 54px;
+  padding: 8px 10px;
 }
 
 .label {
@@ -3389,6 +3440,22 @@ html[data-theme="dark"] .dashboard-overview .weather-strip {
   border-color: transparent;
 }
 
+html[data-theme="dark"] .dashboard-overview .weather-actions,
+html[data-theme="dark"] .dashboard-overview .weather-summary,
+html[data-theme="dark"] .dashboard-overview .weather-chip,
+html[data-theme="dark"] .dashboard-overview .stat-box {
+  background: #172033;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .dashboard-overview .weather-location-picker span {
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .dashboard-overview .stats-grid {
+  border-color: #334155;
+}
+
 html[data-theme="dark"] .links-panel,
 html[data-theme="dark"] .incident-panel,
 html[data-theme="dark"] .runbook-panel,
@@ -3771,6 +3838,18 @@ html[data-theme="dark"] a {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-overview .stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding-top: 10px;
+    padding-left: 0;
+    border-top: 1px solid #dbe3ed;
+    border-left: 0;
+  }
+
   .links-grid {
     grid-template-columns: 1fr;
   }
@@ -3819,6 +3898,14 @@ html[data-theme="dark"] a {
 @media (max-width: 760px) {
   .dashboard-overview {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-overview .weather-strip {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "weather-heading"
+      "weather-reading"
+      "weather-controls";
   }
 
   .dashboard-overview .stats-grid {
@@ -3910,9 +3997,18 @@ html[data-theme="dark"] a {
     width: 100%;
   }
 
+  .dashboard-overview .weather-actions {
+    align-self: stretch;
+    flex-wrap: wrap;
+  }
+
   .weather-location-picker {
     flex: 1 1 100%;
     width: 100%;
+  }
+
+  .dashboard-overview .weather-location-picker {
+    flex-basis: 100%;
   }
 
   .weather-location-select {
@@ -3921,6 +4017,10 @@ html[data-theme="dark"] a {
 
   .weather-location-select.county-select,
   .weather-location-select.district-select {
+    width: 100%;
+  }
+
+  .dashboard-overview .weather-refresh {
     width: 100%;
   }
 
