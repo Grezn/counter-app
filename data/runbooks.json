@@ -1,5 +1,5 @@
 {
-  "version": "2026-05-21",
+  "version": "2026-06-29",
   "note": "這裡會透過 /api/runbooks 顯示到前端。請只放允許值班人員在此系統查看的 SOP 資訊；更詳細或敏感的正式文件仍建議放在 SharePoint / KB / ITOP。",
   "categories": [
     {
@@ -162,8 +162,8 @@
       ],
       "links": [
         {
-          "label": "原 SOP",
-          "href": "https://dtimis.sharepoint.com/:p:/s/P400-P400/ERb0KkfJZS9Fhbg2VofdJ1ABl3eWXHKmV5koyT1wgI_b6g?e=F5VZZT"
+          "label": "KB SOP",
+          "href": "https://kb.aws-metaage.com/dell-server-storage-sop/"
         },
         {
           "label": "通話記錄用表格",
@@ -822,8 +822,8 @@
       ],
       "links": [
         {
-          "label": "原 SOP",
-          "href": "https://dtimis.sharepoint.com/sites/ST640-Akamai/Shared%20Documents/Forms/AllItems.aspx?id=%2Fsites%2FST640%2DAkamai%2FShared%20Documents%2FST610%2DAkamai%2FSOP%20%2D%20MSP%20%E7%B6%AD%E9%81%8B%2FAkamai%20CDN%5FAAP%5FLinode%20%20%E7%B6%AD%E9%81%8BSOP%5F20251216&p=true&ga=1"
+          "label": "KB SOP",
+          "href": "https://kb.aws-metaage.com/akamai-sop/"
         },
         {
           "label": "案件追蹤 SOP",
@@ -1108,12 +1108,8 @@
       ],
       "links": [
         {
-          "label": "原 SOP",
-          "href": "https://dtimis.sharepoint.com/:p:/s/P400-P400/IQCz7AR2A6PqTYX2wNdSZLIRATkUsgzfgCtIQ-1FxeSZO3I?e=Sra3CX"
-        },
-        {
           "label": "KB SOP",
-          "href": "https://kb.aws-metaage.com/%E5%A5%A7%E7%BE%A9%E6%99%BA%E6%85%A7-sop/"
+          "href": "https://kb.aws-metaage.com/%e5%a5%a7%e7%be%a9%e6%99%ba%e6%85%a7-sop/"
         },
         {
           "label": "流程圖(大)",
