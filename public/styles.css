@@ -4011,8 +4011,12 @@ html[data-theme="dark"] a {
   }
 
   .dashboard-overview .weather-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
     align-self: stretch;
-    flex-wrap: wrap;
+    gap: 6px;
+    padding: 7px;
   }
 
   .weather-location-picker {
@@ -4021,7 +4025,12 @@ html[data-theme="dark"] a {
   }
 
   .dashboard-overview .weather-location-picker {
-    flex-basis: 100%;
+    width: auto;
+    flex-basis: auto;
+  }
+
+  .dashboard-overview .weather-location-picker span {
+    font-size: 0.65rem;
   }
 
   .weather-location-select {
@@ -4034,7 +4043,10 @@ html[data-theme="dark"] a {
   }
 
   .dashboard-overview .weather-refresh {
-    width: 100%;
+    width: auto;
+    min-width: 48px;
+    padding: 6px 8px;
+    white-space: nowrap;
   }
 
   .weather-summary {
