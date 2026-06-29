@@ -48,13 +48,22 @@ function formatWeatherValue(value, unit = "") {
 function formatWeatherPeriod(startTime, endTime) {
   if (!startTime && !endTime) return "最近一段預報";
   const clean = (value) => String(value || "").replace("T", " ").slice(5, 16);
-  const start = clean(startTime);
-  const end = clean(endTime);
+  const split = (value) => {
+    const cleaned = clean(value);
+    const [date = "", time = ""] = cleaned.split(" ");
 
-  if (!start) return end || "最近一段預報";
-  if (!end || start === end) return start;
+    return { cleaned, date, time };
+  };
+  const start = split(startTime);
+  const end = split(endTime);
 
-  return `${start} - ${end}`;
+  if (!start.cleaned) return end.cleaned || "最近一段預報";
+  if (!end.cleaned || start.cleaned === end.cleaned) return start.cleaned;
+  if (start.date && start.date === end.date && start.time && end.time) {
+    return `${start.date} ${start.time}-${end.time}`;
+  }
+
+  return `${start.cleaned} - ${end.cleaned}`;
 }
 
 function formatWeatherTimestamp(value) {

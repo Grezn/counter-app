@@ -458,6 +458,14 @@ h1 {
 }
 
 .dashboard-overview .weather-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "weather-temp weather-now weather-icon"
+    "weather-forecast weather-forecast weather-forecast";
+  align-items: center;
+  gap: 8px;
+  row-gap: 5px;
   padding: 8px 10px;
 }
 
@@ -466,10 +474,24 @@ h1 {
 }
 
 .dashboard-overview .weather-temp {
+  grid-area: weather-temp;
   font-size: 1.32rem;
 }
 
+.dashboard-overview .weather-summary-text {
+  display: contents;
+}
+
+.dashboard-overview .weather-now {
+  grid-area: weather-now;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
 .dashboard-overview .weather-sticker {
+  grid-area: weather-icon;
+  justify-self: end;
   width: 30px;
   height: 30px;
   margin-left: 0;
@@ -477,7 +499,11 @@ h1 {
 }
 
 .dashboard-overview .weather-forecast-note {
+  grid-area: weather-forecast;
+  padding-top: 5px;
+  border-top: 1px solid #dbe3ed;
   font-size: 0.72rem;
+  text-align: left;
 }
 
 .weather-placeholder {
