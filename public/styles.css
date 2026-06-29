@@ -514,6 +514,7 @@ h1 {
 }
 
 .dashboard-overview .stat-box {
+  min-width: 0;
   min-height: 54px;
   padding: 8px 10px;
 }
@@ -546,7 +547,13 @@ h1 {
 }
 
 .dashboard-overview .stat-date {
-  font-size: 0.76rem;
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 button {
