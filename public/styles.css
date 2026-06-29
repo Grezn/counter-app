@@ -408,6 +408,8 @@ h1 {
   color: #8ea0b8;
   font-size: 0.76rem;
   line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .weather-chip {
@@ -3707,6 +3709,10 @@ html[data-theme="dark"] .weather-placeholder {
   color: #94a3b8;
 }
 
+html[data-theme="dark"] .dashboard-overview .weather-forecast-note {
+  border-top-color: #334155;
+}
+
 html[data-theme="dark"] .quick-link:hover {
   background: #12333b;
   border-color: #14b8a6;
@@ -4036,11 +4042,43 @@ html[data-theme="dark"] a {
   }
 
   .dashboard-overview .weather-summary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "weather-temp weather-now weather-icon"
+      "weather-forecast weather-forecast weather-forecast";
     gap: 8px;
-    padding-right: 0;
+    row-gap: 5px;
+    align-items: center;
+    padding: 8px 10px;
+  }
+
+  .dashboard-overview .weather-temp {
+    grid-area: weather-temp;
+  }
+
+  .dashboard-overview .weather-summary-text {
+    display: contents;
+  }
+
+  .dashboard-overview .weather-now {
+    grid-area: weather-now;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .dashboard-overview .weather-forecast-note {
+    grid-area: weather-forecast;
+    padding-top: 5px;
+    border-top: 1px solid #dbe3ed;
+    font-size: 0.72rem;
+    text-align: left;
   }
 
   .dashboard-overview .weather-sticker {
+    grid-area: weather-icon;
+    justify-self: end;
     width: 28px;
     height: 28px;
     font-size: 1rem;
